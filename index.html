@@ -392,13 +392,17 @@
   .play-modes{display:flex;gap:8px;width:100%;justify-content:center;flex-wrap:wrap}
   .play-modes .btn{flex:1 1 140px;max-width:340px;padding:11px 12px;font-size:14px}
   .coop-note{margin:0;color:var(--muted);font-size:11px;line-height:1.35}
+  .coop-error{margin:0;padding:9px;border:1px solid var(--danger);border-radius:9px;color:#ffc9c3;font-size:12px;line-height:1.4;max-height:110px;overflow-y:auto;overflow-wrap:anywhere}
+  #coopWaiting{position:absolute;inset:0;z-index:9;display:grid;place-items:center;padding:16px;background:rgba(8,7,6,.86);backdrop-filter:blur(3px);text-align:center;line-height:1.45}
+  #coopWaiting[hidden]{display:none}
+  #coopWaiting b{color:var(--amber-2);font-size:22px}
+  #coopWaiting p{color:var(--text);font-size:14px;margin:10px 0 0}
   #coopBar{display:flex;align-items:center;gap:8px;padding:5px 9px;flex:none;border:1px solid var(--edge);border-radius:9px;background:var(--panel);line-height:1.3}
   #coopBar[hidden]{display:none}
   #coopStatus{min-width:0;flex:1;font-size:12px;color:var(--amber-2);overflow-wrap:anywhere}
   #leaveCoop{min-height:36px;padding:6px 10px;font-size:12px}
   .btn:disabled{opacity:.55;cursor:wait}
   #startScreen .qsource{margin:0;font-size:11px}
-  #startBtn{width:100%;max-width:340px}
   @media (max-width:540px){
     #startScreen{padding:8px}
     #startScreen .card{padding:12px;gap:10px}
@@ -409,19 +413,16 @@
     #startScreen .skinbtn canvas{width:42px!important;height:48px!important}
     #startScreen .skin-desc{padding:8px;font-size:11px}
     #startScreen .skin-desc .say{margin-top:4px}
-    #startBtn{padding:11px 16px}
   }
 
   /* Ограничиваем высоту экранов: прокручивается только их содержимое. */
   #app{min-width:0;min-height:0}
   .screen{padding:12px;overflow:hidden}
   .screen .card{max-height:100%;min-height:0;min-width:0}
-  #cityScreen .card,#qScreen .card,#endScreen .card{
+  #qScreen .card,#endScreen .card{
     display:flex;flex-direction:column;
   }
-  #cityScreen h1,#cityScreen .sub,#cityScreen .btnrow,
   .qtop,.qnext,#endScreen .btnrow{flex-shrink:0}
-  #cityScreen .citygrid{min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
   .qbody,.end-body{min-height:0;overflow-y:auto;overscroll-behavior:contain}
   .qbody{padding:0 2px 2px}
   .qtop{flex-wrap:wrap}
@@ -466,7 +467,6 @@
     .citybtn{padding:10px 8px}
     .citybtn b{font-size:13px;overflow-wrap:anywhere}
     .citybtn small{font-size:11px}
-    #cityScreen .btnrow .btn{width:100%}
     .qtop{gap:6px;margin-bottom:8px}
     .qtag{font-size:10px;letter-spacing:.06em}
     .qright{gap:6px}
@@ -504,8 +504,6 @@
     #startScreen .skinbtn canvas{width:35px!important;height:40px!important}
     #startScreen .skins{margin-bottom:6px}
     .start-footer{flex-direction:row;justify-content:space-between;gap:10px}
-    #startBtn{width:auto;flex-shrink:0}
-    #cityScreen .sub{margin-bottom:6px}
     .citygrid{grid-template-columns:repeat(3,minmax(0,1fr))}
     #qAnswers:not(.sliderq){grid-template-columns:repeat(2,minmax(0,1fr))}
   }
@@ -567,21 +565,10 @@
         <div class="start-footer">
         <div class="qsource" id="qSource">вопросы загружаются…</div>
         <div class="play-modes">
-          <button class="btn ghost" id="startBtn">Играть одному</button>
           <button class="btn" id="coopBtn">Играть вместе</button>
         </div>
-        <p class="coop-note">Общая шахта до 8 игроков · без кода комнаты</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="screen hidden" id="cityScreen">
-      <div class="card">
-        <h1>Откуда начнём?</h1>
-        <p class="sub">Выберите город Смоленской области. Цель — СОТА в Смоленске (Смоленская областная технологическая академия): чем дальше город, тем больше шахт придётся пройти, но и награда за путь больше.</p>
-        <div class="citygrid" id="cityGrid"></div>
-        <div class="btnrow" style="margin-top:12px">
-          <button class="btn ghost" id="backBtn" type="button">Назад к скинам</button>
+        <p class="coop-note">Общая шахта для 2–8 игроков · без кода комнаты</p>
+        <p class="coop-error" id="coopError" role="alert" hidden></p>
         </div>
       </div>
     </div>
@@ -639,6 +626,7 @@
       </div>
     </div>
 
+    <div id="coopWaiting" hidden><div><b>Ожидаем товарища</b><p>Отправьте другу ссылку на эту страницу.<br>Игра продолжится, когда подключится второй игрок.</p></div></div>
     <div id="toast"></div>
   </div>
 
@@ -859,7 +847,7 @@
   let shake = 0, flash = 0, flashColor = '255,120,90';
   let autoPath = [], autoNext = 0, tapTarget = null;
   let pickups = [], hintUsed = false;
-  let coopId = null, coopToken = null, coopLevel = 0, coopPeers = [], coopTimer = null;
+  let coopId = null, coopToken = null, coopLevel = 0, coopPeers = [], coopTimer = null, coopReady = false;
   let coopQueue = Promise.resolve(), coopJoining = false, coopTransition = false, coopLocking = false;
   let speech = null;
   let best = 0;
@@ -1145,6 +1133,7 @@
   }
 
   async function openQuestion(crystal){
+    if (!coopId || !coopReady) return;
     if (coopId){
       if (coopLocking || coopTransition) return;
       coopLocking = true;
@@ -1282,6 +1271,7 @@
   }
 
   async function answer(btn, ok){
+    if (!coopId || !coopReady) return;
     if (answerLock) return;
     answerLock = true;
     lastAnswerOk = ok;
@@ -1358,6 +1348,7 @@
   }
 
   async function submitSlider(){
+    if (!coopId || !coopReady) return;
     if (answerLock) return;
     const q = activeQuestion;
     if (!q || q.type !== 'slider') return;
@@ -1572,7 +1563,7 @@
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   function tryMove(dx, dy){
-    if (state !== 'playing' || coopTransition || coopLocking) return;
+    if (state !== 'playing' || !coopId || !coopReady || coopTransition || coopLocking) return;
     if (dx !== 0) player.dir = dx > 0 ? 1 : -1;
 
     const nx = player.gx + dx, ny = player.gy + dy;
@@ -1625,22 +1616,8 @@
   }
 
   function descend(){
-    if (coopId){ coopDescend(); return; }
-    completedMines++;
-    depth = completedMines + 1;
-    score += 300 + depth * 60;
-    fuel = Math.min(100, fuel + 30);
-    hp = Math.min(100, hp + 12);
-    answerStreak = 0;
-    sfx.descend();
-    flash = 0.5; flashColor = '255,210,140';
-
-    if (completedMines >= totalMines){ victory(); return; }
-
-    newLevel();
-    updateHUD();
-    say(currentSkin().lines.descend);
-    toast('Шахта ' + (completedMines + 1) + '/' + totalMines + ' · до Соты ' + leftKm() + ' км');
+    if (!coopId || !coopReady) return;
+    coopDescend();
   }
 
   function victory(){
@@ -1743,39 +1720,7 @@
     g.drawImage(sp, 0, 0);
   }
 
-  function buildCities(){
-    const grid = el('cityGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    CITIES.forEach(c => {
-      const mines = minesFor(c.km);
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'citybtn';
-      const nm = document.createElement('b');
-      nm.textContent = c.name;
-      const info = document.createElement('small');
-      info.innerHTML = c.km + ' км · <em>' + mines + ' ' + plural(mines, 'шахта', 'шахты', 'шахт') + '</em>';
-      b.appendChild(nm);
-      b.appendChild(info);
-      b.addEventListener('click', () => startGame(c));
-      grid.appendChild(b);
-    });
-  }
-
-  function openCitySelect(){
-    leaveCoop();
-    state = 'title';
-    stopAuto();
-    speech = null;
-    el('startScreen').classList.add('hidden');
-    el('endScreen').classList.add('hidden');
-    el('qScreen').classList.add('hidden');
-    el('cityScreen').classList.remove('hidden');
-    buildCities();
-  }
-
-  function startGame(city){
+  function prepareGame(city){
     chosenCity = city;
     startKm = city.km;
     completedMines = 0;
@@ -1789,7 +1734,6 @@
     el('endScreen').classList.add('hidden');
     el('qScreen').classList.add('hidden');
     el('startScreen').classList.add('hidden');
-    el('cityScreen').classList.add('hidden');
     state = 'playing';
     updateHUD();
     toast(city.name + ' → Соты: ' + city.km + ' км · ' + totalMines + ' ' + plural(totalMines, 'шахта', 'шахты', 'шахт'));
@@ -1807,8 +1751,16 @@
     try {
       const response = await fetch('/api/coop', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body), signal: controller.signal });
-      const data = await response.json();
+      if (!(response.headers.get('content-type') || '').includes('application/json')){
+        throw new Error('Сервер совместной игры недоступен. Для сайта на Vercel нужно опубликовать API и подключить общее хранилище.');
+      }
+      let data;
+      try { data = await response.json(); }
+      catch { throw new Error('Сервер вернул некорректный ответ. Попробуйте подключиться ещё раз.'); }
       if (!response.ok) throw new Error(data.error || 'Сервер недоступен');
+      if (!data || typeof data !== 'object' || (body.action !== 'leave' && (!data.id || !data.session))){
+        throw new Error('Сервер вернул неполные данные совместной игры. Обновите страницу.');
+      }
       return data;
     } finally { clearTimeout(timeout); }
   }
@@ -1821,12 +1773,14 @@
       if (id !== coopId) return null;
       applyCoop(result);
       return result;
-    }).catch(() => {
+    }).catch((error) => {
       if (id === coopId){
         leaveCoop();
         state = 'title'; stopAuto();
-        ['cityScreen','endScreen','qScreen'].forEach(key => el(key).classList.add('hidden'));
+        ['endScreen','qScreen'].forEach(key => el(key).classList.add('hidden'));
         el('startScreen').classList.remove('hidden');
+        el('coopError').hidden = false;
+        el('coopError').textContent = error.message || 'Связь с сервером потеряна. Подключитесь снова.';
         toast('Связь с сервером потеряна. Нажмите «Играть вместе», чтобы подключиться снова.');
       }
       return null;
@@ -1862,9 +1816,11 @@
     }
     collected = crystals.filter(c => c.done).length; exitOpen = collected >= needed; runOre = session.runOre;
     coopPeers = session.players.filter(p => p.id !== coopId);
+    coopReady = session.players.length >= 2;
+    el('coopWaiting').hidden = coopReady || session.finished;
     const me = session.players.find(p => p.id === coopId);
     el('coopBar').hidden = false;
-    el('coopStatus').textContent = 'Вместе: ' + session.players.length + '/8 · Вы: ' + (me?.name || 'игрок') + ' · кристаллы общие';
+    el('coopStatus').textContent = 'Вместе: ' + session.players.length + '/8 · Вы: ' + (me?.name || 'игрок') + (coopReady ? ' · кристаллы общие' : ' · ждём второго игрока');
     updateHUD();
     if (session.finished && state !== 'dead'){
       completedMines = totalMines;
@@ -1876,7 +1832,7 @@
   async function coopPoll(){
     if (!coopId) return;
     await coopAction('sync', { x: player.gx, y: player.gy, dir: player.dir, state, score });
-    if (coopId) coopTimer = setTimeout(coopPoll, 200);
+    if (coopId) coopTimer = setTimeout(coopPoll, 500);
   }
 
   function leaveCoop(){
@@ -1884,7 +1840,8 @@
       const body = JSON.stringify({ action: 'leave', id: coopId, token: coopToken });
       navigator.sendBeacon('/api/coop', new Blob([body], { type: 'application/json' }));
     }
-    coopId = null; coopToken = null; coopLevel = 0; coopPeers = []; clearTimeout(coopTimer);
+    coopId = null; coopToken = null; coopLevel = 0; coopPeers = []; coopReady = false; clearTimeout(coopTimer);
+    el('coopWaiting').hidden = true;
     coopTransition = false; coopLocking = false;
     el('coopBar').hidden = true;
   }
@@ -1897,7 +1854,7 @@
   }
 
   async function coopDescend(){
-    if (coopTransition) return;
+    if (coopTransition || !coopReady) return;
     coopTransition = true; stopAuto();
     // Создаём вариант следующей карты; первый принятый запрос переводит туда всю команду.
     let world = null;
@@ -1911,23 +1868,26 @@
     coopTransition = false;
   }
 
-  el('coopBtn').addEventListener('click', async () => {
+  async function joinCoop(){
     if (coopJoining) return;
     coopJoining = true; el('coopBtn').disabled = true;
+    el('coopError').hidden = true;
     try {
-      leaveCoop(); startGame(CITIES[0]); state = 'connecting';
+      leaveCoop(); prepareGame(CITIES[0]); state = 'connecting';
       const result = await coopFetch({ action: 'join', skin: skinIndex, world: coopWorld() });
       coopId = result.id; coopToken = result.token; coopQueue = Promise.resolve();
       applyCoop(result, true); coopPoll();
       toast('Вы в общей шахте! Другу достаточно нажать «Играть вместе» на том же сервере.');
     } catch (error){
       state = 'title'; el('startScreen').classList.remove('hidden');
-      toast(error.name === 'AbortError' ? 'Сервер не отвечает. Запустите start.bat.' : error.message);
+      el('coopError').hidden = false;
+      el('coopError').textContent = error.name === 'AbortError' ? 'Сервер не отвечает. Попробуйте подключиться ещё раз.' : error instanceof TypeError ? 'Не удалось связаться с сервером. Проверьте подключение к интернету и попробуйте снова.' : error.message;
     } finally { coopJoining = false; el('coopBtn').disabled = false; }
-  });
+  }
+  el('coopBtn').addEventListener('click', joinCoop);
   el('leaveCoop').addEventListener('click', () => {
     leaveCoop(); stopAuto(); state = 'title';
-    ['qScreen','endScreen','cityScreen'].forEach(key => el(key).classList.add('hidden'));
+    ['qScreen','endScreen'].forEach(key => el(key).classList.add('hidden'));
     el('startScreen').classList.remove('hidden'); buildSkins();
   });
   window.addEventListener('pagehide', leaveCoop);
@@ -2738,7 +2698,7 @@
     if (canvas.clientWidth !== cssW || canvas.clientHeight !== cssH) resizeCanvas();
 
     // автопроход по маршруту, выбранному тапом
-    if (state === 'playing' && autoPath.length && now >= autoNext){
+    if (state === 'playing' && coopReady && autoPath.length && now >= autoNext){
       const nxt = autoPath.shift();
       autoNext = now + 105;
       tryMove(nxt.x - player.gx, nxt.y - player.gy);
@@ -2756,7 +2716,7 @@
     player.x += (tx - player.x) * k;
     player.y += (ty - player.y) * k;
 
-    if (state === 'playing'){
+    if (state === 'playing' && coopReady){
       fuel = Math.max(0, fuel - dt * 1.05);
       if (fuel <= 0){ updateHUD(); gameOver('Фонарь погас, и шахта сомкнулась.'); }
       updateHUD();
@@ -2784,14 +2744,12 @@
     const isArrow = e.code.startsWith('Arrow') || e.code === 'Space';
     if (isArrow) e.preventDefault();
 
-    const dir = KEYMAP[e.code];
-    if (!dir) return;
-
     if (state === 'title'){
-      if (e.code === 'Space' || e.code === 'Enter') openCitySelect();
+      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); joinCoop(); }
       return;
     }
-    if (state !== 'playing') return;
+    const dir = KEYMAP[e.code];
+    if (!dir || state !== 'playing') return;
     if (performance.now() - moveCooldown < 90) return;
     moveCooldown = performance.now();
     stopAuto();
@@ -2813,14 +2771,7 @@
     btn.addEventListener('contextmenu', e => e.preventDefault());
   });
 
-  el('startBtn').addEventListener('click', openCitySelect);
-  el('againBtn').addEventListener('click', openCitySelect);
-  el('backBtn').addEventListener('click', () => {
-    el('cityScreen').classList.add('hidden');
-    el('startScreen').classList.remove('hidden');
-    state = 'title';
-    buildSkins();
-  });
+  el('againBtn').addEventListener('click', joinCoop);
   el('skinsBtn').addEventListener('click', () => {
     leaveCoop();
     el('endScreen').classList.add('hidden');

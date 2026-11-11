@@ -14,9 +14,9 @@ function validateWorld(world) {
   return copy(world);
 }
 
-function createCoop({ now = Date.now } = {}) {
-  let session = null;
-  const players = new Map();
+function createCoop({ now = Date.now, state = null } = {}) {
+  let session = state?.session || null;
+  const players = new Map(state?.players || []);
   const cleanup = () => {
     for (const [id, player] of players) if (now() - player.lastSeen > 15000) players.delete(id);
     if (!players.size) session = null;
@@ -26,7 +26,7 @@ function createCoop({ now = Date.now } = {}) {
     id: session.id, level: session.level, finished: session.finished, runOre: session.runOre, world: session.world,
     players: [...players.values()].map(({ lastSeen, token, ...player }) => player)
   } });
-  return { handle(input, uuid) {
+  return { exportState: () => copy({ session, players: [...players.entries()] }), handle(input, uuid) {
     cleanup();
     if (!input || typeof input !== 'object') fail(400, 'Некорректный запрос');
     if (input.action === 'join') {
@@ -47,8 +47,12 @@ function createCoop({ now = Date.now } = {}) {
     if (input.action === 'leave') { players.delete(input.id); cleanup(); return { left: true }; }
     const world = session.world;
     const sameLevel = input.level === session.level;
+    // Без второго участника игровые действия приостановлены и на сервере.
+    if (players.size < 2 && !['sync', 'release'].includes(input.action)) {
+      return snapshot(input.id, { allowed: false, pickup: null, waiting: true });
+    }
     if (input.action === 'sync') {
-      if (sameLevel && Number.isInteger(input.x) && Number.isInteger(input.y) && world.map[input.y]?.[input.x] === 0) {
+      if (players.size >= 2 && sameLevel && Number.isInteger(input.x) && Number.isInteger(input.y) && world.map[input.y]?.[input.x] === 0) {
         player.x = input.x; player.y = input.y;
       }
       player.dir = input.dir === -1 ? -1 : 1;

@@ -56,12 +56,14 @@ test('pickup is granted once; level advances once even for simultaneous requests
 });
 
 test('late join gets progress; disconnect frees locks; empty session resets', () => {
-  const { join, act, tick } = setup(); const a = join();
+  const { join, act, tick } = setup(); const a = join(); join();
   act(a, 'lock', { index: 0 }); act(a, 'answer', { index: 0, ok: true });
   act(a, 'lock', { index: 1 });
   const b = join(); assert.equal(b.session.runOre, 1);
   tick(10000); act(b, 'sync'); tick(6000);
+  const teammate = join();
   assert.equal(act(b, 'lock', { index: 1 }).allowed, true);
+  act(teammate, 'leave');
   act(b, 'leave');
   const c = join(); assert.notEqual(c.session.id, a.session.id); assert.equal(c.session.runOre, 0);
 });
