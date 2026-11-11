@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Шахта Знаний — игра</title>
 <style>
   :root{
@@ -42,7 +42,7 @@
     display:flex;flex-direction:column;gap:10px;
   }
 
-  /* ---------- HUD ---------- */
+  /* ---------- Панель показателей ---------- */
   .hud{
     display:flex;flex-wrap:wrap;align-items:center;gap:8px;
     flex:none;
@@ -71,7 +71,7 @@
   .meter.low i{background:linear-gradient(90deg,#d6453a,#f4796b)!important;animation:pulseBar .7s infinite alternate}
   @keyframes pulseBar{from{opacity:.55}to{opacity:1}}
 
-  /* ---------- Stage ---------- */
+  /* ---------- Игровая область ---------- */
   #stage{
     position:relative;border-radius:16px;overflow:hidden;
     border:1px solid var(--edge);
@@ -83,7 +83,7 @@
   }
   canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
-  /* ---------- Overlays ---------- */
+  /* ---------- Экраны поверх игры ---------- */
   .screen{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     padding:22px;text-align:center;line-height:1.5;
@@ -203,7 +203,7 @@
     border-left:2px solid rgba(242,164,65,.45);
   }
 
-  /* ---------- Question modal ---------- */
+  /* ---------- Окно вопроса ---------- */
   #qScreen{z-index:8}
   #qScreen .card{max-width:600px;text-align:left;position:relative}
   .qtop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
@@ -301,7 +301,7 @@
   #sliderSubmit{margin-top:14px}
   .qfoot{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px}
 
-  /* ---------- Toast ---------- */
+  /* ---------- Всплывающее уведомление ---------- */
   #toast{
     position:absolute;left:50%;bottom:16px;transform:translate(-50%,14px);
     padding:9px 16px;border-radius:99px;font-size:13px;line-height:1.4;
@@ -312,7 +312,7 @@
   }
   #toast.show{opacity:1;transform:translate(-50%,0)}
 
-  /* ---------- Controls ---------- */
+  /* ---------- Управление ---------- */
   #controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;flex:none}
   .hint{font-size:12.5px;color:var(--muted);line-height:1.6}
   .hint kbd{
@@ -367,6 +367,161 @@
     .dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,40px)}
     #controls{gap:6px}
   }
+
+  /* Кнопка запуска всегда видна в пределах высоты игровой области. */
+  #startScreen{padding:12px;overflow:hidden}
+  #startScreen .card{
+    max-width:760px;max-height:100%;min-height:0;
+    display:flex;flex-direction:column;padding:18px;gap:14px;
+  }
+  #startScreen h1{flex:none;margin:0;font-size:clamp(24px,3.5vw,32px)}
+  .start-body{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:18px;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+    text-align:left;
+  }
+  .start-body > div{min-width:0}
+  #startScreen .sub{font-size:13px;line-height:1.45;margin-bottom:12px}
+  #startScreen .rules{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;font-size:12px;line-height:1.4}
+  #startScreen .rules div{padding:8px}
+  #startScreen .rules b{font-size:11px}
+  #startScreen .skins{gap:6px;margin-bottom:10px;flex-wrap:nowrap}
+  #startScreen .skinbtn{padding:5px 6px}
+  #startScreen .skin-desc{margin:0;padding:10px;font-size:12px;line-height:1.4}
+  .start-footer{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .play-modes{display:flex;gap:8px;width:100%;justify-content:center;flex-wrap:wrap}
+  .play-modes .btn{flex:1 1 140px;max-width:340px;padding:11px 12px;font-size:14px}
+  .coop-note{margin:0;color:var(--muted);font-size:11px;line-height:1.35}
+  #coopBar{display:flex;align-items:center;gap:8px;padding:5px 9px;flex:none;border:1px solid var(--edge);border-radius:9px;background:var(--panel);line-height:1.3}
+  #coopBar[hidden]{display:none}
+  #coopStatus{min-width:0;flex:1;font-size:12px;color:var(--amber-2);overflow-wrap:anywhere}
+  #leaveCoop{min-height:36px;padding:6px 10px;font-size:12px}
+  .btn:disabled{opacity:.55;cursor:wait}
+  #startScreen .qsource{margin:0;font-size:11px}
+  #startBtn{width:100%;max-width:340px}
+  @media (max-width:540px){
+    #startScreen{padding:8px}
+    #startScreen .card{padding:12px;gap:10px}
+    .start-body{grid-template-columns:minmax(0,1fr);gap:12px}
+    #startScreen .sub{font-size:12px;margin-bottom:8px}
+    #startScreen .skins-title{margin-bottom:5px}
+    #startScreen .skins{margin-bottom:8px}
+    #startScreen .skinbtn canvas{width:42px!important;height:48px!important}
+    #startScreen .skin-desc{padding:8px;font-size:11px}
+    #startScreen .skin-desc .say{margin-top:4px}
+    #startBtn{padding:11px 16px}
+  }
+
+  /* Ограничиваем высоту экранов: прокручивается только их содержимое. */
+  #app{min-width:0;min-height:0}
+  .screen{padding:12px;overflow:hidden}
+  .screen .card{max-height:100%;min-height:0;min-width:0}
+  #cityScreen .card,#qScreen .card,#endScreen .card{
+    display:flex;flex-direction:column;
+  }
+  #cityScreen h1,#cityScreen .sub,#cityScreen .btnrow,
+  .qtop,.qnext,#endScreen .btnrow{flex-shrink:0}
+  #cityScreen .citygrid{min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
+  .qbody,.end-body{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .qbody{padding:0 2px 2px}
+  .qtop{flex-wrap:wrap}
+  .qright{margin-left:auto;max-width:100%}
+  .qprog{flex-wrap:wrap;justify-content:flex-end}
+  .qconfirm{overflow-y:auto}
+  .mobile-copy{display:none}
+  .skin-details summary{display:none;cursor:pointer;color:var(--amber-2);font-size:12px;line-height:1.4}
+  button{touch-action:manipulation}
+  .btn,.citybtn,.ans,.hintbtn,.qclose{min-height:44px}
+  #toast{max-width:calc(100% - 20px);white-space:normal;text-align:center}
+
+  @media (max-width:640px), (max-height:500px) and (pointer:coarse){
+    body{
+      padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right))
+        max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));
+    }
+    #app{gap:6px}
+    .hud{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding:6px;gap:4px}
+    .brand{grid-column:1/-1;font-size:11px;line-height:1.2}
+    .brand span{display:none}
+    .stat{grid-column:span 2;justify-content:space-between;min-width:0;padding:4px 5px;font-size:9px;gap:3px;letter-spacing:0}
+    .stat b{font-size:12px;white-space:nowrap}
+    .stat:nth-child(n+5){grid-column:span 3}
+    .meter{flex:1;min-width:20px;max-width:92px;width:auto}
+    #controls .hint{font-size:11px;line-height:1.3;padding:0}
+    #controls .kb,.dpad{display:none!important}
+    .screen,#startScreen{padding:6px}
+    .screen .card,#startScreen .card{padding:12px;border-radius:12px}
+    h1{font-size:24px}
+    .sub{font-size:12px;line-height:1.4;margin-bottom:10px}
+    .btn{font-size:14px;padding:11px 16px}
+    #startScreen .desktop-copy{display:none}
+    #startScreen .mobile-copy{display:block}
+    #startScreen .rules kbd,#startScreen .keyboard-rule{display:none}
+    #startScreen .rules{font-size:11px;line-height:1.35}
+    #startScreen .rules div{padding:6px}
+    #startScreen .skinbtn{min-width:64px;min-height:44px}
+    #startScreen .skin-desc{font-size:12px}
+    #startScreen .qsource{font-size:10px}
+    .citygrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+    .citybtn{padding:10px 8px}
+    .citybtn b{font-size:13px;overflow-wrap:anywhere}
+    .citybtn small{font-size:11px}
+    #cityScreen .btnrow .btn{width:100%}
+    .qtop{gap:6px;margin-bottom:8px}
+    .qtag{font-size:10px;letter-spacing:.06em}
+    .qright{gap:6px}
+    .qclose{width:44px;height:44px}
+    .qprog{gap:4px}
+    .qprog span{width:7px;height:7px}
+    #qText{font-size:17px;line-height:1.35;margin-bottom:12px}
+    #qAnswers{gap:7px}
+    .ans,#qAnswers.tf .ans{font-size:14px;padding:10px;overflow-wrap:anywhere}
+    .hintbtn{font-size:12px;width:100%;padding:8px}
+    .qfeedback{font-size:13px;padding:9px;margin-top:8px}
+    .qfact,.qspeak{font-size:12px}
+    .qfoot{font-size:11px;margin-top:8px}
+    .qnext{margin-top:8px}
+    .sliderWrap{padding:6px 4px 10px}
+    .sliderWrap input[type=range]{height:32px;background-color:transparent;touch-action:pan-y}
+    .qconfirm{padding:10px}
+    .qconfirm-box{padding:14px;max-height:100%;overflow-y:auto}
+    .qconfirm-text{font-size:13px;margin-bottom:12px}
+    .qconfirm .btnrow{flex-direction:column}
+    #endScreen .btnrow{gap:7px;margin-top:10px}
+    #endScreen .btnrow .btn{flex:1 1 140px}
+    #endScreen .rules{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px;margin-bottom:10px}
+    .sota canvas{max-height:24dvh;object-fit:contain}
+  }
+  @media (max-height:500px) and (orientation:landscape){
+    .brand,#controls{display:none}
+    .hud{grid-template-columns:repeat(7,minmax(0,1fr))}
+    .hud .stat{grid-column:span 1;font-size:9px;flex-wrap:wrap;justify-content:center}
+    .meter{flex-basis:100%;height:5px}
+    #startScreen .card{gap:8px;padding:10px}
+    #startScreen h1{font-size:22px}
+    .start-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+    #startScreen .skin-desc{font-size:11px;padding:7px}
+    #startScreen .skinbtn canvas{width:35px!important;height:40px!important}
+    #startScreen .skins{margin-bottom:6px}
+    .start-footer{flex-direction:row;justify-content:space-between;gap:10px}
+    #startBtn{width:auto;flex-shrink:0}
+    #cityScreen .sub{margin-bottom:6px}
+    .citygrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    #qAnswers:not(.sliderq){grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:640px) and (max-height:740px){
+    #startScreen .card{gap:8px;padding:10px}
+    .start-body{gap:8px}
+    .skin-details summary{display:list-item;min-height:32px;padding:6px 0}
+    #startScreen .skin-desc{margin-top:4px}
+    #startScreen .skinbtn{flex-direction:row;padding:4px;gap:4px;font-size:11px}
+    #startScreen .skinbtn canvas{width:28px!important;height:32px!important}
+    #startScreen .skins{gap:4px;margin-bottom:2px}
+    #startScreen .skins-title{margin-bottom:3px}
+    .coop-note{font-size:10px}
+    .play-modes{gap:5px}
+    .play-modes .btn{flex-basis:100px;font-size:12px;padding:9px 5px}
+  }
 </style>
 </head>
 <body>
@@ -389,18 +544,34 @@
     <div class="screen" id="startScreen">
       <div class="card">
         <h1>Шахта Знаний</h1>
-        <p class="sub">Спускайтесь в забой, собирайте кристаллы и отвечайте на вопросы о недрах. Цель — СОТА, Смоленская областная технологическая академия: чем дальше ваш город, тем больше шахт. Встречаются фиолетовые алмазы: вопрос сложнее, награда выше.</p>
+        <div class="start-body">
+        <div>
+        <p class="sub desktop-copy">Спускайтесь в забой, собирайте кристаллы и отвечайте на вопросы о недрах. Цель — СОТА, Смоленская областная технологическая академия: чем дальше ваш город, тем больше шахт. Встречаются фиолетовые алмазы: вопрос сложнее, награда выше.</p>
+        <p class="sub mobile-copy">Собирайте кристаллы и отвечайте на вопросы, чтобы добраться до СОТЫ в Смоленске.</p>
         <div class="rules">
-          <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
+          <div><b>Ходьба</b>Тап по клетке<span class="keyboard-rule">, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</span></div>
           <div><b>Кристалл</b>Наступите на него — откроется вопрос</div>
           <div><b>Алмаз</b>Фиолетовый кристалл: сложный вопрос, двойные очки</div>
           <div><b>Проигрыш</b>Свет погас или силы на нуле</div>
         </div>
+        </div>
+        <div>
         <div class="skins-title">Скины <span>· бесплатно</span></div>
         <div class="skins" id="skinRow"></div>
+        <details class="skin-details" id="skinDetails" open>
+        <summary>О персонаже</summary>
         <div class="skin-desc" id="skinDesc"></div>
+        </details>
+        </div>
+        </div>
+        <div class="start-footer">
         <div class="qsource" id="qSource">вопросы загружаются…</div>
-        <button class="btn" id="startBtn">Спуститься в шахту</button>
+        <div class="play-modes">
+          <button class="btn ghost" id="startBtn">Играть одному</button>
+          <button class="btn" id="coopBtn">Играть вместе</button>
+        </div>
+        <p class="coop-note">Общая шахта до 8 игроков · без кода комнаты</p>
+        </div>
       </div>
     </div>
 
@@ -424,11 +595,13 @@
             <button class="qclose" id="qCloseBtn" type="button" title="Выйти из вопроса (−75 очков)" aria-label="Выйти из вопроса">✕</button>
           </div>
         </div>
+        <div class="qbody">
         <p id="qText">…</p>
         <div id="qAnswers"></div>
         <button class="hintbtn" id="hintBtn" type="button">Подсказка: убрать 2 неверных</button>
         <div class="qfeedback hidden" id="qFeedback"></div>
         <div class="qfoot" id="qFoot"></div>
+        </div>
         <button class="btn qnext hidden" id="qNextBtn" type="button">Дальше</button>
         <div class="qconfirm hidden" id="qExitConfirm" role="dialog" aria-modal="true" aria-labelledby="qConfirmTitle">
           <div class="qconfirm-box">
@@ -445,6 +618,7 @@
 
     <div class="screen hidden" id="endScreen">
       <div class="card">
+        <div class="end-body">
         <h1 id="endTitle">Смена окончена</h1>
         <p class="sub" id="endText">Свет погас, и тьма забрала своё.</p>
         <div class="sota hidden" id="sotaWrap">
@@ -457,6 +631,7 @@
           <div><b>Очки</b><span id="endScore">0</span></div>
           <div><b>Рекорд</b><span id="endBest">0</span></div>
         </div>
+        </div>
         <div class="btnrow">
           <button class="btn" id="againBtn">Спуститься снова</button>
           <button class="btn ghost" id="skinsBtn">Сменить скин</button>
@@ -467,6 +642,10 @@
     <div id="toast"></div>
   </div>
 
+  <div id="coopBar" hidden>
+    <span id="coopStatus" role="status" aria-live="polite"></span>
+    <button class="btn ghost" id="leaveCoop" type="button">Выйти</button>
+  </div>
   <div id="controls">
     <div class="hint">
       <b>Тапните по любой клетке</b> — шахтёр сам дойдёт.
@@ -511,6 +690,12 @@
   }
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 250));
+
+  // Описание персонажа можно раскрыть, не перегружая невысокие экраны телефонов.
+  const compactPhone = window.matchMedia('(max-width:640px) and (max-height:740px)');
+  const syncSkinDetails = () => { document.getElementById('skinDetails').open = !compactPhone.matches; };
+  compactPhone.addEventListener('change', syncSkinDetails);
+  syncSkinDetails();
 
   /* ============================================================
      Вопросы
@@ -659,7 +844,7 @@
      Состояние игры
      ============================================================ */
   const LIGHT = 5.3;                 // радиус фонаря в тайлах
-  let state = 'title';               // title | playing | question | dead
+  let state = 'title';               // состояния: главное меню, игра, вопрос, конец игры
   let map = [], seen = [], bright = [];
   let depth = 1, score = 0, answerStreak = 0;
   let chosenCity = null, startKm = 0, totalMines = 3, completedMines = 0, runOre = 0;
@@ -674,6 +859,8 @@
   let shake = 0, flash = 0, flashColor = '255,120,90';
   let autoPath = [], autoNext = 0, tapTarget = null;
   let pickups = [], hintUsed = false;
+  let coopId = null, coopToken = null, coopLevel = 0, coopPeers = [], coopTimer = null;
+  let coopQueue = Promise.resolve(), coopJoining = false, coopTransition = false, coopLocking = false;
   let speech = null;
   let best = 0;
   try { best = Number(localStorage.getItem('mine_best')) || 0; } catch (e) { best = 0; }
@@ -920,7 +1107,7 @@
   }
 
   /* ============================================================
-     HUD
+     Панель показателей
      ============================================================ */
   const el = id => document.getElementById(id);
   function updateHUD(){
@@ -957,7 +1144,15 @@
     return QUESTIONS[decks[key].pop()];
   }
 
-  function openQuestion(crystal){
+  async function openQuestion(crystal){
+    if (coopId){
+      if (coopLocking || coopTransition) return;
+      coopLocking = true;
+      const result = await coopAction('lock', { index: crystals.indexOf(crystal) });
+      coopLocking = false;
+      if (!result || !coopId) return;
+      if (!result.allowed){ toast('Этот кристалл уже разбирает товарищ. Выберите другой.'); return; }
+    }
     const hard = !!(crystal && crystal.hard);
     const q = nextQuestion(hard);
     activeQuestion = q;
@@ -1086,7 +1281,7 @@
     btn.insertBefore(m, btn.firstChild);
   }
 
-  function answer(btn, ok){
+  async function answer(btn, ok){
     if (answerLock) return;
     answerLock = true;
     lastAnswerOk = ok;
@@ -1159,9 +1354,10 @@
       fb.appendChild(q);
     }
     updateHUD();
+    await coopAnswer(ok);
   }
 
-  function submitSlider(){
+  async function submitSlider(){
     if (answerLock) return;
     const q = activeQuestion;
     if (!q || q.type !== 'slider') return;
@@ -1240,6 +1436,7 @@
       fb.appendChild(line);
     }
     updateHUD();
+    await coopAnswer(ok);
   }
 
   el('qNextBtn').addEventListener('click', () => {
@@ -1288,6 +1485,7 @@
     el('qExitConfirm').classList.add('hidden');
     el('qScreen').classList.add('hidden');
     answerLock = false;
+    if (coopId && activeCrystal) coopAction('release', { index: crystals.indexOf(activeCrystal) });
     activeQuestion = null;
     activeCrystal = null;
     state = 'playing';
@@ -1300,7 +1498,7 @@
      ============================================================ */
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-  // Маршрут по проходимым клеткам (BFS), без стартовой клетки
+  // Маршрут по проходимым клеткам (поиск в ширину), без стартовой клетки
   function planPath(tx, ty){
     if (tx < 0 || ty < 0 || tx >= W || ty >= H) return null;
     if (map[ty][tx] !== FLOOR) return null;
@@ -1374,7 +1572,7 @@
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   function tryMove(dx, dy){
-    if (state !== 'playing') return;
+    if (state !== 'playing' || coopTransition || coopLocking) return;
     if (dx !== 0) player.dir = dx > 0 ? 1 : -1;
 
     const nx = player.gx + dx, ny = player.gy + dy;
@@ -1406,7 +1604,11 @@
     }
   }
 
-  function takePickup(pk){
+  async function takePickup(pk){
+    if (coopId){
+      const result = await coopAction('pickup', { x: pk.x, y: pk.y });
+      if (!result?.pickup || !coopId) return;
+    }
     pickups = pickups.filter(p => p !== pk);
     if (pk.type === 'oil'){
       fuel = Math.min(100, fuel + 20);
@@ -1423,6 +1625,7 @@
   }
 
   function descend(){
+    if (coopId){ coopDescend(); return; }
     completedMines++;
     depth = completedMines + 1;
     score += 300 + depth * 60;
@@ -1461,6 +1664,7 @@
   }
 
   function gameOver(reason){
+    leaveCoop();
     state = 'dead';
     stopAuto();
     if (score > best){
@@ -1494,7 +1698,7 @@
       g.imageSmoothingEnabled = true;
       g.drawImage(img, 0, 0, SW, SH);
 
-      // лёгкая постеризация — «чуть запиксельный» вид, с защитой от tainted canvas на file://
+      // Лёгкая постеризация для пиксельного вида; учитываем запрет чтения холста при открытии через file://.
       try {
         const data = g.getImageData(0, 0, SW, SH);
         const px = data.data;
@@ -1560,6 +1764,7 @@
   }
 
   function openCitySelect(){
+    leaveCoop();
     state = 'title';
     stopAuto();
     speech = null;
@@ -1588,6 +1793,159 @@
     state = 'playing';
     updateHUD();
     toast(city.name + ' → Соты: ' + city.km + ' км · ' + totalMines + ' ' + plural(totalMines, 'шахта', 'шахты', 'шахт'));
+  }
+
+  /* Совместный поход: сервер управляет кристаллами, бонусами и переходами между шахтами. */
+  function coopWorld(){
+    return { map, crystals: crystals.map(c => ({ ...c, done: false, owner: undefined })), pickups,
+      needed, exitCell, start: { x: player.gx, y: player.gy }, city: chosenCity, totalMines };
+  }
+
+  async function coopFetch(body){
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    try {
+      const response = await fetch('/api/coop', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body), signal: controller.signal });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Сервер недоступен');
+      return data;
+    } finally { clearTimeout(timeout); }
+  }
+
+  function coopAction(action, extra = {}){
+    const id = coopId, token = coopToken, level = coopLevel;
+    const task = coopQueue.then(async () => {
+      if (!id || id !== coopId) return null;
+      const result = await coopFetch({ action, id, token, level, ...extra });
+      if (id !== coopId) return null;
+      applyCoop(result);
+      return result;
+    }).catch(() => {
+      if (id === coopId){
+        leaveCoop();
+        state = 'title'; stopAuto();
+        ['cityScreen','endScreen','qScreen'].forEach(key => el(key).classList.add('hidden'));
+        el('startScreen').classList.remove('hidden');
+        toast('Связь с сервером потеряна. Нажмите «Играть вместе», чтобы подключиться снова.');
+      }
+      return null;
+    });
+    coopQueue = task;
+    return task;
+  }
+
+  function applyCoop(data, initial = false){
+    const session = data.session;
+    if (!session || !coopId) return;
+    const world = session.world;
+    if (initial || session.level !== coopLevel){
+      const progressed = !initial;
+      coopLevel = session.level; depth = session.level; completedMines = depth - 1;
+      chosenCity = world.city; startKm = chosenCity.km; totalMines = world.totalMines;
+      map = world.map; crystals = world.crystals; pickups = world.pickups;
+      needed = world.needed; exitCell = world.exitCell;
+      seen = Array.from({ length: H }, () => new Array(W).fill(0));
+      bright = Array.from({ length: H }, () => new Array(W).fill(0));
+      player.gx = world.start.x; player.gy = world.start.y;
+      player.x = player.gx * TILE + TILE / 2; player.y = player.gy * TILE + TILE / 2;
+      particles = []; stopAuto();
+      activeCrystal = null; activeQuestion = null; answerLock = false;
+      el('qScreen').classList.add('hidden');
+      state = 'playing';
+      if (progressed){ fuel = Math.min(100, fuel + 30); hp = Math.min(100, hp + 12); score += 300 + depth * 60; toast('Команда спустилась в шахту ' + depth); }
+    } else {
+      world.crystals.forEach((c, i) => Object.assign(crystals[i], c));
+      // Удаляем снятые блокировки: свойства со значением undefined не передаются в JSON.
+      world.crystals.forEach((c, i) => { if (!c.owner) delete crystals[i].owner; });
+      pickups = world.pickups;
+    }
+    collected = crystals.filter(c => c.done).length; exitOpen = collected >= needed; runOre = session.runOre;
+    coopPeers = session.players.filter(p => p.id !== coopId);
+    const me = session.players.find(p => p.id === coopId);
+    el('coopBar').hidden = false;
+    el('coopStatus').textContent = 'Вместе: ' + session.players.length + '/8 · Вы: ' + (me?.name || 'игрок') + ' · кристаллы общие';
+    updateHUD();
+    if (session.finished && state !== 'dead'){
+      completedMines = totalMines;
+      el('qScreen').classList.add('hidden');
+      victory();
+    }
+  }
+
+  async function coopPoll(){
+    if (!coopId) return;
+    await coopAction('sync', { x: player.gx, y: player.gy, dir: player.dir, state, score });
+    if (coopId) coopTimer = setTimeout(coopPoll, 200);
+  }
+
+  function leaveCoop(){
+    if (coopId){
+      const body = JSON.stringify({ action: 'leave', id: coopId, token: coopToken });
+      navigator.sendBeacon('/api/coop', new Blob([body], { type: 'application/json' }));
+    }
+    coopId = null; coopToken = null; coopLevel = 0; coopPeers = []; clearTimeout(coopTimer);
+    coopTransition = false; coopLocking = false;
+    el('coopBar').hidden = true;
+  }
+
+  async function coopAnswer(ok){
+    if (!coopId || !activeCrystal) return;
+    el('qNextBtn').disabled = true;
+    await coopAction('answer', { index: crystals.indexOf(activeCrystal), ok });
+    el('qNextBtn').disabled = false;
+  }
+
+  async function coopDescend(){
+    if (coopTransition) return;
+    coopTransition = true; stopAuto();
+    // Создаём вариант следующей карты; первый принятый запрос переводит туда всю команду.
+    let world = null;
+    if (coopLevel < totalMines){
+      const previous = { map, seen, bright, crystals, pickups, needed, collected, exitOpen, exitCell, depth, particles, player: { ...player } };
+      depth = coopLevel + 1; newLevel(); world = coopWorld();
+      ({ map, seen, bright, crystals, pickups, needed, collected, exitOpen, exitCell, depth, particles, player } = previous);
+      updateHUD();
+    }
+    await coopAction('advance', { world });
+    coopTransition = false;
+  }
+
+  el('coopBtn').addEventListener('click', async () => {
+    if (coopJoining) return;
+    coopJoining = true; el('coopBtn').disabled = true;
+    try {
+      leaveCoop(); startGame(CITIES[0]); state = 'connecting';
+      const result = await coopFetch({ action: 'join', skin: skinIndex, world: coopWorld() });
+      coopId = result.id; coopToken = result.token; coopQueue = Promise.resolve();
+      applyCoop(result, true); coopPoll();
+      toast('Вы в общей шахте! Другу достаточно нажать «Играть вместе» на том же сервере.');
+    } catch (error){
+      state = 'title'; el('startScreen').classList.remove('hidden');
+      toast(error.name === 'AbortError' ? 'Сервер не отвечает. Запустите start.bat.' : error.message);
+    } finally { coopJoining = false; el('coopBtn').disabled = false; }
+  });
+  el('leaveCoop').addEventListener('click', () => {
+    leaveCoop(); stopAuto(); state = 'title';
+    ['qScreen','endScreen','cityScreen'].forEach(key => el(key).classList.add('hidden'));
+    el('startScreen').classList.remove('hidden'); buildSkins();
+  });
+  window.addEventListener('pagehide', leaveCoop);
+
+  function drawCoop(now){
+    if (!coopId) return;
+    for (const peer of coopPeers){
+      const x = peer.x * TILE + TILE / 2, y = peer.y * TILE + TILE / 2;
+      ctx.save(); ctx.translate(x, y - 2);
+      ctx.strokeStyle = '#72d9f0'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0, 15, 16, 6, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.save(); ctx.scale(peer.dir, 1); drawSkinBody(ctx, SKINS[peer.skin] || SKINS[0], now); ctx.restore();
+      ctx.font = 'bold 11px "Segoe UI", sans-serif'; ctx.textAlign = 'center';
+      ctx.lineWidth = 3; ctx.strokeStyle = '#080706'; ctx.fillStyle = '#b6f0ff';
+      const label = peer.name + (peer.state === 'question' ? ' · ?' : '');
+      ctx.strokeText(label, 0, -29); ctx.fillText(label, 0, -29);
+      ctx.restore();
+    }
   }
 
   /* ============================================================
@@ -2286,6 +2644,7 @@
     drawExit(now);
     for (const c of crystals) if (!c.done) drawCrystal(c, now);
     for (const pk of pickups) drawPickup(pk, now);
+    drawCoop(now);
     drawMiner(now);
     drawParticles(1 / 60, now);
 
@@ -2359,6 +2718,10 @@
     }
 
     const blink = 0.55 + Math.sin(now * 0.008) * 0.45;
+    if (coopId){
+      ctx.fillStyle = '#72d9f0';
+      for (const peer of coopPeers) ctx.fillRect(x0 + peer.x * cell - 1, y0 + peer.y * cell - 1, cell + 2, cell + 2);
+    }
     ctx.globalAlpha = 0.55 + blink * 0.45;
     ctx.fillStyle = '#fff2cb';
     ctx.fillRect(x0 + player.gx * cell - 1, y0 + player.gy * cell - 1, cell + 2, cell + 2);
@@ -2459,6 +2822,7 @@
     buildSkins();
   });
   el('skinsBtn').addEventListener('click', () => {
+    leaveCoop();
     el('endScreen').classList.add('hidden');
     el('startScreen').classList.remove('hidden');
     state = 'title';
