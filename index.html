@@ -166,6 +166,17 @@
   .citybtn b{font-size:14px;font-weight:600;line-height:1.2}
   .citybtn small{font-size:11.5px;color:var(--muted)}
   .citybtn small em{color:var(--amber);font-style:normal}
+  .sota{margin:0 0 16px}
+  .sota.hidden{display:none}
+  .sota canvas{
+    display:block;width:100%;height:auto;max-height:34vh;
+    border-radius:10px;border:1px solid rgba(255,255,255,.09);
+    background:#0d0b09;image-rendering:pixelated;
+  }
+  .sota .cap{margin-top:6px;font-size:11.5px;color:var(--muted)}
+  @media (max-width:640px){
+    .sota canvas{max-height:30vh}
+  }
   .skin-desc{
     margin:0 0 18px;padding:11px 13px;border-radius:11px;text-align:left;
     background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
@@ -173,6 +184,11 @@
   }
   .skin-desc .who{color:var(--amber-2);font-weight:700;letter-spacing:.02em}
   .skin-desc .bio{display:block;margin-top:3px}
+  .qsource{font-size:11.5px;color:var(--muted);margin:-8px 0 14px;text-align:center}
+  .qsource.warn{color:#d9a25c}
+  .ans .mark{display:inline-block;min-width:1.15em;font-weight:700}
+  .ans .mark.ok{color:var(--good)}
+  .ans .mark.bad{color:#ff8b7d}
   .skin-desc .say{
     display:block;margin-top:7px;padding-left:9px;color:var(--muted);font-style:italic;
     border-left:2px solid rgba(242,164,65,.35);
@@ -232,6 +248,25 @@
   .qfeedback.bad{background:rgba(226,86,74,.12);border:1px solid rgba(226,86,74,.35);color:#ffd0c9}
   #qFeedback.hidden,#qNextBtn.hidden{display:none!important}
   .qnext{margin-top:12px;width:100%}
+  .sliderWrap{padding:4px 2px 8px}
+  .sliderVal{text-align:center;font-size:28px;font-weight:700;color:var(--amber-2);margin-bottom:12px;letter-spacing:.01em}
+  .sliderVal span{font-size:14px;color:var(--muted);font-weight:400;margin-left:3px}
+  .sliderWrap input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:7px;border-radius:99px;
+    background:linear-gradient(90deg, rgba(242,164,65,.55), rgba(255,255,255,.12));
+    outline:none;margin:0;
+  }
+  .sliderWrap input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:linear-gradient(180deg,#ffd08a,#e59a35);
+    border:2px solid #4a3415;box-shadow:0 2px 12px rgba(242,164,65,.55);cursor:pointer;
+  }
+  .sliderWrap input[type=range]::-moz-range-thumb{
+    width:20px;height:20px;border-radius:50%;background:#e59a35;
+    border:2px solid #4a3415;cursor:pointer;
+  }
+  .sliderScale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:7px}
+  #sliderSubmit{margin-top:14px}
   .qfoot{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px}
 
   /* ---------- Toast ---------- */
@@ -268,6 +303,16 @@
   .dpad .d{grid-column:2;grid-row:2}
   .dpad .r{grid-column:3;grid-row:2}
 
+  @media (max-width:760px), (pointer:coarse){
+    .dpad{display:none!important}
+    #controls{justify-content:center}
+    .hint{
+      display:block!important;font-size:12.5px;text-align:center;line-height:1.5;
+      margin:0 auto;padding:2px 0;
+    }
+    .hint kbd{display:none}
+    .hint .kb{display:none}
+  }
   @media (max-width:640px){
     body{padding:6px}
     #app{gap:7px}
@@ -322,6 +367,7 @@
         <div class="skins-title">Скины <span>· бесплатно</span></div>
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
+        <div class="qsource" id="qSource">вопросы загружаются…</div>
         <button class="btn" id="startBtn">Спуститься в шахту</button>
       </div>
     </div>
@@ -356,6 +402,10 @@
       <div class="card">
         <h1 id="endTitle">Смена окончена</h1>
         <p class="sub" id="endText">Свет погас, и тьма забрала своё.</p>
+        <div class="sota hidden" id="sotaWrap">
+          <canvas id="sotaCanvas" width="640" height="427"></canvas>
+          <div class="cap">СОТА · Смоленская областная технологическая академия</div>
+        </div>
         <div class="rules" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr))">
           <div><b>Шахты</b><span id="endDepth">0/3</span></div>
           <div><b>Кристаллы</b><span id="endOre">0</span></div>
@@ -374,7 +424,8 @@
 
   <div id="controls">
     <div class="hint">
-      <b>Тапните по любой клетке</b> — шахтёр сам дойдёт. Или <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.
+      <b>Тапните по любой клетке</b> — шахтёр сам дойдёт.
+      <span class="kb">На компьютере: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.</span>
     </div>
     <div class="dpad">
       <button class="u" data-dir="up" aria-label="Вверх">▲</button>
@@ -419,7 +470,9 @@
   /* ============================================================
      Вопросы
      ============================================================ */
-  const QUESTIONS = [
+  // Резервный набор: используется, если questions.json не удалось загрузить
+  // (например, при открытии файла напрямую через file://).
+  let QUESTIONS = [
     { q:'Какой минерал является самым твёрдым по шкале Мооса?', a:['Алмаз','Кварц','Корунд','Топаз'], c:0, fact:'Алмаз — это углерод, сжатый при огромных давлении и температуре.' },
     { q:'Из какой руды в основном получают железо?', a:['Магнетит','Галит','Графит','Малахит'], c:0, fact:'Магнетит притягивается магнитом и содержит до 72% железа.' },
     { q:'Что такое штрек в шахте?', a:['Горизонтальная горная выработка','Вертикальный ствол','Подъёмный механизм','Куча породы на поверхности'], c:0, fact:'Штрек идёт вдоль месторождения — по нему возят руду.' },
@@ -474,8 +527,46 @@
     { q:'Что такое соляной купол?', a:['Купол соли, поднятый из глубин','Холм из песка','Ледниковая гряда','Вулканический конус'], c:0, fact:'Соль пластична и под давлением всплывает, прорывая породы.', hard:true },
     { q:'Какой минерал называют «кошачьим глазом»?', a:['Хризоберилл','Кварц','Гипс','Гематит'], c:0, fact:'Эффект «кошачьего глаза» даёт ориентировка волокон.', hard:true },
     { q:'Для чего применяют анкерную крепь?', a:['Чтобы скрепить слои кровли','Чтобы откачивать воду','Чтобы подавать воздух','Чтобы поднимать руду'], c:0, fact:'Анкеры вбивают в кровлю и стягивают породные слои.', hard:true },
-    { q:'Что такое обогащение руды?', a:['Разделение руды и пустой породы','Плавка металла','Бурение скважин','Сортировка вагонеток'], c:0, fact:'Обогащение повышает содержание металла перед плавкой.', hard:true }
-  ];;
+    { q:'Что такое обогащение руды?', a:['Разделение руды и пустой породы','Плавка металла','Бурение скважин','Сортировка вагонеток'], c:0, fact:'Обогащение повышает содержание металла перед плавкой.', hard:true },
+
+    { q:'Сколько процентов кислорода в воздухе?', type:'slider', min:0, max:100, step:1, answer:21, unit:'%', fact:'Кислорода в воздухе около 21%, азота — около 78%.' },
+    { q:'При какой температуре плавится железо?', type:'slider', min:500, max:3000, step:10, answer:1538, unit:'°C', fact:'Чистое железо плавится при 1538 °C, поэтому домны раскалены докрасна.' },
+    { q:'Сколько миллиардов лет Земле?', type:'slider', min:0.5, max:10, step:0.1, answer:4.5, unit:'млрд лет', fact:'Земле около 4,54 млрд лет — это определили по древнейшим минералам.' },
+    { q:'На сколько метров вглубь уходит шахта Мпоненг?', type:'slider', min:500, max:6000, step:100, answer:4000, unit:'м', fact:'Мпоненг в ЮАР — около 4 км в глубину; там жарко и очень опасно.', hard:true },
+    { q:'Сколько процентов железа в магнетите?', type:'slider', min:10, max:100, step:1, answer:72, unit:'%', fact:'Магнетит — одна из самых богатых железных руд: до 72% железа.', hard:true },
+    { q:'Какова плотность золота (г/см³)?', type:'slider', min:1, max:25, step:0.1, answer:19.3, unit:'г/см³', fact:'Золото плотное — 19,3 г/см³: тяжёлый самородок тонет в руке.', hard:true }
+  ];
+
+  /* ---- вопросы из questions.json (файл можно править без сборки) ---- */
+  let questionsSource = 'builtin';
+  async function loadQuestions(){
+    try {
+      const res = await fetch('questions.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!Array.isArray(data) || !data.length) throw new Error('пустой или некорректный файл');
+      const valid = data.filter(q => q && typeof q.q === 'string' &&
+        (q.type === 'slider' ? typeof q.answer === 'number' : Array.isArray(q.a) && q.a.length >= 2));
+      if (!valid.length) throw new Error('нет валидных вопросов');
+      QUESTIONS = valid;
+      questionsSource = 'json';
+    } catch (e) {
+      console.warn('[Шахта Знаний] questions.json не загружен — используется встроенный набор.', e);
+      questionsSource = 'builtin';
+    }
+    decks.easy = [];
+    decks.hard = [];
+    updateQuestionsBadge();
+  }
+
+  function updateQuestionsBadge(){
+    const b = el('qSource');
+    if (!b) return;
+    const n = QUESTIONS.length;
+    b.textContent = n + ' ' + plural(n, 'вопрос', 'вопроса', 'вопросов') + ' · ' +
+      (questionsSource === 'json' ? 'questions.json' : 'встроенный набор');
+    b.classList.toggle('warn', questionsSource !== 'json');
+  }
 
   /* ============================================================
      Города Смоленской области (расстояние до СОТЫ в Смоленске, км)
@@ -848,20 +939,64 @@
 
     const box = el('qAnswers');
     box.innerHTML = '';
-    box.className = q.type === 'tf' ? 'tf' : '';
-    const opts = shuffle(q.a.map((text, i) => ({ text, ok: i === q.c })));
-    opts.forEach(o => {
-      const b = document.createElement('button');
-      b.className = 'ans';
-      b.type = 'button';
-      b.textContent = o.text;
-      b.dataset.ok = o.ok ? '1' : '0';
-      b.addEventListener('click', () => answer(b, o.ok));
-      box.appendChild(b);
-    });
+    box.className = q.type === 'tf' ? 'tf' : (q.type === 'slider' ? 'sliderq' : '');
+
+    if (q.type === 'slider'){
+      const wrap = document.createElement('div');
+      wrap.className = 'sliderWrap';
+
+      const val = document.createElement('div');
+      val.className = 'sliderVal';
+      const num = document.createElement('b');
+      const unit = document.createElement('span');
+      unit.textContent = q.unit;
+      val.appendChild(num);
+      val.appendChild(unit);
+
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.id = 'sliderInput';
+      input.min = q.min;
+      input.max = q.max;
+      input.step = q.step || 1;
+      input.value = Math.round((q.min + q.max) / 2);
+      num.textContent = input.value;
+
+      const scale = document.createElement('div');
+      scale.className = 'sliderScale';
+      const lo = document.createElement('span'); lo.textContent = q.min + ' ' + q.unit;
+      const hi = document.createElement('span'); hi.textContent = q.max + ' ' + q.unit;
+      scale.appendChild(lo); scale.appendChild(hi);
+
+      input.addEventListener('input', () => { num.textContent = input.value; });
+
+      wrap.appendChild(val);
+      wrap.appendChild(input);
+      wrap.appendChild(scale);
+      box.appendChild(wrap);
+
+      const submit = document.createElement('button');
+      submit.type = 'button';
+      submit.className = 'btn qnext';
+      submit.id = 'sliderSubmit';
+      submit.textContent = 'Ответить';
+      submit.addEventListener('click', submitSlider);
+      box.appendChild(submit);
+    } else {
+      const opts = shuffle(q.a.map((text, i) => ({ text, ok: i === q.c })));
+      opts.forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'ans';
+        b.type = 'button';
+        b.textContent = o.text;
+        b.dataset.ok = o.ok ? '1' : '0';
+        b.addEventListener('click', () => answer(b, o.ok));
+        box.appendChild(b);
+      });
+    }
 
     const hb = el('hintBtn');
-    hb.hidden = q.type === 'tf';
+    hb.hidden = q.type === 'tf' || q.type === 'slider';
     hb.disabled = false;
     hb.textContent = 'Подсказка: убрать 2 неверных · −10 света';
 
@@ -869,9 +1004,9 @@
     fb.className = 'qfeedback hidden';
     fb.textContent = '';
     el('qNextBtn').classList.add('hidden');
-    el('qFoot').textContent = hard
-      ? 'Алмаз: награда удвоена, но вопрос непростой.'
-      : 'За верный ответ — очки и свет.';
+    el('qFoot').textContent = q.type === 'slider'
+      ? 'Двигайте ползунок: чем ближе к правде, тем больше очков.'
+      : (hard ? 'Алмаз: награда удвоена, но вопрос непростой.' : 'За верный ответ — очки и свет.');
 
     el('qScreen').classList.remove('hidden');
     sfx.pick();
@@ -894,6 +1029,14 @@
     updateHUD();
   });
 
+  function addMark(btn, sym){
+    if (!sym || btn.querySelector('.mark')) return;
+    const m = document.createElement('span');
+    m.className = 'mark ' + (sym === '✓' ? 'ok' : 'bad');
+    m.textContent = sym;
+    btn.insertBefore(m, btn.firstChild);
+  }
+
   let answerLock = false;
   function answer(btn, ok){
     if (answerLock) return;
@@ -905,7 +1048,9 @@
     const buttons = Array.from(el('qAnswers').children);
     buttons.forEach(b => {
       b.disabled = true;
-      if (b.dataset.ok === '1') b.classList.add('correct');
+      const isRight = b.dataset.ok === '1';
+      if (isRight) b.classList.add('correct');
+      addMark(b, isRight ? '✓' : (b === btn ? '✕' : ''));
     });
 
     const fb = el('qFeedback');
@@ -944,7 +1089,7 @@
       shake = 1;
       flash = 0.4; flashColor = '235,90,70';
       fb.className = 'qfeedback bad';
-      fb.textContent = 'Неверно. −12 света, −11 сил. Кристалл треснул, но остался — можно попробовать снова.';
+      fb.textContent = '⚠ Неверно. −40 очков, −12 света, −11 сил. Кристалл треснул, но остался — можно попробовать снова.';
       nextBtn.textContent = 'Попробовать снова';
     }
 
@@ -962,6 +1107,85 @@
       q.className = 'qspeak';
       q.textContent = '— ' + lines[Math.floor(Math.random() * lines.length)];
       fb.appendChild(q);
+    }
+    updateHUD();
+  }
+
+  function submitSlider(){
+    if (answerLock) return;
+    const q = activeQuestion;
+    if (!q || q.type !== 'slider') return;
+    const input = el('sliderInput');
+    if (!input) return;
+
+    answerLock = true;
+    const guess = Number(input.value);
+    const span = Math.max(1, q.max - q.min);
+    const err = Math.abs(guess - q.answer) / span;
+    const acc = clamp(1 - err, 0, 1);
+    const ok = acc >= 0.5;
+    const hard = !!(activeCrystal && activeCrystal.hard);
+    lastAnswerOk = ok;
+
+    input.disabled = true;
+    const submit = el('sliderSubmit');
+    if (submit) submit.disabled = true;
+    el('hintBtn').disabled = true;
+
+    const fb = el('qFeedback');
+    const nextBtn = el('qNextBtn');
+    fb.classList.remove('hidden');
+    nextBtn.classList.remove('hidden');
+
+    const accPct = Math.round(acc * 100);
+    const truth = 'Верный ответ: ' + q.answer + ' ' + q.unit + '.';
+
+    if (ok){
+      answerStreak++;
+      const base = 120 + depth * 40 + answerStreak * 25;
+      const bonus = Math.round(base * (0.3 + 0.7 * acc) * (hard ? 2 : 1));
+      score += bonus;
+      fuel = Math.min(100, fuel + (hard ? 24 : 16));
+      hp = Math.min(100, hp + (hard ? 5 : 3));
+      collected++;
+      runOre++;
+      if (activeCrystal) activeCrystal.done = true;
+      sfx.good();
+      flash = 0.35; flashColor = hard ? '185,150,255' : '120,220,160';
+      fb.className = 'qfeedback ok';
+      fb.textContent = '✓ Точность ' + accPct + '% · +' + bonus + ' очков. ' + truth;
+      nextBtn.textContent = collected >= needed ? 'К лестнице' : 'Дальше';
+      if (collected >= needed && !exitOpen){
+        exitOpen = true;
+        setTimeout(() => toast('Лестница открыта — ищите спуск!'), 400);
+      }
+    } else {
+      answerStreak = 0;
+      fuel = Math.max(0, fuel - 12);
+      hp = Math.max(0, hp - 11);
+      score = Math.max(0, score - 20);
+      if (activeCrystal) activeCrystal.cracked = true;
+      sfx.bad();
+      shake = 1;
+      flash = 0.4; flashColor = '235,90,70';
+      fb.className = 'qfeedback bad';
+      fb.textContent = '⚠ Мимо: точность ' + accPct + '%. −20 очков, −12 света, −11 сил. ' + truth;
+      nextBtn.textContent = 'Попробовать снова';
+    }
+
+    if (q.fact){
+      const f = document.createElement('div');
+      f.className = 'qfact';
+      f.textContent = '💡 ' + q.fact;
+      fb.appendChild(f);
+    }
+    const sk = currentSkin();
+    const lines = sk.lines && (ok ? sk.lines.correct : sk.lines.wrong);
+    if (lines && lines.length){
+      const line = document.createElement('div');
+      line.className = 'qspeak';
+      line.textContent = '— ' + lines[Math.floor(Math.random() * lines.length)];
+      fb.appendChild(line);
     }
     updateHUD();
   }
@@ -1156,6 +1380,8 @@
     el('endOre').textContent = runOre;
     el('endScore').textContent = score;
     el('endBest').textContent = best;
+    el('sotaWrap').classList.remove('hidden');
+    drawSotaBuilding();
     el('endScreen').classList.remove('hidden');
   }
 
@@ -1172,7 +1398,106 @@
     el('endOre').textContent = runOre;
     el('endScore').textContent = score;
     el('endBest').textContent = best;
+    el('sotaWrap').classList.add('hidden');
     el('endScreen').classList.remove('hidden');
+  }
+
+  let sotaSprite = null, sotaLoading = false;
+  function getSotaSprite(){
+    if (sotaSprite) return sotaSprite;
+    if (sotaLoading) return null;
+    sotaLoading = true;
+    const img = new Image();
+    img.onload = () => {
+      const SW = 128;
+      const SH = Math.max(1, Math.round(SW * img.naturalHeight / img.naturalWidth));
+      const tmp = document.createElement('canvas');
+      tmp.width = SW;
+      tmp.height = SH;
+      const g = tmp.getContext('2d', { willReadFrequently: true });
+      g.drawImage(img, 0, 0, SW, SH);
+
+      // лёгкая постеризация — «пиксельный» вид, но очертания читаются
+      const data = g.getImageData(0, 0, SW, SH);
+      const px = data.data;
+      const L = 6;
+      for (let i = 0; i < px.length; i += 4){
+        for (let k = 0; k < 3; k++){
+          px[i + k] = Math.round(Math.round(px[i + k] / 255 * (L - 1)) / (L - 1) * 255);
+        }
+      }
+      g.putImageData(data, 0, 0);
+
+      const up = document.createElement('canvas');
+      up.width = SW * 5;
+      up.height = SH * 5;
+      const cg = up.getContext('2d');
+      cg.imageSmoothingEnabled = false;
+      cg.drawImage(tmp, 0, 0, up.width, up.height);
+      sotaSprite = up;
+      sotaLoading = false;
+    };
+    img.onerror = () => { sotaLoading = false; };
+    img.src = 'assets/sota-photo.png';
+    return null;
+  }
+
+  function drawSotaBuilding(){
+    const cv = el('sotaCanvas');
+    if (!cv) return;
+    const sp = getSotaSprite();
+    if (!sp){ setTimeout(drawSotaBuilding, 150); return; }
+    cv.width = sp.width;
+    cv.height = sp.height;
+    const g = cv.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(sp, 0, 0);
+  }
+
+  // здание СОТЫ в конце тоннеля последней шахты
+  function drawSotaInWorld(now){
+    if (completedMines < totalMines - 1) return;
+    const sp = getSotaSprite();
+    if (!sp) return;
+
+    const b = Math.max(bright[exitCell.y][exitCell.x], 0.32);
+    const cx = exitCell.x * TILE + TILE / 2;
+    const baseY = exitCell.y * TILE + TILE;
+    const w = TILE * 3.6;
+    const h = w * sp.height / sp.width;
+    const topY = baseY - h;
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, b * 1.2);
+
+    // тёплый свет из окон
+    const glow = ctx.createRadialGradient(cx, topY + h * 0.55, 8, cx, topY + h * 0.55, w * 0.95);
+    glow.addColorStop(0, 'rgba(255,208,140,.26)');
+    glow.addColorStop(1, 'rgba(255,208,140,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(cx - w, topY - w * 0.3, w * 2, h + w);
+
+    // тёмный портал тоннеля вокруг здания
+    ctx.fillStyle = 'rgba(6,5,4,.55)';
+    ctx.beginPath();
+    ctx.roundRect(cx - w * 0.62, topY - 6, w * 1.24, h + 12, 10);
+    ctx.fill();
+
+    ctx.shadowColor = 'rgba(0,0,0,.65)';
+    ctx.shadowBlur = 16;
+    ctx.drawImage(sp, cx - w / 2, topY, w, h);
+    ctx.shadowBlur = 0;
+
+    // вывеска
+    ctx.globalAlpha = Math.min(1, b * 1.35);
+    const pulse = 0.6 + Math.sin(now * 0.004) * 0.4;
+    ctx.fillStyle = 'rgba(242,164,65,' + (0.6 + pulse * 0.4) + ')';
+    ctx.font = 'bold 11px "Trebuchet MS", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('СОТА', cx, topY - 8);
+
+    ctx.restore();
   }
 
   function buildCities(){
@@ -1919,6 +2244,7 @@
     ctx.globalAlpha = 1;
 
     drawTarget(now);
+    drawSotaInWorld(now);
     drawExit(now);
     for (const c of crystals) if (!c.done) drawCrystal(c, now);
     for (const pk of pickups) drawPickup(pk, now);
@@ -2108,6 +2434,7 @@
      ============================================================ */
   decks.easy = []; decks.hard = [];
   depth = 1;
+  loadQuestions();
   resizeCanvas();
   newLevel();
   updateHUD();
