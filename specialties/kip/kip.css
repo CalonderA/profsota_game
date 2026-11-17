@@ -1,0 +1,245 @@
+﻿/* ============================================================
+   СОТА — Стили специальности КИПиА (15.01.31)
+   Мини-игры: Калибровка 4-20 мА, Монтаж клеммной цепи, ПИД-регулятор
+   ============================================================ */
+  .calib-shell{
+    width:min(860px, 96vw);
+    display:flex;flex-direction:column;gap:12px;
+    padding:16px 20px;border-radius:18px;
+    background:linear-gradient(180deg, rgba(16,24,36,.96), rgba(9,12,18,.98));
+    border:1px solid rgba(56,189,248,.32);
+    box-shadow:0 26px 70px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.07);
+    user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  }
+  .calib-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .calib-stats{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .calib-pill{
+    padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:700;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
+    color:var(--text);font-variant-numeric:tabular-nums;
+  }
+  .calib-pill.target{color:#38bdf8;border-color:rgba(56,189,248,.4);background:rgba(56,189,248,.1)}
+  .calib-pill.reward{color:#ffcc80;border-color:rgba(255,152,0,.3);background:rgba(255,152,0,.1)}
+  .calib-pill.timer{min-width:74px;text-align:center;color:var(--amber-2);border-color:rgba(242,164,65,.3)}
+  .calib-pill.timer.low{color:#ff9e94;border-color:rgba(226,86,74,.5);background:rgba(226,86,74,.14)}
+  .calib-timer-track{
+    width:100%;height:8px;border-radius:999px;overflow:hidden;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.06);
+  }
+  .calib-timer-fill{
+    height:100%;width:100%;border-radius:999px;
+    background:linear-gradient(90deg, #0284c7, #38bdf8);
+    transition:background .15s;
+  }
+  .calib-timer-fill.warn{background:linear-gradient(90deg, #e59a35, #ffcf85)}
+  .calib-timer-fill.low{background:linear-gradient(90deg, #c9453a, #ff8b80)}
+  .calib-workspace{
+    position:relative;display:flex;flex-direction:column;gap:14px;
+    background:radial-gradient(circle at 50% 50%, rgba(2,132,199,.08), rgba(9,12,18,.95) 75%);
+    border:1px solid rgba(56,189,248,.16);border-radius:14px;padding:16px 14px;
+  }
+  .calib-meter-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center;
+  }
+  @media(max-width:680px){
+    .calib-meter-row{grid-template-columns:1fr;gap:12px}
+  }
+  .calib-analog-box{
+    display:flex;justify-content:center;align-items:center;
+    background:#080c14;border:1px solid rgba(56,189,248,.2);border-radius:12px;padding:6px;
+    box-shadow:inset 0 0 20px rgba(0,0,0,.6);
+  }
+  .calib-analog-box canvas{width:100%;max-width:360px;height:auto;display:block}
+  .calib-digital-box{
+    display:flex;flex-direction:column;gap:8px;
+    background:#080c14;border:1px solid rgba(56,189,248,.2);border-radius:12px;padding:14px 16px;
+  }
+  .digital-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#94a3b8}
+  .digital-screen{
+    font-family:monospace;font-size:36px;font-weight:800;color:#38bdf8;
+    text-shadow:0 0 16px rgba(56,189,248,.5);letter-spacing:2px;
+  }
+  .digital-screen .unit{font-size:18px;color:#64748b;font-weight:600}
+  .digital-status{
+    display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;
+  }
+  .status-led{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .status-led.good{background:#22c55e;box-shadow:0 0 10px #22c55e}
+  .status-led.bad{background:#ef4444;box-shadow:0 0 10px #ef4444}
+  .calib-points-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .calib-pt-chip{
+    padding:4px 8px;border-radius:6px;font-size:11.5px;font-weight:600;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3b8;
+    display:flex;align-items:center;gap:5px;
+  }
+  .calib-pt-chip.active{color:#38bdf8;border-color:#38bdf8;background:rgba(56,189,248,.12)}
+  .calib-pt-chip.done{color:#22c55e;border-color:#22c55e;background:rgba(34,197,94,.12)}
+  .chip-state{font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.1)}
+  .calib-tuning-box{
+    display:flex;flex-direction:column;gap:12px;
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;padding:14px;
+  }
+  .calib-btn-steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .calib-btn-steps .step-label{font-size:12px;color:#94a3b8;font-weight:600;margin-right:4px}
+  .calib-step-btn{
+    appearance:none;cursor:pointer;padding:6px 14px;border-radius:8px;
+    background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);
+    color:#e0f2fe;font-size:13px;font-weight:700;transition:all .15s;
+  }
+  .calib-step-btn:hover{background:rgba(56,189,248,.22);border-color:#38bdf8;transform:translateY(-1px)}
+  .calib-step-btn:active{transform:translateY(0)}
+  .calib-slider-wrap{display:flex;flex-direction:column;gap:6px}
+  .slider-head{display:flex;justify-content:space-between;font-size:11px;color:#64748b;font-weight:600}
+  .slider-label{color:#38bdf8}
+  #calibSlider{
+    -webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+    background:linear-gradient(90deg, #0284c7, #38bdf8);outline:none;cursor:pointer;
+  }
+  #calibSlider::-webkit-slider-thumb{
+    -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:#f0f9ff;border:3px solid #0284c7;box-shadow:0 0 12px rgba(56,189,248,.6);
+    cursor:pointer;
+  }
+  .calib-lock-wrap{display:flex;justify-content:center;margin-top:2px}
+  .calib-lock-btn{
+    width:100%;max-width:440px;padding:12px 20px;font-size:14.5px;font-weight:800;letter-spacing:.02em;
+    border-radius:10px;background:linear-gradient(180deg, #22c55e, #16a34a);color:#ffffff;
+    box-shadow:0 6px 20px rgba(34,197,94,.4);cursor:pointer;border:0;transition:all .18s;
+  }
+  .calib-lock-btn:hover:not(.disabled){
+    filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 8px 24px rgba(34,197,94,.55);
+  }
+  .calib-lock-btn.disabled{
+    background:rgba(255,255,255,.08);color:rgba(255,255,255,.3);box-shadow:none;cursor:not-allowed;
+  }
+
+
+  /* Стили мини-игры Монтаж клеммной цепи (КИП) */
+  .wires-workspace {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .wires-instruct {
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
+  }
+  .wires-board {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 16px;
+    position: relative;
+    min-height: 220px;
+  }
+  .wires-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 2;
+  }
+  .wire-terminal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(30, 41, 59, 0.85);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+  }
+  .wire-terminal:hover, .wire-terminal.selected {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+  }
+  .wire-terminal.connected {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    cursor: default;
+  }
+  .term-pin {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .term-pin.red { background: #ef4444; color: #ef4444; }
+  .term-pin.yellow { background: #eab308; color: #eab308; }
+  .term-pin.blue { background: #38bdf8; color: #38bdf8; }
+  .term-info b { display: block; font-size: 13px; color: #f8fafc; }
+  .term-info small { font-size: 10.5px; color: #94a3b8; }
+  .wires-svg-wrap {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .wires-svg-wrap svg {
+    width: 100%;
+    height: 100%;
+  }
+
+
+  /* Стили мини-игры ПИД-регулятор (КИП) */
+  .pid-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 12px;
+  }
+  .pid-scope-box {
+    background: #060b13;
+    border: 1.5px solid rgba(56, 189, 248, 0.3);
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    height: 180px;
+  }
+  #pidScopeCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .pid-gauge-overlay {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 10px;
+    text-align: right;
+  }
+  #pidGaugeVal { font-size: 20px; font-weight: 900; color: #38bdf8; }
+  .pid-stability { font-size: 10.5px; font-weight: 700; color: #f59e0b; margin-top: 2px; }
+  .pid-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.7);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .pid-slider-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-bottom: 4px;
+  }
+  .pid-slider-group input[type=range] {
+    width: 100%;
+    accent-color: #38bdf8;
+  }
+

@@ -1,8 +1,0 @@
-node_modules/
-dist/
-portable/
-runtime/
-.runtime/
-*.log
-.env
-event-config.local.json

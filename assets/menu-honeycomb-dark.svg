@@ -1,0 +1,19 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1000" viewBox="0 0 1440 1000" fill="none">
+  <defs>
+    <filter id="blue" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="glow"/><feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="red" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9" result="glow"/><feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g stroke="#34bce8" stroke-width="1.5" filter="url(#blue)">
+    <path d="m46 244 100 58v116L46 476-54 418V302Z" fill="#19b5e8" fill-opacity=".025" opacity=".55"/>
+    <path d="m-44 417 100 58v116L-44 649-144 591V475Z" opacity=".22"/>
+    <path d="m1378 595 77 44v89l-77 44-77-44v-89Z" fill="#25bce9" fill-opacity=".03" opacity=".5"/>
+    <path d="m1300 735 77 44v89l-77 44-77-44v-89Z" opacity=".22"/>
+    <path d="m68 811 46 27v53l-46 27-46-27v-53Z" opacity=".35"/>
+    <path d="m248 44 24 14v28l-24 14-24-14V58Z" opacity=".22"/>
+  </g>
+  <g stroke="#ee657b" stroke-width="1.5" filter="url(#red)">
+    <path d="m1362 -70 145 84v167l-145 84-145-84V14Z" fill="#e14b68" fill-opacity=".035" opacity=".27"/>
+    <path d="m1310 290 43 25v50l-43 25-43-25v-50Z" opacity=".45"/>
+    <path d="m1413 349 43 25v50l-43 25-43-25v-50Z" opacity=".19"/>
+  </g>
+</svg>

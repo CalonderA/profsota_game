@@ -1,0 +1,20 @@
+<svg width="400" height="400" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+  <!-- Clean SOTA 3 Hexagons, No Background -->
+  <g id="sota-hexagons">
+    <!-- Blue Hexagon -->
+    <polygon points="44,52 104,52 134,104 104,156 44,156 14,104"
+             fill="#0082d4" stroke="#006bb3" stroke-width="2" />
+    
+    <!-- Red Hexagon -->
+    <polygon points="139,106 199,106 229,158 199,210 139,210 109,158"
+             fill="#d3122a" stroke="#a50d20" stroke-width="2" />
+             
+    <!-- Grey Hexagon -->
+    <polygon points="44,160 104,160 134,212 104,264 44,264 14,212"
+             fill="#71717a" stroke="#52525b" stroke-width="2" />
+             
+    <!-- Center connecting outline -->
+    <polygon points="89,131 104,104 134,104 149,131 134,158 104,158"
+             fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+  </g>
+</svg>

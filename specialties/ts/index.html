@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>СОТА — Теплопункт ТС (13.02.02)</title>
+  <link rel="stylesheet" href="../../shared/css/common.css">
+  <link rel="stylesheet" href="ts.css">
+</head>
+<body>
+  <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
+  <div class="brand-header-bar">
+    <a href="../../menu.html" class="brand-header-logo" title="В главное меню">
+      <svg class="brand-hex-icon" viewBox="0 0 240 280">
+        <polygon points="44,52 104,52 134,104 104,156 44,156 14,104" fill="#0082d4" />
+        <polygon points="139,106 199,106 229,158 199,210 139,210 109,158" fill="#d3122a" />
+        <polygon points="44,160 104,160 134,212 104,264 44,264 14,212" fill="#71717a" />
+        <polygon points="89,131 104,104 134,104 149,131 134,158 104,158" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+      </svg>
+      <div class="brand-header-text">
+        <span class="brand-header-title">СОТА</span>
+        <span class="brand-header-sub">Смоленск</span>
+      </div>
+    </a>
+    <div class="brand-header-divider"></div>
+    <span class="brand-header-tag">ТС · 13.02.02</span>
+    <a href="../../menu.html" class="brand-header-back" title="Вернуться к выбору специальности">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>В меню</span>
+    </a>
+  </div>
+<div id="app">
+  <div class="hud">
+    <div class="brand">
+      <span id="hudBrand" style="color:var(--amber-2);font-weight:800;letter-spacing:.07em">ПУТЬ К СОТЕ</span>
+      <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· Цех КИПиА</span>
+    </div>
+    <div class="stat"><span id="floorLabel">&lt;/&gt; Цех</span> <b id="mineVal">1/3</b></div>
+    <div class="stat"><span id="distLabel">📍 До СОТЫ</span> <b id="distVal">0 км</b></div>
+    <div class="stat"><span id="unitLabel">💎 Станки</span> <b id="oreVal">0/3</b></div>
+    <div class="stat">⭐ Очки <b id="scoreVal">0</b></div>
+    <div class="stat">🔥 Серия <b id="comboVal">×0</b></div>
+    <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
+    <div class="stat">⚡ Силы <div class="meter" id="hpMeter"><i id="hpBar"></i></div></div>
+  </div>
+
+
+  <div id="stage">
+    <canvas id="game"></canvas>
+
+    <div class="screen" id="startScreen">
+      <div class="card">
+        <div class="spec-banner" id="specBanner">
+          <div class="spec-banner-info">
+            <span class="spec-banner-code" id="specBadge">КИП</span>
+            <div>
+              <b id="specTitle">Цех КИПиА</b>
+              <small id="specSub">Специальность 15.01.31</small>
+            </div>
+          </div>
+          <a href="../../menu.html" class="spec-change-link">Сменить специальность ⮵</a>
+        </div>
+        <h1 id="startMainTitle">Шахта Знаний: СОТА</h1>
+        <p class="sub" id="startMainSub">Смоленская областная технологическая академия. Обслуживайте рабочие станки и приборы в цеху, проводите замеры и решайте задачи наладчика!</p>
+        <div class="rules" id="rulesGrid">
+          <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
+          <div><b id="ruleUnitTitle">Станок КИП</b>Подойдите к станку — проведите диагностику</div>
+          <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
+          <div><b>Авария</b>Свет погас или силы мастера на нуле</div>
+        </div>
+        <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
+        <div class="skins" id="skinRow"></div>
+        <div class="skin-desc" id="skinDesc"></div>
+        <div class="qsource" id="qSource">вопросы загружаются…</div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn" id="startBtn">Войти в цех</button>
+          <a href="../../menu.html" class="btn ghost">Выбор специальности</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="cityScreen">
+      <div class="card">
+        <h1>Откуда начнём?</h1>
+        <p class="sub">Выберите город Смоленской области. Цель — СОТА в Смоленске (Смоленская областная технологическая академия): чем дальше город, тем больше цехов придётся пройти, но и награда за путь больше.</p>
+        <div class="city-filter-row">
+          <button type="button" class="city-filter-btn active" data-filter="all">Все города</button>
+          <button type="button" class="city-filter-btn" data-filter="major">★ Крупные промцентры</button>
+          <button type="button" class="city-filter-btn" data-filter="far">Дальние (4–5 цехов)</button>
+        </div>
+        <div class="citygrid" id="cityGrid"></div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn ghost" id="backBtn" type="button">Назад к скинам</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="qScreen">
+      <div class="card">
+        <div class="qtop">
+          <div class="qtag"><i></i><span id="qTag">ВОПРОС</span></div>
+          <div class="qright">
+            <div class="qprog" id="qProg"></div>
+            <button class="qclose" id="qCloseBtn" type="button" title="Выйти из вопроса (−75 очков)" aria-label="Выйти из вопроса">✕</button>
+          </div>
+        </div>
+        <p id="qText">…</p>
+        <div id="qAnswers"></div>
+        <button class="hintbtn" id="hintBtn" type="button">Подсказка: убрать 2 неверных</button>
+        <div class="qfeedback hidden" id="qFeedback"></div>
+        <div class="qfoot" id="qFoot"></div>
+        <button class="btn qnext hidden" id="qNextBtn" type="button">Дальше</button>
+        <div class="qconfirm hidden" id="qExitConfirm" role="dialog" aria-modal="true" aria-labelledby="qConfirmTitle">
+          <div class="qconfirm-box">
+            <h3 class="qconfirm-title" id="qConfirmTitle">Выйти из вопроса?</h3>
+            <p class="qconfirm-text">Вы точно хотите выйти? Вы потеряете <b>75 очков</b>.</p>
+            <div class="btnrow">
+              <button class="btn ghost" id="qExitCancel" type="button">Отмена</button>
+              <button class="btn danger" id="qExitConfirmBtn" type="button">Выйти из вопроса</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Мини-игра «Калибровка токовой петли 4–20 мА» (КИП) -->
+    <div class="screen hidden" id="clickerScreen" style="display:none">
+      <div id="clickerCount"></div><div id="clickerTimerBar"></div><div id="clickerTimerText"></div><div id="clickerArena"><div id="clickerBanner"><h2 id="clickerBannerTitle"></h2><p id="clickerBannerText"></p><button id="clickerStartBtn"></button></div></div>
+    </div>
+
+    <div class="screen hidden" id="pipeScreen">
+      <div class="pipe-shell">
+        <div class="pipe-head">
+          <div class="qtag" id="pipeTag">ТЕХНОЛОГИЧЕСКИЙ СБОЙ · СБОРКА ТЕПЛОТРАССЫ</div>
+          <div class="pipe-stats">
+            <div class="pipe-pill status" id="pipeStatus">Контур: разомкнут</div>
+            <div class="pipe-pill reward">+200 очков</div>
+            <div class="pipe-pill timer" id="pipeTimerText">25.0 с</div>
+          </div>
+        </div>
+        <div class="pipe-timer-track">
+          <div class="pipe-timer-fill" id="pipeTimerBar"></div>
+        </div>
+        <div class="pipe-arena-wrap">
+          <div class="pipe-inout pipe-in">
+            <span>🔥 КОТЕЛЬНАЯ</span>
+            <small>Подача теплоносителя</small>
+          </div>
+          <div class="pipe-grid" id="pipeGrid"></div>
+          <div class="pipe-inout pipe-out">
+            <span>🏢 ТЕПЛОПУНКТ</span>
+            <small>Отопление здания</small>
+          </div>
+          
+          <div class="clicker-banner" id="pipeBanner">
+            <h2 id="pipeBannerTitle">Собери контур теплотрассы!</h2>
+            <p id="pipeBannerText">
+              Трубы теплоснабжения перепутаны. Кликай по сегментам, поворачивай трубы и соедини подачу горячей воды из котельной (слева вверху) с теплопунктом дома (справа внизу)!
+            </p>
+            <div class="btnrow">
+              <button class="btn" id="pipeStartBtn">Начать сборку</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- КИП: Мини-игра Монтаж клеммной схемы -->
+    <div class="screen hidden" id="bypassScreen">
+      <div class="pipe-shell">
+        <div class="pipe-head">
+          <div class="qtag" id="bypassTag">ТС · АВАРИЙНЫЙ БАЙПАС И ГИДРОУДАР</div>
+          <div class="pipe-stats">
+            <div class="pipe-pill status" id="bypassStatus">Шаг 1: Открыть байпас</div>
+            <div class="pipe-pill reward">+200 очков</div>
+            <div class="pipe-pill timer" id="bypassTimerText">25.0 с</div>
+          </div>
+        </div>
+        <div class="pipe-timer-track">
+          <div class="pipe-timer-fill" id="bypassTimerBar"></div>
+        </div>
+
+        <div class="bypass-arena">
+          <div class="bypass-diagram">
+            <!-- Верхняя линия: Байпасная линия -->
+            <div class="bypass-pipe bypass-upper" id="bypassLine">
+              <span style="font-size:12px;font-weight:700;color:#7dd3fc">БАЙПАСНАЯ ЛИНИЯ (ОБХОД)</span>
+              <button type="button" class="valve-btn closed" id="valveBypass">
+                <span class="valve-icon">⊗</span>
+                <span id="valveBypassText">Задвижка 1 (Байпас): ЗАКРЫТА</span>
+              </button>
+            </div>
+
+            <!-- Средняя линия: Основная магистраль с аварией -->
+            <div class="bypass-pipe bypass-main danger" id="mainLine">
+              <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+                <button type="button" class="valve-btn opened" id="valveInlet">
+                  <span class="valve-icon">⊙</span>
+                  <span id="valveInletText">Задвижка 2 (Вход): ОТКРЫТА</span>
+                </button>
+                <div class="leak-indicator" id="leakIndicator">
+                  <span class="leak-steam">💨</span>
+                  <span class="leak-alert">СВИЩ ТРУБЫ / УТЕЧКА</span>
+                </div>
+                <button type="button" class="valve-btn opened" id="valveOutlet">
+                  <span class="valve-icon">⊙</span>
+                  <span id="valveOutletText">Задвижка 3 (Выход): ОТКРЫТА</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Нижняя линия: Дренаж аварийного участка -->
+            <div style="display:flex;justify-content:flex-end">
+              <button type="button" class="valve-btn closed" id="valveDrain">
+                <span class="valve-icon">▽</span>
+                <span id="valveDrainText">Клапан 4 (Дренаж сброса): ЗАКРЫТ</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+        <!-- Баннер вынесен на уровень pipe-shell -->
+        <div class="clicker-banner" id="bypassBanner">
+          <h2 id="bypassBannerTitle">Аварийное переключение на байпас</h2>
+          <p id="bypassBannerText">
+            На основном участке теплосети обнаружен свищ! Чтобы не оставить район без тепла и не допустить гидроудара: 
+            1) Сначала откройте байпасную линию; 
+            2) Перекройте входную задвижку; 
+            3) Перекройте выходную задвижку; 
+            4) Откройте дренажный клапан для сброса давления пара!
+          </p>
+          <div class="btnrow">
+            <button class="btn" id="bypassStartBtn">Ликвидировать аварию</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТС: Мини-игра Балансировка теплообменника -->
+    <div class="screen hidden" id="exchangerScreen">
+      <div class="pipe-shell">
+        <div class="pipe-head">
+          <div class="qtag" id="exchangerTag">ТС · БАЛАНСИРОВКА ТЕПЛООБМЕННИКА</div>
+          <div class="pipe-stats">
+            <div class="pipe-pill status" id="exchangerStatus">КПД: 52% (Низкий)</div>
+            <div class="pipe-pill reward">+200 очков</div>
+            <div class="pipe-pill timer" id="exchangerTimerText">25.0 с</div>
+          </div>
+        </div>
+        <div class="pipe-timer-track">
+          <div class="pipe-timer-fill" id="exchangerTimerBar"></div>
+        </div>
+
+        <div class="exchanger-arena">
+          <div class="exchanger-box">
+            <div class="exchanger-streams">
+              <div class="stream-line hot">
+                🔥 Греющий контур: Котельная 95°C → Сеть
+              </div>
+              <div class="stream-core">
+                <div class="plates-graphic">||||||||||||||</div>
+                <div style="font-size:12px;color:#94a3b8;margin-top:2px">ПЛАСТИНЧАТЫЙ БЛОК ТЕПЛООБМЕНА</div>
+                <div class="flow-mode-badge" id="flowModeBadge">Схема: ПРЯМОТОК (КПД падает)</div>
+              </div>
+              <div class="stream-line cold">
+                ❄ Нагреваемый контур: Обратка 45°C → В дома 70°C
+              </div>
+            </div>
+
+            <div class="exchanger-controls">
+              <div style="display:flex;gap:10px;align-items:center;justify-content:space-between">
+                <span style="font-size:12px;font-weight:700;color:#cbd5e1">Схема циркуляции потоков:</span>
+                <button type="button" class="btn ghost" id="flowModeBtn" style="padding:6px 14px;font-size:12px">Переключить на ПРОТИВОТОК</button>
+              </div>
+
+              <div class="exchanger-slider-row">
+                <div style="display:flex;justify-content:space-between">
+                  <span>Расход сетевого теплоносителя (клапан подачи):</span>
+                  <b id="flowRateVal" style="color:#38bdf8">35%</b>
+                </div>
+                <input type="range" id="flowRateSlider" min="10" max="100" value="35" style="accent-color:#38bdf8">
+              </div>
+
+              <div style="background:rgba(0,0,0,0.3);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08)">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                  <span>Эффективность теплопередачи (КПД):</span>
+                  <b id="exchangerKpdText" style="color:#ef4444">52% (Цель: ≥ 95%)</b>
+                </div>
+                <div style="height:10px;background:rgba(255,255,255,0.1);border-radius:5px;overflow:hidden">
+                  <div id="exchangerKpdBar" style="height:100%;width:52%;background:#ef4444;transition:all 0.2s ease"></div>
+                </div>
+              </div>
+
+              <div style="text-align:center">
+                <button type="button" class="btn disabled" id="exchangerLockBtn" style="padding:8px 24px;font-size:13px" disabled>Зафиксировать рабочий режим</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- Баннер вынесен на уровень pipe-shell -->
+        <div class="clicker-banner" id="exchangerBanner">
+          <h2 id="exchangerBannerTitle">Балансировка пластинчатого теплообменника</h2>
+          <p id="exchangerBannerText">
+            Пластинчатый теплообменник работает с потерями. Для достижения расчётного КПД (≥95%):
+            1) Переключите схему на более эффективный ПРОТИВОТОК;
+            2) Отрегулируйте расход сетевой воды в оптимальный диапазон (75%–85%);
+            3) Зафиксируйте сбалансированный режим!
+          </p>
+          <div class="btnrow">
+            <button class="btn" id="exchangerStartBtn">Начать балансировку</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="endScreen">
+      <div class="card">
+        <h1 id="endTitle">Смена окончена</h1>
+        <p class="sub" id="endText">Смена завершена. Практика подошла к концу.</p>
+        <div class="sota hidden" id="sotaWrap">
+          <canvas id="sotaCanvas" width="640" height="427"></canvas>
+          <div class="cap">СОТА · Смоленская областная технологическая академия</div>
+        </div>
+        <div class="rules" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr))">
+          <div><b id="endFloorName">Цеха</b><span id="endDepth">0/3</span></div>
+          <div><b id="endStationName">Станки</b><span id="endOre">0</span></div>
+          <div><b>Очки</b><span id="endScore">0</span></div>
+          <div><b>Рекорд</b><span id="endBest">0</span></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="againBtn">Начать практику заново</button>
+          <button class="btn ghost" id="skinsBtn">Сменить скин</button>
+        </div>
+      </div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="controls">
+    <div class="mode-badge" id="modeBadge">Одиночная игра</div>
+    <div class="hint">
+      <b>Тапните по любой клетке</b> — наладчик сам дойдёт.
+      <span class="kb">На компьютере: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.</span>
+    </div>
+    <a href="../../menu.html" class="exit-btn" id="exitMenuBtn">Выйти</a>
+    <div class="dpad">
+      <button class="u" data-dir="up" aria-label="Вверх">▲</button>
+      <button class="l" data-dir="left" aria-label="Влево">◀</button>
+      <button class="d" data-dir="down" aria-label="Вниз">▼</button>
+      <button class="r" data-dir="right" aria-label="Вправо">▶</button>
+    </div>
+  </div>
+</div>
+
+  <script>window.CURRENT_SPEC = 'ts';</script>
+  <script src="ts.js"></script>
+  <script src="../../shared/js/workshop-start.js"></script>
+  <script src="../../shared/js/common.js"></script>
+</body>
+</html>

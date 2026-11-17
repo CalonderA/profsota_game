@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>СОТА — Выбор специальности</title>
+    <link rel="stylesheet" href="shared/css/menu.css">
+</head>
+<body>
+
+  <div class="main-wrap">
+    <!-- Верхняя бренд-панель СОТА Смоленск (как на фото) -->
+    <div class="top-brand-bar">
+      <div class="brand-left">
+        <svg class="brand-hex-icon" viewBox="0 0 240 280">
+          <polygon points="44,52 104,52 134,104 104,156 44,156 14,104" fill="#0082d4" />
+          <polygon points="139,106 199,106 229,158 199,210 139,210 109,158" fill="#d3122a" />
+          <polygon points="44,160 104,160 134,212 104,264 44,264 14,212" fill="#71717a" />
+          <polygon points="89,158 104,131 134,131 149,158 134,185 104,185" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+        </svg>
+        <div class="brand-info">
+          <div class="brand-title">СОТА</div>
+          <div class="brand-city">Смоленск</div>
+        </div>
+      </div>
+      <div class="brand-badge-pill">Шахта Знаний · Профориентационный симулятор</div>
+    </div>
+    <!-- Шапка -->
+    <header class="header">
+      <div class="academy-badge">ОГБПОУ СОТА · Профориентационный симулятор</div>
+      <h1>Выбор специальности в СОТА</h1>
+      <p class="sub">Нажмите на цветные шестиугольники эмблемы или специальности на выносках, чтобы выбрать направление и начать практику в цеху!</p>
+    </header>
+
+    <!-- СХЕМА: ЛОГОТИП + НАЛОЖЕННЫЕ ВЫНОСНЫЕ СТРЕЛКИ И ПОЛОЧКИ -->
+    <div class="schematic-viewport">
+      <svg class="schematic-svg" viewBox="-155 -68 575 418" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+          <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        <!-- 1. ИСХОДНОЕ ЧИСТОЕ ЛОГО СОТА (в центре 0..319 x 0..320) -->
+                <!-- ЧИСТЫЕ ЦВЕТНЫЕ ШЕСТИУГОЛЬНИКИ СОТА (БЕЗ КРУГЛОГО ФОНА, ГОЛЫЕ В ЦВЕТАХ) -->
+        <g id="sotaPureHexagons">
+          <!-- Синий шестиугольник -->
+          <polygon points="44,52 104,52 134,104 104,156 44,156 14,104"
+                   fill="#0082d4" stroke="#0284c7" stroke-width="2.5" />
+          
+          <!-- Красный шестиугольник -->
+          <polygon points="139,106 199,106 229,158 199,210 139,210 109,158"
+                   fill="#d3122a" stroke="#dc2626" stroke-width="2.5" />
+                   
+          <!-- Серый шестиугольник -->
+          <polygon points="44,160 104,160 134,212 104,264 44,264 14,212"
+                   fill="#71717a" stroke="#94a3b8" stroke-width="2.5" />
+                   
+          <!-- Центральный белый соединительный контур -->
+          <polygon points="89,158 104,131 134,131 149,158 134,185 104,185"
+                   fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+        </g>
+
+        <!-- ============================================================
+             КЛАСТЕР 1: СИНИЙ ШЕСТИУГОЛЬНИК (КИП и ТС)
+             ============================================================ -->
+        <g class="cluster cluster-blue active" id="clusterBlue" data-spec="blue">
+          <!-- Точный контур синего шестиугольника на эмблеме -->
+          <polygon class="hex-hit blue" 
+                   points="44,52 104,52 134,104 104,156 44,156 14,104"
+                   title="Синий шестиугольник: КИП и ТС" />
+
+          <!-- Точки выхода линий на гранях синего шестиугольника -->
+          <circle class="leader-dot" cx="44" cy="52" r="3.2" />
+          <circle class="leader-dot" cx="104" cy="52" r="3.2" />
+
+          <!-- Выноска 1: КИП (влево-вверх, линия идеально идёт строго по нижней границе кнопки от края до края) -->
+          <path class="leader-line" d="M 44,52 L -15,-14 L -147,-14" />
+
+          <!-- Узел КИП (на полочке слева-вверху) -->
+          <g class="spec-node blue selected" id="nodeKip" transform="translate(-147, -56)" onclick="handleNodeClick('kip')">
+            <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
+            <text class="node-title" x="12" y="27">КИП</text>
+            <text class="node-code" x="52" y="17">15.01.31</text>
+            <text class="node-status ready" x="52" y="32">● ДОСТУПНО</text>
+          </g>
+
+          <!-- Выноска 2: ТС (вправо-вверх, идеально совпадает с полочкой) -->
+          <path class="leader-line" d="M 104,52 L 145,-14 L 277,-14" />
+
+          <!-- Узел ТС (на полочке справа-вверху) -->
+          <g class="spec-node blue" id="nodeTs" transform="translate(145, -56)" onclick="handleNodeClick('ts')">
+            <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
+            <text class="node-title" x="14" y="27">ТС</text>
+            <text class="node-code" x="50" y="17">13.02.02</text>
+            <text class="node-status ready" x="50" y="32">● ДОСТУПНО</text>
+          </g>
+        </g>
+
+        <!-- ============================================================
+             КЛАСТЕР 2: КРАСНЫЙ ШЕСТИУГОЛЬНИК (Э и РЭУ)
+             ============================================================ -->
+        <g class="cluster cluster-red" id="clusterRed" data-spec="red">
+          <!-- Точный контур красного шестиугольника на эмблеме -->
+          <polygon class="hex-hit red" 
+                   points="139,106 199,106 229,158 199,210 139,210 109,158"
+                   title="Красный шестиугольник: Э и РЭУ" />
+
+          <!-- Точки выхода линий на гранях красного шестиугольника -->
+          <circle class="leader-dot" cx="214" cy="132" r="3.2" />
+          <circle class="leader-dot" cx="214" cy="184" r="3.2" />
+
+          <!-- Выноска 1: Э (вправо-вверх, строго от угла до края) -->
+          <path class="leader-line" d="M 214,132 L 275,95 L 407,95" />
+
+          <!-- Узел Э (на полочке справа) -->
+          <g class="spec-node red" id="nodeE" transform="translate(275, 53)" onclick="handleNodeClick('e')">
+            <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
+            <text class="node-title" x="14" y="27">Э</text>
+            <text class="node-code" x="42" y="17">13.02.13</text>
+            <text class="node-status wip" x="42" y="32">СЛОТ КОМАНДЫ</text>
+          </g>
+
+          <!-- Выноска 2: РЭУ (вправо-вниз) -->
+          <path class="leader-line" d="M 214,184 L 275,225 L 407,225" />
+
+          <!-- Узел РЭУ (на полочке справа-внизу) -->
+          <g class="spec-node red" id="nodeReu" transform="translate(275, 183)" onclick="handleNodeClick('reu')">
+            <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
+            <text class="node-title" x="12" y="27">РЭУ</text>
+            <text class="node-code" x="52" y="17">11.02.16</text>
+            <text class="node-status wip" x="52" y="32">СЛОТ КОМАНДЫ</text>
+          </g>
+        </g>
+
+        <!-- ============================================================
+             КЛАСТЕР 3: СЕРЫЙ ШЕСТИУГОЛЬНИК (П и КСК)
+             ============================================================ -->
+        <g class="cluster cluster-grey" id="clusterGrey" data-spec="grey">
+          <!-- Точный контур серого шестиугольника на эмблеме -->
+          <polygon class="hex-hit grey" 
+                   points="44,160 104,160 134,212 104,264 44,264 14,212"
+                   title="Серый шестиугольник: П и КСК" />
+
+          <!-- Точки выхода линий на гранях серого шестиугольника -->
+          <circle class="leader-dot" cx="44" cy="264" r="3.2" />
+          <circle class="leader-dot" cx="104" cy="264" r="3.2" />
+
+          <!-- Выноска 1: П (влево-вниз, строго от угла до края) -->
+          <path class="leader-line" d="M 44,264 L -15,335 L -147,335" />
+
+          <!-- Узел П (на полочке слева-внизу) -->
+          <g class="spec-node grey" id="nodeP" transform="translate(-147, 293)" onclick="event.stopPropagation(); handleNodeClick('p')">
+            <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
+            <text class="node-title" x="14" y="27">П</text>
+            <text class="node-code" x="42" y="17">09.02.07</text>
+            <text class="node-status ready" x="42" y="32">● ДОСТУПНО</text>
+          </g>
+
+          <!-- Выноска 2: КСК (вправо-вниз) -->
+          <path class="leader-line" d="M 104,264 L 145,335 L 277,335" />
+
+          <!-- Узел КСК (на полочке справа-внизу) -->
+          <g class="spec-node grey" id="nodeKsk" transform="translate(145, 293)" onclick="event.stopPropagation(); handleNodeClick('ksk')">
+            <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
+            <text class="node-title" x="12" y="27">КСК</text>
+            <text class="node-code" x="52" y="17">09.02.01</text>
+            <text class="node-status ready" x="52" y="32">● ДОСТУПНО</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <nav class="mobile-spec-list" aria-label="Выбор специальности">
+      <button type="button" data-spec="kip" onclick="selectSpec('kip')"><b>КИП</b><span>15.01.31 · Доступно</span></button>
+      <button type="button" data-spec="ts" onclick="selectSpec('ts')"><b>ТС</b><span>13.02.02 · Доступно</span></button>
+      <button type="button" data-spec="p" onclick="selectSpec('p')"><b>Программирование</b><span>09.02.07 · Доступно</span></button>
+      <button type="button" data-spec="ksk" onclick="selectSpec('ksk')"><b>КСК</b><span>09.02.01 · Доступно</span></button>
+      <button type="button" data-spec="e" onclick="selectSpec('e')"><b>Э</b><span>13.02.13 · В разработке</span></button>
+      <button type="button" data-spec="reu" onclick="selectSpec('reu')"><b>РЭУ</b><span>11.02.16 · В разработке</span></button>
+    </nav>
+
+    <!-- ИНФО-ПАНЕЛЬ И БЫСТРЫЙ СТАРТ -->
+    <section class="action-panel blue" id="actionPanel">
+      <div class="panel-head">
+        <span class="panel-cluster-tag" id="panelTag">🟦 Технический кластер · Синий шестиугольник</span>
+        <span id="panelSub" style="font-size:12px;color:var(--muted)">Специальности группы наладчиков</span>
+      </div>
+      <p class="panel-desc" id="panelDesc">
+        Специальности автоматики и теплоэнергетики: диагностика токовой петли 4–20 мА, поверка манометров, балансировка трубопроводов и ИТП.
+      </p>
+      <div class="panel-actions" id="panelActions">
+        <a href="specialties/kip/index.html" class="btn-play">
+          <span>Войти в цех КИП</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="specialties/ts/index.html" class="btn-play ts">
+          <span>Войти в теплопункт ТС</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const SPEC_DATA = {
+      kip: {
+        cluster: 'blue',
+        tag: '🟦 КИП (15.01.31) · Мастер КИП',
+        sub: 'Готово к практике',
+        desc: 'Наладка датчиков 4–20 мА, поверка манометров, термопар и шкафов автоматики цеха.',
+        actionHtml: `
+          <a href="specialties/kip/index.html" class="btn-play">
+            <span>Войти в цех КИП (15.01.31)</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <button type="button" class="btn-play ts" onclick="selectSpec('ts')">
+            <span>Переключить на ТС</span>
+          </button>
+        `
+      },
+      ts: {
+        cluster: 'blue',
+        tag: '🟦 ТС (13.02.02) · Теплоснабжение',
+        sub: 'Готово к практике',
+        desc: 'Обслуживание насосных станций, теплообменников ИТП и трубопроводов теплосетей.',
+        actionHtml: `
+          <a href="specialties/ts/index.html" class="btn-play ts">
+            <span>Войти в теплопункт ТС (13.02.02)</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <button type="button" class="btn-play" onclick="selectSpec('kip')">
+            <span>Переключить на КИП</span>
+          </button>
+        `
+      },
+      blue: {
+        cluster: 'blue',
+        tag: '🟦 Технический кластер · Синий шестиугольник',
+        sub: 'КИП (15.01.31) и ТС (13.02.02) · Доступно',
+        desc: 'Два направления практики: автоматика, метрология и теплоэнергетика СОТА.',
+        actionHtml: `
+          <a href="specialties/kip/index.html" class="btn-play">
+            <span>Войти в цех КИП</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="specialties/ts/index.html" class="btn-play ts">
+            <span>Войти в теплопункт ТС</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        `
+      },
+      e: {
+        cluster: 'red',
+        tag: '🟥 Э (13.02.13) · Электрооборудование',
+        sub: 'Слот команды',
+        desc: 'Электромонтаж, распределительные щиты, трансформаторы 0.4 кВ и силовые электроприводы.',
+        actionHtml: `
+          <button type="button" class="btn-disabled" disabled>Разрабатывается другой группой</button>
+          <button type="button" class="btn-play" onclick="selectSpec('kip')">Открыть практику КИП / ТС</button>
+        `
+      },
+      reu: {
+        cluster: 'red',
+        tag: '🟥 РЭУ (11.02.16) · Электронные устройства',
+        sub: 'Слот команды',
+        desc: 'Проектирование печатных плат, микроконтроллерные модули и диагностика радиоэлектроники.',
+        actionHtml: `
+          <button type="button" class="btn-disabled" disabled>Разрабатывается другой группой</button>
+          <button type="button" class="btn-play" onclick="selectSpec('kip')">Открыть практику КИП / ТС</button>
+        `
+      },
+      red: {
+        cluster: 'red',
+        tag: '🟥 Красный шестиугольник · Электрика и РЭУ',
+        sub: 'Э (13.02.13) и РЭУ (11.02.16)',
+        desc: 'Электромонтаж, силовые трансформаторы 0.4 кВ и микроэлектронные устройства СОТА.',
+        actionHtml: `
+          <button type="button" class="btn-disabled" disabled>Слот команды Э и РЭУ</button>
+          <button type="button" class="btn-play" onclick="selectSpec('kip')">Перейти к КИП и ТС</button>
+        `
+      },
+      p: {
+        cluster: 'grey', tag: '⬜ П (09.02.07) · Программирование',
+        sub: 'IT-центр · Доступно',
+        desc: 'Приложения, сети, серверы и игры. Четыре станции в IT-центре СОТА.',
+        actionHtml: `<a href="index.html?spec=p" class="btn-play">Войти в IT-центр</a>`
+      },
+      ksk: {
+        cluster: 'grey',
+        tag: '⬜ КСК (09.02.01) · Компьютерные системы и комплексы',
+        sub: 'Лаборатория КСК · Доступно',
+        desc: 'Сборка ПК, диагностика, серверы, ремонт и компьютерные сети. Пять практических станций СОТА.',
+        actionHtml: `<a href="index.html?spec=ksk" class="btn-play">Войти в лабораторию КСК</a>`
+      },
+      grey: {
+        cluster: 'grey',
+        tag: '⬜ Серый шестиугольник · IT-направление',
+        sub: 'П (09.02.07) и КСК (09.02.01)',
+        desc: 'Программная инженерия, серверные комплексы и сетевая инфраструктура СОТА.',
+        actionHtml: `
+          <a href="index.html?spec=ksk" class="btn-play">Войти в лабораторию КСК</a>
+          <button type="button" class="btn-play" onclick="selectSpec('kip')">Перейти к КИП и ТС</button>
+        `
+      }
+    };
+
+    let currentSelection = 'kip';
+
+    function renderPanel(key){
+      const data = SPEC_DATA[key];
+      if (!data) return;
+
+      const panel = document.getElementById('actionPanel');
+      panel.className = `action-panel ${data.cluster}`;
+      document.getElementById('panelTag').textContent = data.tag;
+      document.getElementById('panelSub').textContent = data.sub;
+      document.getElementById('panelDesc').textContent = data.desc;
+      document.getElementById('panelActions').innerHTML = data.actionHtml;
+    }
+
+    function activateCluster(colorName){
+      const clusterKey = colorName.toLowerCase();
+      currentSelection = clusterKey;
+
+      document.querySelectorAll('.cluster').forEach(c => c.classList.remove('active'));
+      const activeCluster = document.getElementById(`cluster${colorName}`);
+      if (activeCluster) activeCluster.classList.add('active');
+
+      // Снимаем выделение со специфичных нод
+      document.querySelectorAll('.spec-node').forEach(n => n.classList.remove('selected'));
+
+      renderPanel(clusterKey);
+      playChime(clusterKey, 0.05);
+    }
+
+    function selectSpec(key){
+      const data = SPEC_DATA[key];
+      if (!data) return;
+      currentSelection = key;
+
+      playChime(data.cluster, 0.08);
+
+      document.querySelectorAll('.cluster').forEach(c => c.classList.remove('active'));
+      const activeCluster = document.querySelector(`.cluster-${data.cluster}`);
+      if (activeCluster) activeCluster.classList.add('active');
+
+      document.querySelectorAll('.spec-node').forEach(n => n.classList.remove('selected'));
+      const activeNode = document.getElementById(`node${key.charAt(0).toUpperCase() + key.slice(1)}`);
+      if (activeNode) activeNode.classList.add('selected');
+
+      renderPanel(key);
+      document.querySelectorAll('.mobile-spec-list button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.spec === key)));
+
+      if (key !== 'kip' && key !== 'ts' && key !== 'p' && key !== 'ksk' && key !== 'blue'){
+        showToast('Эта специальность закреплена за другой группой. Вам доступны КИП и ТС.');
+      }
+    }
+
+    function handleNodeClick(key){
+      if (key === 'ksk' && currentSelection === 'ksk') { window.location.href = 'index.html?spec=ksk'; return; }
+      if (key === 'p' && currentSelection === 'p') { window.location.href = 'index.html?spec=p'; return; }
+      if (key === 'kip' && currentSelection === 'kip'){
+        launchGame('kip');
+        return;
+      }
+      if (key === 'ts' && currentSelection === 'ts'){
+        launchGame('ts');
+        return;
+      }
+      selectSpec(key);
+    }
+
+    function launchGame(spec){
+      playChime('blue', 0.15);
+      window.location.href = `index.html?spec=${encodeURIComponent(spec)}`;
+    }
+
+    // Наведение на шестиугольники эмблемы — ТОЛЬКО мягкая подсветка (hover-glow), без переключения сферы!
+    // Выбор сферы происходит СТРОГО по клику/тапу (на фигуру или на специальность)!
+    ['Blue', 'Red', 'Grey'].forEach(color => {
+      const cluster = document.getElementById(`cluster${color}`);
+      if (!cluster) return;
+
+      cluster.addEventListener('mouseenter', () => {
+        cluster.classList.add('hover-glow');
+      });
+
+      cluster.addEventListener('mouseleave', () => {
+        cluster.classList.remove('hover-glow');
+      });
+
+      cluster.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activateCluster(color);
+      });
+    });
+
+    let toastTimer = null;
+    function showToast(text){
+      const t = document.getElementById('toast');
+      t.textContent = text;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    // Аудио синтезатор для кликов и наведения
+    let audioCtx = null;
+    function playChime(kind, volume = 0.12){
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        const freqs = { blue: 587.33, red: 440, grey: 523.25 };
+        const f = freqs[kind] || 440;
+        osc.frequency.setValueAtTime(f, now);
+        osc.frequency.exponentialRampToValueAtTime(f * 1.5, now + 0.12);
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch (e){}
+    }
+  </script>
+</body>
+</html>

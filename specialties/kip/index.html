@@ -1,0 +1,443 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>СОТА — Цех КИПиА (15.01.31)</title>
+  <link rel="stylesheet" href="../../shared/css/common.css">
+  <link rel="stylesheet" href="kip.css">
+</head>
+<body>
+  <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
+  <div class="brand-header-bar">
+    <a href="../../menu.html" class="brand-header-logo" title="В главное меню">
+      <svg class="brand-hex-icon" viewBox="0 0 240 280">
+        <polygon points="44,52 104,52 134,104 104,156 44,156 14,104" fill="#0082d4" />
+        <polygon points="139,106 199,106 229,158 199,210 139,210 109,158" fill="#d3122a" />
+        <polygon points="44,160 104,160 134,212 104,264 44,264 14,212" fill="#71717a" />
+        <polygon points="89,131 104,104 134,104 149,131 134,158 104,158" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+      </svg>
+      <div class="brand-header-text">
+        <span class="brand-header-title">СОТА</span>
+        <span class="brand-header-sub">Смоленск</span>
+      </div>
+    </a>
+    <div class="brand-header-divider"></div>
+    <span class="brand-header-tag">КИП · 15.01.31</span>
+    <a href="../../menu.html" class="brand-header-back" title="Вернуться к выбору специальности">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>В меню</span>
+    </a>
+  </div>
+<div id="app">
+
+  <div class="hud">
+    <div class="brand">
+      <span id="hudBrand" style="color:var(--amber-2);font-weight:800;letter-spacing:.07em">ПУТЬ К СОТЕ</span>
+      <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· Цех КИПиА</span>
+    </div>
+    <div class="stat"><span id="floorLabel">&lt;/&gt; Цех</span> <b id="mineVal">1/3</b></div>
+    <div class="stat"><span id="distLabel">📍 До СОТЫ</span> <b id="distVal">0 км</b></div>
+    <div class="stat"><span id="unitLabel">💎 Станки</span> <b id="oreVal">0/3</b></div>
+    <div class="stat">⭐ Очки <b id="scoreVal">0</b></div>
+    <div class="stat">🔥 Серия <b id="comboVal">×0</b></div>
+    <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
+    <div class="stat">⚡ Силы <div class="meter" id="hpMeter"><i id="hpBar"></i></div></div>
+  </div>
+
+
+  <div id="stage">
+    <canvas id="game"></canvas>
+
+    <div class="screen" id="startScreen">
+      <div class="card">
+        <div class="spec-banner" id="specBanner">
+          <div class="spec-banner-info">
+            <span class="spec-banner-code" id="specBadge">КИП</span>
+            <div>
+              <b id="specTitle">Цех КИПиА</b>
+              <small id="specSub">Специальность 15.01.31</small>
+            </div>
+          </div>
+          <a href="../../menu.html" class="spec-change-link">Сменить специальность ⮵</a>
+        </div>
+        <h1 id="startMainTitle">Шахта Знаний: СОТА</h1>
+        <p class="sub" id="startMainSub">Смоленская областная технологическая академия. Обслуживайте рабочие станки и приборы в цеху, проводите замеры и решайте задачи наладчика!</p>
+        <div class="rules" id="rulesGrid">
+          <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
+          <div><b id="ruleUnitTitle">Станок КИП</b>Подойдите к станку — проведите диагностику</div>
+          <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
+          <div><b>Авария</b>Свет погас или силы мастера на нуле</div>
+        </div>
+        <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
+        <div class="skins" id="skinRow"></div>
+        <div class="skin-desc" id="skinDesc"></div>
+        <div class="qsource" id="qSource">вопросы загружаются…</div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn" id="startBtn">Войти в цех</button>
+          <a href="../../menu.html" class="btn ghost">Выбор специальности</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="cityScreen">
+      <div class="card">
+        <h1>Откуда начнём?</h1>
+        <p class="sub">Выберите город Смоленской области. Цель — СОТА в Смоленске (Смоленская областная технологическая академия): чем дальше город, тем больше цехов придётся пройти, но и награда за путь больше.</p>
+        <div class="city-filter-row">
+          <button type="button" class="city-filter-btn active" data-filter="all">Все города</button>
+          <button type="button" class="city-filter-btn" data-filter="major">★ Крупные промцентры</button>
+          <button type="button" class="city-filter-btn" data-filter="far">Дальние (4–5 цехов)</button>
+        </div>
+        <div class="citygrid" id="cityGrid"></div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn ghost" id="backBtn" type="button">Назад к скинам</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="qScreen">
+      <div class="card">
+        <div class="qtop">
+          <div class="qtag"><i></i><span id="qTag">ВОПРОС</span></div>
+          <div class="qright">
+            <div class="qprog" id="qProg"></div>
+            <button class="qclose" id="qCloseBtn" type="button" title="Выйти из вопроса (−75 очков)" aria-label="Выйти из вопроса">✕</button>
+          </div>
+        </div>
+        <p id="qText">…</p>
+        <div id="qAnswers"></div>
+        <button class="hintbtn" id="hintBtn" type="button">Подсказка: убрать 2 неверных</button>
+        <div class="qfeedback hidden" id="qFeedback"></div>
+        <div class="qfoot" id="qFoot"></div>
+        <button class="btn qnext hidden" id="qNextBtn" type="button">Дальше</button>
+        <div class="qconfirm hidden" id="qExitConfirm" role="dialog" aria-modal="true" aria-labelledby="qConfirmTitle">
+          <div class="qconfirm-box">
+            <h3 class="qconfirm-title" id="qConfirmTitle">Выйти из вопроса?</h3>
+            <p class="qconfirm-text">Вы точно хотите выйти? Вы потеряете <b>75 очков</b>.</p>
+            <div class="btnrow">
+              <button class="btn ghost" id="qExitCancel" type="button">Отмена</button>
+              <button class="btn danger" id="qExitConfirmBtn" type="button">Выйти из вопроса</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Мини-игра «Калибровка токовой петли 4–20 мА» (КИП) -->
+    <div class="screen hidden" id="calibScreen">
+      <div class="calib-shell">
+        <div class="calib-head">
+          <div class="qtag" id="calibTag">КИП · КАЛИБРОВКА ТОКОВОЙ ПЕТЛИ 4–20 мА</div>
+          <div class="calib-stats">
+            <div class="calib-pill target" id="calibTarget">Точка 1/3: 4.00 мА (0%)</div>
+            <div class="calib-pill reward">+200 очков</div>
+            <div class="calib-pill timer" id="calibTimerText">25.0 с</div>
+          </div>
+        </div>
+        <div class="calib-timer-track">
+          <div class="calib-timer-fill" id="calibTimerBar"></div>
+        </div>
+        
+        <div class="calib-workspace">
+          <!-- Верхний ряд: Аналоговый прибор со стрелкой + Цифровое табло -->
+          <div class="calib-meter-row">
+            <div class="calib-analog-box">
+              <canvas id="calibMeterCanvas" width="360" height="180"></canvas>
+            </div>
+            <div class="calib-digital-box">
+              <div class="digital-label">ИЗМЕРИТЕЛЬ ТОКА ПЕТЛИ</div>
+              <div class="digital-screen" id="calibDigitalVal">03.40 <span class="unit">mA</span></div>
+              <div class="digital-status" id="calibStatus">
+                <span class="status-led bad" id="calibLed"></span>
+                <span id="calibStatusText">Δ = −0.60 мА · РАСКАЛИБРОВКА</span>
+              </div>
+              <div class="calib-points-row">
+                <div class="calib-pt-chip active" id="calibChip1"><span class="chip-state">1</span> 4.00 мА (0%)</div>
+                <div class="calib-pt-chip" id="calibChip2"><span class="chip-state">2</span> 12.00 мА (50%)</div>
+                <div class="calib-pt-chip" id="calibChip3"><span class="chip-state">3</span> 20.00 мА (100%)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Нижний ряд: Панель регулировки потенциометра наладчика -->
+          <div class="calib-tuning-box">
+            <div class="calib-btn-steps">
+              <span class="step-label">Грубая подстройка:</span>
+              <button type="button" class="calib-step-btn" data-step="-1.0">−1.0 мА</button>
+              <button type="button" class="calib-step-btn" data-step="-0.1">−0.1 мА</button>
+              <button type="button" class="calib-step-btn" data-step="+0.1">+0.1 мА</button>
+              <button type="button" class="calib-step-btn" data-step="+1.0">+1.0 мА</button>
+            </div>
+
+            <div class="calib-slider-wrap">
+              <div class="slider-head">
+                <span>0.0 мА</span>
+                <span class="slider-label">Плавная настройка потенциометра (допуск ±0.15 мА)</span>
+                <span>24.0 мА</span>
+              </div>
+              <input type="range" id="calibSlider" min="0" max="24" step="0.02" value="3.40">
+            </div>
+
+            <div class="calib-lock-wrap">
+              <button type="button" class="btn calib-lock-btn disabled" id="calibLockBtn" disabled>
+                <span>Зафиксировать калибровку (Точка 1/3)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Баннер старта и завершения калибровки -->
+          <div class="clicker-banner" id="calibBanner">
+            <h2 id="calibBannerTitle">Калибровка токовой петли 4–20 мА</h2>
+            <p id="calibBannerText">
+              Промышленный датчик давления выдаёт погрешность. Настройте потенциометром ток петли для 3 контрольных точек (4.0 мА, 12.0 мА, 20.0 мА) в пределах допуска ±0.15 мА и зафиксируйте калибровку!
+            </p>
+            <div class="btnrow">
+              <button class="btn" id="calibStartBtn">Начать калибровку</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen hidden" id="clickerScreen" style="display:none">
+      <div id="clickerCount"></div><div id="clickerTimerBar"></div><div id="clickerTimerText"></div><div id="clickerArena"><div id="clickerBanner"><h2 id="clickerBannerTitle"></h2><p id="clickerBannerText"></p><button id="clickerStartBtn"></button></div></div>
+    </div>
+
+    <div class="screen hidden" id="wiresScreen">
+      <div class="calib-shell">
+        <div class="calib-head">
+          <div class="qtag" id="wiresTag">КИП · МОНТАЖ СХЕМЫ УПРАВЛЕНИЯ И ЗАЩИТЫ</div>
+          <div class="calib-stats">
+            <div class="calib-pill target" id="wiresStatus">Цепь: 0/3 проводов</div>
+            <div class="calib-pill reward">+200 очков</div>
+            <div class="calib-pill timer" id="wiresTimerText">25.0 с</div>
+          </div>
+        </div>
+        <div class="calib-timer-track">
+          <div class="calib-timer-fill" id="wiresTimerBar"></div>
+        </div>
+        
+        <div class="wires-workspace">
+          <div class="wires-instruct" id="wiresInstruct">
+            Выберите клемму датчика слева, затем кликните соответствующую клемму в шкафу справа
+          </div>
+          <div class="wires-board" id="wiresBoard">
+            <div class="wires-col left-col">
+              <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;text-align:center">ДАТЧИК ДАВЛЕНИЯ</div>
+              <div class="wire-terminal" data-wire="vcc" data-side="left">
+                <span class="term-pin red"></span>
+                <div class="term-info">
+                  <b>+24V</b>
+                  <small>Питание датчика (+)</small>
+                </div>
+              </div>
+              <div class="wire-terminal" data-wire="sig" data-side="left">
+                <span class="term-pin yellow"></span>
+                <div class="term-info">
+                  <b>SIG (4–20 mA)</b>
+                  <small>Сигнальный выход</small>
+                </div>
+              </div>
+              <div class="wire-terminal" data-wire="pe" data-side="left">
+                <span class="term-pin blue"></span>
+                <div class="term-info">
+                  <b>PE (Экран)</b>
+                  <small>Заземление оплётки</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="wires-svg-wrap">
+              <svg id="wiresSvg" viewBox="0 0 500 240"></svg>
+            </div>
+
+            <div class="wires-col right-col">
+              <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;text-align:center">ШКАФ УПРАВЛЕНИЯ (ПЛК)</div>
+              <div class="wire-terminal" data-wire="sig" data-side="right">
+                <div class="term-info" style="text-align:right">
+                  <b>Клемма 2 (AI-1)</b>
+                  <small>Аналоговый вход ПЛК</small>
+                </div>
+                <span class="term-pin yellow"></span>
+              </div>
+              <div class="wire-terminal" data-wire="vcc" data-side="right">
+                <div class="term-info" style="text-align:right">
+                  <b>Клемма 1 (+Vcc)</b>
+                  <small>Блок питания 24 В</small>
+                </div>
+                <span class="term-pin red"></span>
+              </div>
+              <div class="wire-terminal" data-wire="pe" data-side="right">
+                <div class="term-info" style="text-align:right">
+                  <b>Клемма 3 (GND/PE)</b>
+                  <small>Шина заземления</small>
+                </div>
+                <span class="term-pin blue"></span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- Баннер вынесен на уровень calib-shell, изолирован и перекрывает всю карточку -->
+        <div class="clicker-banner" id="wiresBanner">
+          <h2 id="wiresBannerTitle">Монтаж клеммной схемы КИПиА</h2>
+          <p id="wiresBannerText">
+            Для ввода нового датчика в эксплуатацию соедините клеммы датчика (+24V, Сигнал 4–20 мА, Экран) с клеммной колодкой шкафа автоматики! Кликните клемму слева, затем парную клемму справа.
+          </p>
+          <div class="btnrow">
+            <button class="btn" id="wiresStartBtn">Начать монтаж</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- КИП: Мини-игра Настройка ПИД-регулятора -->
+    <div class="screen hidden" id="pidScreen">
+      <div class="calib-shell">
+        <div class="calib-head">
+          <div class="qtag" id="pidTag">КИП · НАСТРОЙКА ПИД-РЕГУЛЯТОРА ДАВЛЕНИЯ</div>
+          <div class="calib-stats">
+            <div class="calib-pill target" id="pidStatus">Уставка: 6.00 бар (коридор ±0.45)</div>
+            <div class="calib-pill reward">+200 очков</div>
+            <div class="calib-pill timer" id="pidTimerText">25.0 с</div>
+          </div>
+        </div>
+        <div class="calib-timer-track">
+          <div class="calib-timer-fill" id="pidTimerBar"></div>
+        </div>
+
+        <div class="pid-workspace">
+          <div class="pid-scope-box">
+            <canvas id="pidScopeCanvas" width="560" height="180"></canvas>
+            <div class="pid-gauge-overlay">
+              <div id="pidGaugeVal">6.00 бар</div>
+              <div class="pid-stability" id="pidStability">Колебания: требуется настройка</div>
+            </div>
+          </div>
+
+          <!-- Динамическая панель подсказки для игрока -->
+          <div class="pid-advice-bar" id="pidAdvice">
+            <span class="pid-advice-icon">💡</span>
+            <span id="pidAdviceText">Переместите ползунки Kp, Ki, Kd в зелёные зоны оптимума (~50, ~40, ~30) или нажмите «Автоподстройка».</span>
+          </div>
+
+          <div class="pid-controls">
+            <div class="pid-slider-group">
+              <label>
+                <span><b>Kp</b> (Подавление ошибки)</span>
+                <b id="kpVal" class="pid-val">20</b>
+              </label>
+              <div class="pid-track-wrap">
+                <input type="range" id="kpSlider" min="0" max="100" value="20">
+                <div class="pid-target-zone" style="left:45%;width:12%"></div>
+              </div>
+              <div class="pid-slider-sub"><span>Оптимум: <b>45–55</b></span><span>(сведение к 6.0)</span></div>
+            </div>
+
+            <div class="pid-slider-group">
+              <label>
+                <span><b>Ki</b> (Устранение смещения)</span>
+                <b id="kiVal" class="pid-val">10</b>
+              </label>
+              <div class="pid-track-wrap">
+                <input type="range" id="kiSlider" min="0" max="100" value="10">
+                <div class="pid-target-zone" style="left:35%;width:12%"></div>
+              </div>
+              <div class="pid-slider-sub"><span>Оптимум: <b>35–45</b></span><span>(точность уставки)</span></div>
+            </div>
+
+            <div class="pid-slider-group">
+              <label>
+                <span><b>Kd</b> (Гашение волн)</span>
+                <b id="kdVal" class="pid-val">5</b>
+              </label>
+              <div class="pid-track-wrap">
+                <input type="range" id="kdSlider" min="0" max="100" value="5">
+                <div class="pid-target-zone" style="left:25%;width:12%"></div>
+              </div>
+              <div class="pid-slider-sub"><span>Оптимум: <b>25–35</b></span><span>(успокаивает пульсации)</span></div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:2px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:3px">
+                <span>Стабилизация в коридоре 6.0 бар:</span>
+                <b id="pidLockPct" style="color:#38bdf8">0%</b>
+              </div>
+              <div style="height:10px;background:rgba(255,255,255,0.1);border-radius:5px;overflow:hidden">
+                <div id="pidLockBar" style="height:100%;width:0%;background:#10b981;transition:width 0.1s linear"></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="btn ghost" id="pidAutoBtn" style="padding:8px 14px;font-size:12px" title="Автоматически настроить оптимальные коэффициенты">⚡ Автоподстройка</button>
+              <button type="button" class="btn disabled" id="pidLockBtn" style="padding:8px 18px;font-size:12px" disabled>Зафиксировать</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Баннер вынесен на уровень calib-shell, изолирован и перекрывает всю карточку -->
+        <div class="clicker-banner" id="pidBanner">
+          <h2 id="pidBannerTitle">Настройка ПИД-регулятора давления</h2>
+          <div id="pidBannerText" style="text-align:left;max-width:480px;font-size:13px;line-height:1.5;color:#cbd5e1">
+            <p style="margin:0 0 8px"><b>Как работает регулирование контура:</b></p>
+            <ul style="margin:0 0 10px;padding-left:18px">
+              <li><b>Kp (~50)</b> — пропорционально гасит отклонение давления от нормы.</li>
+              <li><b>Ki (~40)</b> — устраняет накопленную погрешность (смещение).</li>
+              <li><b>Kd (~30)</b> — глушит автоколебания и гидропульсации (волны).</li>
+            </ul>
+            <p style="margin:0">Тяните 3 ползунка в <b>зелёные зоны</b> или нажмите <b>«⚡ Автоподстройка»</b>, чтобы ввести график в зелёный коридор 6.0 бар!</p>
+          </div>
+          <div class="btnrow" style="margin-top:10px">
+            <button class="btn" id="pidStartBtn">Начать настройку</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТС: Мини-игра Аварийный байпас -->
+    <div class="screen hidden" id="endScreen">
+      <div class="card">
+        <h1 id="endTitle">Смена окончена</h1>
+        <p class="sub" id="endText">Смена завершена. Практика подошла к концу.</p>
+        <div class="sota hidden" id="sotaWrap">
+          <canvas id="sotaCanvas" width="640" height="427"></canvas>
+          <div class="cap">СОТА · Смоленская областная технологическая академия</div>
+        </div>
+        <div class="rules" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr))">
+          <div><b id="endFloorName">Цеха</b><span id="endDepth">0/3</span></div>
+          <div><b id="endStationName">Станки</b><span id="endOre">0</span></div>
+          <div><b>Очки</b><span id="endScore">0</span></div>
+          <div><b>Рекорд</b><span id="endBest">0</span></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="againBtn">Начать практику заново</button>
+          <button class="btn ghost" id="skinsBtn">Сменить скин</button>
+        </div>
+      </div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="controls">
+    <div class="mode-badge" id="modeBadge">Одиночная игра</div>
+    <div class="hint">
+      <b>Тапните по любой клетке</b> — наладчик сам дойдёт.
+      <span class="kb">На компьютере: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.</span>
+    </div>
+    <a href="../../menu.html" class="exit-btn" id="exitMenuBtn">Выйти</a>
+    <div class="dpad">
+      <button class="u" data-dir="up" aria-label="Вверх">▲</button>
+      <button class="l" data-dir="left" aria-label="Влево">◀</button>
+      <button class="d" data-dir="down" aria-label="Вниз">▼</button>
+      <button class="r" data-dir="right" aria-label="Вправо">▶</button>
+    </div>
+  </div>
+</div>
+
+  <script>window.CURRENT_SPEC = 'kip';</script>
+  <script src="kip.js"></script>
+  <script src="../../shared/js/workshop-start.js"></script>
+  <script src="../../shared/js/common.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+﻿/* Только IT-комната: длинные подсказки остаются в пределах мобильного экрана. */
+#toast { max-width: calc(100% - 24px); white-space: normal; text-align: center; box-sizing: border-box; }
+@media (max-width: 600px) {
+  .hud .brand { padding-top: 30px; }
+}

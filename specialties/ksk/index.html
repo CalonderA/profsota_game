@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>СОТА — Серверная КСК (09.02.01)</title>
+  <link rel="stylesheet" href="../../shared/css/common.css">
+  <link rel="stylesheet" href="ksk.css">
+</head>
+<body>
+  <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
+  <div class="brand-header-bar">
+    <a href="../../menu.html" class="brand-header-logo" title="В главное меню">
+      <svg class="brand-hex-icon" viewBox="0 0 240 280">
+        <polygon points="44,52 104,52 134,104 104,156 44,156 14,104" fill="#0082d4" />
+        <polygon points="139,106 199,106 229,158 199,210 139,210 109,158" fill="#d3122a" />
+        <polygon points="44,160 104,160 134,212 104,264 44,264 14,212" fill="#71717a" />
+        <polygon points="89,131 104,104 134,104 149,131 134,158 104,158" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+      </svg>
+      <div class="brand-header-text">
+        <span class="brand-header-title">СОТА</span>
+        <span class="brand-header-sub">Смоленск</span>
+      </div>
+    </a>
+    <div class="brand-header-divider"></div>
+    <span class="brand-header-tag">KSK · 09.02.01</span>
+    <a href="../../menu.html" class="brand-header-back" title="Вернуться к выбору специальности">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>В меню</span>
+    </a>
+  </div>
+<div id="app">
+
+  <div class="hud">
+    <div class="brand">
+      <span id="hudBrand" style="color:var(--amber-2);font-weight:800;letter-spacing:.07em">ПУТЬ К СОТЕ</span>
+      <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· Лаборатория КСК</span>
+    </div>
+    <div class="stat"><span id="floorLabel">&lt;/&gt; Цех</span> <b id="mineVal">1/3</b></div>
+    <div class="stat"><span id="distLabel">📍 До СОТЫ</span> <b id="distVal">0 км</b></div>
+    <div class="stat"><span id="unitLabel">💎 Станки</span> <b id="oreVal">0/3</b></div>
+    <div class="stat">⭐ Очки <b id="scoreVal">0</b></div>
+    <div class="stat">🔥 Серия <b id="comboVal">×0</b></div>
+    <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
+    <div class="stat">⚡ Силы <div class="meter" id="hpMeter"><i id="hpBar"></i></div></div>
+  </div>
+
+
+  <div id="stage">
+    <canvas id="game"></canvas>
+
+    <div class="screen" id="startScreen">
+      <div class="card">
+        <div class="spec-banner" id="specBanner">
+          <div class="spec-banner-info">
+            <span class="spec-banner-code" id="specBadge">КСК</span>
+            <div>
+              <b id="specTitle">Лаборатория КСК</b>
+              <small id="specSub">Специальность 09.02.01</small>
+            </div>
+          </div>
+          <a href="../../menu.html" class="spec-change-link">Сменить специальность ⮵</a>
+        </div>
+        <h1 id="startMainTitle">Шахта Знаний: СОТА</h1>
+        <p class="sub" id="startMainSub">Соберите ПК, найдите неисправность, изучите серверы, обслуживание и сети. Выполните пять заданий и подойдите к двери «К СОТЕ».</p>
+        <div class="rules" id="rulesGrid">
+          <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
+          <div><b id="ruleUnitTitle">Рабочая станция</b>Подойдите к маркеру — решите задачу</div>
+          <div><b>Пять станций</b>Зелёная галочка — задание выполнено. После пяти заданий откроется дверь.</div>
+          <div><b>Авария</b>Свет погас или силы мастера на нуле</div>
+        </div>
+        <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
+        <div class="skins" id="skinRow"></div>
+        <div class="skin-desc" id="skinDesc"></div>
+        <div class="qsource" id="qSource">вопросы загружаются…</div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn" id="startBtn">Войти в лабораторию</button>
+          <a href="../../menu.html" class="btn ghost">Выбор специальности</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="cityScreen">
+      <div class="card">
+        <h1>Откуда начнём?</h1>
+        <p class="sub">Выберите город Смоленской области. Цель — СОТА в Смоленске (Смоленская областная технологическая академия): чем дальше город, тем больше лабораторий: от 2 до 5. В каждой — пять заданий. В последней вас ждёт здание СОТА.</p>
+        <div class="city-filter-row">
+          <button type="button" class="city-filter-btn active" data-filter="all">Все города</button>
+          <button type="button" class="city-filter-btn" data-filter="major">★ Крупные промцентры</button>
+          <button type="button" class="city-filter-btn" data-filter="far">Дальние города</button>
+        </div>
+        <div class="citygrid" id="cityGrid"></div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn ghost" id="backBtn" type="button">Назад к скинам</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="qScreen">
+      <div class="card">
+        <div class="qtop">
+          <div class="qtag"><i></i><span id="qTag">ВОПРОС</span></div>
+          <div class="qright">
+            <div class="qprog" id="qProg"></div>
+            <button class="qclose" id="qCloseBtn" type="button" title="Выйти из вопроса (−75 очков)" aria-label="Выйти из вопроса">✕</button>
+          </div>
+        </div>
+        <p id="qText">…</p>
+        <div id="qAnswers"></div>
+        <button class="hintbtn" id="hintBtn" type="button">Подсказка: убрать 2 неверных</button>
+        <div class="qfeedback hidden" id="qFeedback"></div>
+        <div class="qfoot" id="qFoot"></div>
+        <button class="btn qnext hidden" id="qNextBtn" type="button">Дальше</button>
+        <div class="qconfirm hidden" id="qExitConfirm" role="dialog" aria-modal="true" aria-labelledby="qConfirmTitle">
+          <div class="qconfirm-box">
+            <h3 class="qconfirm-title" id="qConfirmTitle">Выйти из вопроса?</h3>
+            <p class="qconfirm-text">Вы точно хотите выйти? Вы потеряете <b>75 очков</b>.</p>
+            <div class="btnrow">
+              <button class="btn ghost" id="qExitCancel" type="button">Отмена</button>
+              <button class="btn danger" id="qExitConfirmBtn" type="button">Выйти из вопроса</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Мини-игра «Калибровка токовой петли 4–20 мА» (КИП) -->
+    <div class="screen hidden" id="clickerScreen" style="display:none">
+      <div id="clickerCount"></div><div id="clickerTimerBar"></div><div id="clickerTimerText"></div><div id="clickerArena"><div id="clickerBanner"><h2 id="clickerBannerTitle"></h2><p id="clickerBannerText"></p><button id="clickerStartBtn"></button></div></div>
+    </div>
+
+    <div class="screen hidden" id="endScreen">
+      <div class="card">
+        <h1 id="endTitle">Смена окончена</h1>
+        <p class="sub" id="endText">Смена завершена. Практика подошла к концу.</p>
+        <div class="sota hidden" id="sotaWrap">
+          <canvas id="sotaCanvas" width="640" height="427"></canvas>
+          <div class="cap">СОТА · Смоленская областная технологическая академия</div>
+        </div>
+        <div class="rules" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr))">
+          <div><b id="endFloorName">Цеха</b><span id="endDepth">0/3</span></div>
+          <div><b id="endStationName">Станки</b><span id="endOre">0</span></div>
+          <div><b>Очки</b><span id="endScore">0</span></div>
+          <div><b>Рекорд</b><span id="endBest">0</span></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="againBtn">Начать практику заново</button>
+          <button class="btn ghost" id="skinsBtn">Сменить скин</button>
+        </div>
+      </div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="controls">
+    <div class="mode-badge" id="modeBadge">Одиночная игра</div>
+    <div class="hint">
+      <b>Тапните по любой клетке</b> — наладчик сам дойдёт.
+      <span class="kb">На компьютере: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.</span>
+    </div>
+    <a href="../../menu.html" class="exit-btn" id="exitMenuBtn">Выйти</a>
+    <div class="dpad">
+      <button class="u" data-dir="up" aria-label="Вверх">▲</button>
+      <button class="l" data-dir="left" aria-label="Влево">◀</button>
+      <button class="d" data-dir="down" aria-label="Вниз">▼</button>
+      <button class="r" data-dir="right" aria-label="Вправо">▶</button>
+    </div>
+  </div>
+</div>
+
+  <script>window.CURRENT_SPEC = 'ksk';</script>
+  <script src="questions.js"></script>
+  <script src="ksk.js"></script>
+  <script src="../../shared/js/common.js"></script>
+</body>
+</html>

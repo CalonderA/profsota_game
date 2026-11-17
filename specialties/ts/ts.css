@@ -1,0 +1,293 @@
+﻿/* ============================================================
+   СОТА — Стили специальности ТС (13.02.02 Теплоснабжение)
+   Мини-игры: Сборка теплотрассы, Аварийный байпас, Балансировка теплообменника
+   ============================================================ */
+  /* ---------- Мини-игра Поворот труб (ТС) ---------- */
+  #pipeScreen{z-index:9;padding:14px}
+  .pipe-shell{
+    width:min(820px, 95vw);
+    display:flex;flex-direction:column;gap:12px;
+    padding:16px;border-radius:18px;
+    background:linear-gradient(180deg, rgba(28,20,18,.96), rgba(14,10,9,.98));
+    border:1px solid rgba(255,110,64,.32);
+    box-shadow:0 26px 70px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.07);
+    user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  }
+  .pipe-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .pipe-stats{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pipe-pill{
+    padding:5px 10px;border-radius:999px;font-size:12.5px;font-weight:700;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
+    color:var(--text);font-variant-numeric:tabular-nums;
+  }
+  .pipe-pill.reward{color:#ffcc80;border-color:rgba(255,152,0,.3);background:rgba(255,152,0,.1)}
+  .pipe-pill.timer{min-width:74px;text-align:center;color:var(--amber-2);border-color:rgba(242,164,65,.3)}
+  .pipe-pill.timer.low{color:#ff9e94;border-color:rgba(226,86,74,.5);background:rgba(226,86,74,.14)}
+  .pipe-pill.status.connected{color:#81c784;border-color:rgba(76,175,80,.4);background:rgba(76,175,80,.12)}
+  .pipe-timer-track{
+    width:100%;height:8px;border-radius:999px;overflow:hidden;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.06);
+  }
+  .pipe-timer-fill{
+    height:100%;width:100%;border-radius:999px;
+    background:linear-gradient(90deg, #ff9800, #ffb74d);
+    transition:background .15s;
+  }
+  .pipe-timer-fill.warn{background:linear-gradient(90deg, #e59a35, #ffcf85)}
+  .pipe-timer-fill.low{background:linear-gradient(90deg, #c9453a, #ff8b80)}
+
+  .pipe-arena-wrap{
+    position:relative;width:100%;min-height:300px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:12px;padding:16px 12px;border-radius:14px;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,87,34,.12), rgba(12,9,8,.94) 75%),
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+    background-size:auto, 32px 32px, 32px 32px;
+    border:1px solid rgba(255,110,64,.18);
+  }
+  .pipe-inout{
+    display:flex;align-items:center;justify-content:space-between;
+    width:min(280px, 92vw);padding:6px 14px;border-radius:10px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+    font-size:12.5px;font-weight:700;color:var(--text);
+  }
+  .pipe-inout small{color:var(--muted);font-weight:400}
+  .pipe-in{border-left:3px solid #ff5722}
+  .pipe-out{border-right:3px solid #03a9f4}
+
+  .pipe-grid{
+    display:grid;grid-template-columns:repeat(3, 82px);grid-template-rows:repeat(3, 82px);
+    gap:8px;position:relative;
+  }
+  @media(max-width:440px){
+    .pipe-grid{grid-template-columns:repeat(3, 70px);grid-template-rows:repeat(3, 70px);gap:6px}
+  }
+
+  .pipe-tile{
+    appearance:none;cursor:pointer;border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;background:rgba(20,24,30,.85);
+    display:grid;place-items:center;padding:0;outline:none;
+    transition:transform .18s ease, border-color .18s, box-shadow .18s;
+  }
+  .pipe-tile:hover{
+    border-color:rgba(255,152,0,.5);
+    box-shadow:0 0 16px rgba(255,152,0,.25);
+  }
+  .pipe-tile:active{transform:scale(0.94)}
+  .pipe-tile svg{
+    width:76%;height:76%;
+    transition:transform .2s ease-out;
+  }
+  .pipe-tile.flowing{
+    border-color:rgba(255,110,64,.7);
+    background:radial-gradient(circle, rgba(255,87,34,.16), rgba(20,24,30,.9));
+    box-shadow:0 0 18px rgba(255,87,34,.4);
+  }
+  .pipe-tile.flowing svg{
+    filter:drop-shadow(0 0 8px #ff7043);
+  }
+  .sliderWrap{padding:4px 2px 8px}
+  .sliderVal{text-align:center;font-size:28px;font-weight:700;color:var(--amber-2);margin-bottom:12px;letter-spacing:.01em}
+  .sliderVal span{font-size:14px;color:var(--muted);font-weight:400;margin-left:3px}
+  .sliderWrap input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:7px;border-radius:99px;
+    background:linear-gradient(90deg, rgba(242,164,65,.55), rgba(255,255,255,.12));
+    outline:none;margin:0;
+  }
+  .sliderWrap input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:linear-gradient(180deg,#ffd08a,#e59a35);
+    border:2px solid #4a3415;box-shadow:0 2px 12px rgba(242,164,65,.55);cursor:pointer;
+  }
+  .sliderWrap input[type=range]::-moz-range-thumb{
+    width:20px;height:20px;border-radius:50%;background:#e59a35;
+    border:2px solid #4a3415;cursor:pointer;
+  }
+  .sliderScale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:7px}
+  #sliderSubmit{margin-top:14px}
+  .qfoot{margin-top:10px;font-size:12.5px;color:var(--muted);min-height:18px}
+
+
+  /* Стили мини-игры Аварийный байпас (ТС) */
+  .bypass-arena {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .bypass-diagram {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .bypass-pipe {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 10px;
+    position: relative;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+  }
+  .bypass-pipe.bypass-upper {
+    background: rgba(2, 136, 209, 0.15);
+    border-color: rgba(56, 189, 248, 0.4);
+  }
+  .bypass-pipe.bypass-main.danger {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.35);
+  }
+  .bypass-pipe.bypass-main.safe {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    box-shadow: none;
+  }
+  .valve-btn {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(30, 41, 59, 0.9);
+    color: #f8fafc;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+  }
+  .valve-btn:hover {
+    border-color: #38bdf8;
+    transform: translateY(-2px);
+  }
+  .valve-btn.opened {
+    border-color: #10b981;
+    color: #34d399;
+  }
+  .valve-btn.closed {
+    border-color: #ef4444;
+    color: #f87171;
+  }
+  .valve-icon {
+    font-size: 16px;
+  }
+  .leak-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .leak-steam { font-size: 24px; animation: pulseSteam 1s infinite alternate; }
+  @keyframes pulseSteam { from { transform: scale(0.9); opacity: 0.6; } to { transform: scale(1.15); opacity: 1; } }
+  .leak-alert { font-size: 10.5px; font-weight: 800; color: #ef4444; letter-spacing: 0.05em; }
+
+
+  /* Стили мини-игры Балансировка теплообменника (ТС) */
+  .exchanger-arena {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .exchanger-box {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .exchanger-streams {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #080d1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .stream-line {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .stream-line.hot {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border-left: 3px solid #ef4444;
+  }
+  .stream-line.cold {
+    background: rgba(2, 136, 209, 0.2);
+    color: #7dd3fc;
+    border-left: 3px solid #38bdf8;
+  }
+  .stream-core {
+    text-align: center;
+    padding: 12px;
+    background: rgba(30, 41, 59, 0.6);
+    border-radius: 8px;
+  }
+  .plates-graphic {
+    letter-spacing: 6px;
+    font-weight: 900;
+    color: #94a3b8;
+    font-size: 18px;
+  }
+  .flow-mode-badge {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #f59e0b;
+    text-transform: uppercase;
+  }
+  .flow-mode-badge.counter {
+    color: #10b981;
+  }
+  .exchanger-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .exchanger-slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: #cbd5e1;
+  }
+  @media (max-width:640px){
+    body{padding:6px}
+    #app{gap:7px}
+    .hud{padding:7px 9px;gap:6px;border-radius:12px}
+    .brand{font-size:12px}
+    .brand span{display:none}
+    .stat{font-size:10.5px;padding:4px 8px;gap:5px}
+    .stat b{font-size:13px}
+    .meter{width:54px}
+    .hint{display:none}
+    .dpad{grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,54px);gap:7px;margin-left:auto}
+    .dpad button{font-size:19px;border-radius:13px}
+    .card{padding:20px 16px 18px}
+    .rules{font-size:12px}
+  }
+  @media (max-height:520px) and (orientation:landscape){
+    .hud{padding:5px 8px;gap:5px}
+    .stat{padding:3px 7px;font-size:10px}
+    .brand{font-size:11px}
+    .dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,40px)}
+    #controls{gap:6px}
+  }
