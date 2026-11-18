@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 110" fill="none">
+  <defs>
+    <linearGradient id="body" x1="28" y1="12" x2="72" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="#35383d"/><stop offset=".45" stop-color="#08090b"/><stop offset="1" stop-color="#202327"/></linearGradient>
+    <linearGradient id="belly" x1="40" y1="40" x2="60" y2="95" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#dce1e6"/></linearGradient>
+    <linearGradient id="gold" x1="32" y1="80" x2="48" y2="104" gradientUnits="userSpaceOnUse"><stop stop-color="#ffdf39"/><stop offset="1" stop-color="#f6a400"/></linearGradient>
+  </defs>
+  <g stroke="#f6f5ed" stroke-width="3" stroke-linejoin="round">
+    <path d="M32 34C29 16 35 7 48 7c16-1 24 10 22 27-1 10 5 18 10 27 5 10 11 18 7 24-3 5-9 3-12 1-2 14-15 18-26 18-12 0-23-6-25-17-6 5-13 3-13-2-1-8 7-20 12-29 6-10 9-14 9-22Z" fill="url(#body)"/>
+    <path d="M28 79c-6-2-9 1-10 8-3 3-10 4-11 9 1 4 9 3 15 5 9 4 16 2 17-3 1-5-5-15-11-19Z" fill="url(#gold)"/>
+    <path d="M73 79c6-2 9 1 10 8 3 3 10 4 11 9-1 4-9 3-15 5-9 4-16 2-17-3-1-5 5-15 11-19Z" fill="url(#gold)"/>
+  </g>
+  <path d="M38 42c-2 12-10 22-10 36 0 13 11 20 23 20s23-8 23-20c0-14-10-26-13-36Z" fill="url(#belly)"/>
+  <path d="M25 56c-6 9-9 17-9 24 4-2 8-8 11-15M75 56c6 9 9 17 9 24-4-2-8-8-11-15" stroke="#505157" stroke-width="2" stroke-linecap="round"/>
+  <ellipse cx="41" cy="31" rx="6.5" ry="10" fill="#fff" transform="rotate(-9 41 31)"/>
+  <ellipse cx="58" cy="31" rx="6.5" ry="10" fill="#fff" transform="rotate(9 58 31)"/>
+  <ellipse cx="43" cy="33" rx="2.7" ry="5" fill="#101114"/>
+  <ellipse cx="56" cy="33" rx="2.7" ry="5" fill="#101114"/>
+  <circle cx="43.5" cy="31" r="1" fill="#fff"/><circle cx="56.5" cy="31" r="1" fill="#fff"/>
+  <path d="M35 42c3-5 10-7 15-7 6 0 12 3 16 7-4 5-10 9-16 9-6 0-11-4-15-9Z" fill="url(#gold)" stroke="#c67b0b" stroke-width="1.4"/>
+  <path d="M37 43c8 4 18 4 27-1" stroke="#ad700d" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

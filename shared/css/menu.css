@@ -106,7 +106,7 @@
       position: relative;
       width: 100%;
       max-width: 820px;
-      aspect-ratio: 575 / 418;
+      aspect-ratio: 575 / 460;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -271,6 +271,14 @@
     }
     .node-status.ready { fill: #34d399; }
     .node-status.wip { fill: #f59e0b; }
+
+    .node-caption {
+      font-size: 9px;
+      font-weight: 500;
+      fill: var(--text);
+      font-family: inherit;
+    }
+    .node-profession { font-weight: 700; }
 
     /* ============================================================
        НИЖНЯЯ ИНФО-ПАНЕЛЬ ВЫБРАННОГО НАПРАВЛЕНИЯ
@@ -487,6 +495,8 @@ body::before {
   .mobile-spec-list button { min-height: 64px; padding: 12px 10px; color: #dae8f5; background: #172435; border: 1px solid #34495e; border-radius: 10px; text-align: left; font: inherit; touch-action: manipulation; }
   .mobile-spec-list b { display: block; font-size: 13px; overflow-wrap: anywhere; }
   .mobile-spec-list span { display: block; margin-top: 5px; font-size: 10px; color: #9eb5ca; }
+  .mobile-spec-list .spec-caption { margin-top: 10px; font-size: 12px; line-height: 1.45; color: var(--text); overflow-wrap: anywhere; }
+  .mobile-spec-list .spec-profession { font-size: 12px; line-height: 1.45; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
   .mobile-spec-list button[aria-pressed="true"] { border-color: #38bdf8; background: #143248; }
   .action-panel { padding: 16px; min-width: 0; }
   .panel-head { flex-wrap: wrap; gap: 8px; }

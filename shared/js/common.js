@@ -485,6 +485,27 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function openQuestion(crystal){
+    if (currentSpec === 'p' && typeof window.startPStation === 'function'){
+      if (!crystal || crystal.done || state !== 'playing') return;
+      state = 'minigame';
+      stopAuto();
+      window.startPStation(crystal.stationType, completedMines, bonus => {
+        if (crystal.done) return;
+        crystal.done = true;
+        collected++;
+        runOre++;
+        answerStreak++;
+        score += bonus;
+        fuel = Math.min(100, fuel + 16);
+        hp = Math.min(100, hp + 3);
+        if (collected >= needed) exitOpen = true;
+        state = 'playing';
+        sfx.good();
+        updateHUD();
+        toast(exitOpen ? 'Все задания выполнены! Дверь к СОТЕ открыта.' : 'Оборудование настроено · ' + collected + '/' + needed);
+      }, cancelPMinigame);
+      return;
+    }
     if (currentSpec === 'ksk' && (!crystal || crystal.done)) return;
     const hard = !!(crystal && crystal.hard);
     const q = currentSpec === 'ksk' ? nextKskQuestion(crystal) : nextQuestion(hard);
@@ -832,7 +853,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
   // Маршрут по проходимым клеткам (BFS), без стартовой клетки
-  function planPath(tx, ty){
+  function planPath(tx, ty, avoidInteractions = false){
     if (tx < 0 || ty < 0 || tx >= W || ty >= H) return null;
     if (map[ty][tx] !== FLOOR) return null;
     if (tx === player.gx && ty === player.gy) return [];
@@ -849,6 +870,11 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         const nx = x + dx, ny = y + dy;
         if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
         if (map[ny][nx] !== FLOOR || visited[ny][nx]) continue;
+        if (avoidInteractions && (nx !== tx || ny !== ty) && (
+          crystals.some(cr => !cr.done && cr.x === nx && cr.y === ny) ||
+          pickups.some(pk => pk.x === nx && pk.y === ny) ||
+          (exitCell.x === nx && exitCell.y === ny)
+        )) continue;
         visited[ny][nx] = true;
         prev[ny][nx] = [x, y];
         queue.push([nx, ny]);
@@ -877,10 +903,13 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     // Если игрок уже рядом со станком и тапает по нему — сразу открываем задачу
     const nearStation = crystals.find(cr => !cr.done && cr.x === cell.x && cr.y === cell.y);
     if (nearStation && Math.abs(player.gx - cell.x) + Math.abs(player.gy - cell.y) <= 1){
+      stopAuto();
       openQuestion(nearStation);
       return;
     }
-    const path = planPath(cell.x, cell.y);
+    // Сначала обходим другие задания и предметы; в узком проходе можно пройти
+    // через их клетки, но взаимодействие произойдёт только у выбранной цели.
+    const path = planPath(cell.x, cell.y, true) || planPath(cell.x, cell.y);
     if (!path || path.length === 0){
       if (path === null){
         if (map[cell.y] && map[cell.y][cell.x] === WALL) sfx.bump();
@@ -896,17 +925,46 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     autoNext = performance.now() + 40;
   }
 
-  function pointerToCell(e){
+  function pointerToWorld(e){
     const rect = canvas.getBoundingClientRect();
-    const wx = camX + (e.clientX - rect.left) / zoom;
-    const wy = camY + (e.clientY - rect.top) / zoom;
-    return { x: Math.floor(wx / TILE), y: Math.floor(wy / TILE) };
+    return { x: camX + (e.clientX - rect.left) / zoom, y: camY + (e.clientY - rect.top) / zoom };
+  }
+
+  function stationAtPoint(point){
+    const now = performance.now();
+    // Значок расположен над клеткой взаимодействия, а стол занимает несколько клеток.
+    // Сначала проверяем значки, чтобы мебель соседнего места не перехватила нажатие.
+    const active = crystals.filter(cr => !cr.done);
+    const badge = active.find(cr => {
+      const dx = point.x - (cr.x * TILE + TILE / 2);
+      const dy = point.y - (cr.y * TILE + TILE / 2);
+      const badgeY = -38 + Math.sin(now * 0.004 + cr.seed) * 3.5;
+      return Math.hypot(dx, dy - badgeY) <= 20;
+    });
+    if (badge) return badge;
+    return active.filter(cr => {
+      const dx = point.x - (cr.x * TILE + TILE / 2);
+      const dy = point.y - (cr.y * TILE + TILE / 2);
+      if (currentSpec === 'p'){
+        const server = cr.stationType === 2;
+        const equipment = server ? dx >= -32 && dx <= 34 && dy >= -64 && dy <= 16
+          : dx >= -65 && dx <= 70 && dy >= -80 && dy <= 32;
+        const label = Math.abs(dx) <= 82 && dy >= 33 && dy <= 65;
+        return equipment || label;
+      }
+      return Math.abs(dx) <= 32 && dy >= -68 && dy <= 28;
+    }).sort((a, b) => {
+      const distance = cr => Math.hypot(point.x - (cr.x * TILE + TILE / 2), point.y - (cr.y * TILE + TILE / 2));
+      return distance(a) - distance(b);
+    })[0] || null;
   }
 
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     if (state !== 'playing') return;
-    tapTo(pointerToCell(e));
+    const point = pointerToWorld(e);
+    const station = stationAtPoint(point);
+    tapTo(station ? { x: station.x, y: station.y } : { x: Math.floor(point.x / TILE), y: Math.floor(point.y / TILE) });
   });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -927,6 +985,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function onEnterTile(){
+    if (tapTarget){
+      if (player.gx !== tapTarget.x || player.gy !== tapTarget.y) return;
+      stopAuto();
+    }
     const pk = pickups.find(p => p.x === player.gx && p.y === player.gy);
     if (pk){ takePickup(pk); return; }
 
@@ -960,6 +1022,16 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     updateHUD();
   }
 
+  function cancelPMinigame(){
+    fuel = Math.max(0, fuel - 15);
+    answerStreak = 0;
+    state = 'playing';
+    stopAuto();
+    updateHUD();
+    if (fuel <= 0){ gameOver('Свет закончился после выхода из мини-игры.'); return; }
+    toast('Вы вышли из мини-игры: −15 света. Задание не засчитано.');
+  }
+
   function descend(){
     completedMines++;
     depth = completedMines + 1;
@@ -974,6 +1046,16 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
     newLevel();
     updateHUD();
+    if (currentSpec === 'p' && typeof window.startPTransition === 'function'){
+      state = 'minigame';
+      stopAuto();
+      window.startPTransition(completedMines, bonus => {
+        score += bonus;
+        updateHUD();
+        closeFloorEvent();
+      }, cancelPMinigame);
+      return;
+    }
     const eventId = scheduledEvents.get(completedMines);
     if (eventId && MINI_GAMES[eventId]){
       startFloorEvent(eventId);
@@ -2421,10 +2503,12 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   let moveCooldown = 0;
   window.addEventListener('keydown', e => {
     if (e.repeat) return;
+    if (state === 'minigame' && currentSpec === 'p') return;
     const isArrow = e.code.startsWith('Arrow') || e.code === 'Space';
     if (isArrow) e.preventDefault();
 
     if (state === 'minigame'){
+      if (currentSpec === 'p') return;
       if (e.code === 'Space' || e.code === 'Enter'){
         e.preventDefault();
         const calibBanner = el('calibBanner');

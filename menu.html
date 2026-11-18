@@ -34,7 +34,7 @@
 
     <!-- СХЕМА: ЛОГОТИП + НАЛОЖЕННЫЕ ВЫНОСНЫЕ СТРЕЛКИ И ПОЛОЧКИ -->
     <div class="schematic-viewport">
-      <svg class="schematic-svg" viewBox="-155 -68 575 418" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <svg class="schematic-svg" viewBox="-155 -68 575 460" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <defs>
           <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="6" result="blur" />
@@ -84,6 +84,7 @@
             <text class="node-title" x="12" y="27">КИП</text>
             <text class="node-code" x="52" y="17">15.01.31</text>
             <text class="node-status ready" x="52" y="32">● ДОСТУПНО</text>
+            <text class="node-caption" x="0" y="56"><tspan x="0">Контрольно-измерительные</tspan><tspan x="0" dy="12">приборы и автоматика</tspan><tspan class="node-profession" x="0" dy="15">Наладчик КИП и автоматики</tspan></text>
           </g>
 
           <!-- Выноска 2: ТС (вправо-вверх, идеально совпадает с полочкой) -->
@@ -95,6 +96,7 @@
             <text class="node-title" x="14" y="27">ТС</text>
             <text class="node-code" x="50" y="17">13.02.02</text>
             <text class="node-status ready" x="50" y="32">● ДОСТУПНО</text>
+            <text class="node-caption" x="0" y="56"><tspan x="0">Теплоснабжение</tspan><tspan x="0" dy="12">и теплотехника</tspan><tspan class="node-profession" x="0" dy="15">Техник-теплотехник</tspan></text>
           </g>
         </g>
 
@@ -120,6 +122,7 @@
             <text class="node-title" x="14" y="27">Э</text>
             <text class="node-code" x="42" y="17">13.02.13</text>
             <text class="node-status wip" x="42" y="32">СЛОТ КОМАНДЫ</text>
+            <text class="node-caption" x="0" y="56"><tspan x="0">Электрооборудование</tspan><tspan class="node-profession" x="0" dy="15">Техник-электрик</tspan></text>
           </g>
 
           <!-- Выноска 2: РЭУ (вправо-вниз) -->
@@ -131,6 +134,7 @@
             <text class="node-title" x="12" y="27">РЭУ</text>
             <text class="node-code" x="52" y="17">11.02.16</text>
             <text class="node-status wip" x="52" y="32">СЛОТ КОМАНДЫ</text>
+            <text class="node-caption" x="0" y="56"><tspan x="0">Радиоэлектронные</tspan><tspan x="0" dy="12">устройства</tspan><tspan class="node-profession" x="0" dy="15">Техник по радиоэлектронике</tspan></text>
           </g>
         </g>
 
@@ -156,6 +160,7 @@
             <text class="node-title" x="14" y="27">П</text>
             <text class="node-code" x="42" y="17">09.02.07</text>
             <text class="node-status ready" x="42" y="32">● ДОСТУПНО</text>
+            <text class="node-caption" x="0" y="56"><tspan x="0">Программирование</tspan><tspan class="node-profession" x="0" dy="15">Программист</tspan></text>
           </g>
 
           <!-- Выноска 2: КСК (вправо-вниз) -->
@@ -167,18 +172,19 @@
             <text class="node-title" x="12" y="27">КСК</text>
             <text class="node-code" x="52" y="17">09.02.01</text>
             <text class="node-status ready" x="52" y="32">● ДОСТУПНО</text>
+            <text class="node-caption" x="0" y="56"><tspan x="0">Компьютерные системы</tspan><tspan x="0" dy="12">и комплексы</tspan><tspan class="node-profession" x="0" dy="15">Техник по компьютерам</tspan></text>
           </g>
         </g>
       </svg>
     </div>
 
     <nav class="mobile-spec-list" aria-label="Выбор специальности">
-      <button type="button" data-spec="kip" onclick="selectSpec('kip')"><b>КИП</b><span>15.01.31 · Доступно</span></button>
-      <button type="button" data-spec="ts" onclick="selectSpec('ts')"><b>ТС</b><span>13.02.02 · Доступно</span></button>
-      <button type="button" data-spec="p" onclick="selectSpec('p')"><b>Программирование</b><span>09.02.07 · Доступно</span></button>
-      <button type="button" data-spec="ksk" onclick="selectSpec('ksk')"><b>КСК</b><span>09.02.01 · Доступно</span></button>
-      <button type="button" data-spec="e" onclick="selectSpec('e')"><b>Э</b><span>13.02.13 · В разработке</span></button>
-      <button type="button" data-spec="reu" onclick="selectSpec('reu')"><b>РЭУ</b><span>11.02.16 · В разработке</span></button>
+      <button type="button" data-spec="kip" onclick="selectSpec('kip')"><b>КИП</b><span>15.01.31 · Доступно</span><span class="spec-caption">Контрольно-измерительные приборы и автоматика</span><span class="spec-profession">Наладчик КИП и автоматики</span></button>
+      <button type="button" data-spec="ts" onclick="selectSpec('ts')"><b>ТС</b><span>13.02.02 · Доступно</span><span class="spec-caption">Теплоснабжение и теплотехника</span><span class="spec-profession">Техник-теплотехник</span></button>
+      <button type="button" data-spec="p" onclick="selectSpec('p')"><b>П</b><span>09.02.07 · Доступно</span><span class="spec-caption">Программирование</span><span class="spec-profession">Программист</span></button>
+      <button type="button" data-spec="ksk" onclick="selectSpec('ksk')"><b>КСК</b><span>09.02.01 · Доступно</span><span class="spec-caption">Компьютерные системы и комплексы</span><span class="spec-profession">Техник по компьютерам</span></button>
+      <button type="button" data-spec="e" onclick="selectSpec('e')"><b>Э</b><span>13.02.13 · В разработке</span><span class="spec-caption">Электрооборудование</span><span class="spec-profession">Техник-электрик</span></button>
+      <button type="button" data-spec="reu" onclick="selectSpec('reu')"><b>РЭУ</b><span>11.02.16 · В разработке</span><span class="spec-caption">Радиоэлектронные устройства</span><span class="spec-profession">Техник по радиоэлектронике</span></button>
     </nav>
 
     <!-- ИНФО-ПАНЕЛЬ И БЫСТРЫЙ СТАРТ -->

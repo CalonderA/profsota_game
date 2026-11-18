@@ -3,3 +3,225 @@
 @media (max-width: 600px) {
   .hud .brand { padding-top: 30px; }
 }
+
+.p-algorithm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: #080e1eee; overflow-y: auto; }
+.p-algorithm-card { box-sizing: border-box; width: min(100%, 640px); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 24px; border: 1px solid #596797; border-radius: 20px; background: #151e34; color: #e6efff; font-family: system-ui, sans-serif; box-shadow: 0 24px 80px #0009; }
+.p-algorithm-card small, .p-task { color: #8bd9ff; }
+.p-algorithm-card h2 { margin: 12px 0; font-size: 26px; }
+.p-algorithm-card h3 { margin: 16px 0 8px; font-size: 14px; }
+.p-algorithm-card p { font-size: 14px; line-height: 1.5; }
+.p-bank { display: flex; flex-wrap: wrap; gap: 8px; }
+.p-algorithm-card button { padding: 10px 12px; min-height: 44px; border: 1px solid #53698b; border-radius: 9px; background: #253752; color: #eef7ff; font: inherit; font-size: 14px; cursor: pointer; touch-action: manipulation; }
+.p-algorithm-card button:focus-visible { outline: 3px solid #7dd3fc; outline-offset: 2px; }
+.p-algorithm-card button:disabled { opacity: .4; cursor: default; }
+.p-sequence { min-height: 44px; margin: 0; padding: 12px 12px 12px 36px; border: 1px dashed #53698b; border-radius: 10px; background: #0c1425; }
+.p-sequence li + li { margin-top: 6px; }
+.p-sequence button { width: 100%; text-align: left; }
+.p-feedback { min-height: 42px; color: #a5f3cf; }
+.p-actions { display: flex; justify-content: space-between; gap: 10px; }
+.p-actions .p-check { background: #125b72; border-color: #39b8cf; font-weight: 700; }
+@media (max-width: 480px) { .p-algorithm-card { padding: 16px; } .p-actions { flex-wrap: wrap; } .p-actions button { flex: 1; } }
+
+.p-terminal { margin-top: 18px; border: 1px solid #344755; border-radius: 12px; background: #080f13; overflow: hidden; font-family: Consolas, monospace; }
+.p-terminal-bar { display: flex; gap: 20px; padding: 10px 14px; background: #202c36; color: #a9bdc9; font-size: 12px; }
+.p-terminal-bar span { color: #63d9a1; letter-spacing: 3px; }
+.p-command { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 18px 14px; }
+.p-prompt { color: #7ee6aa; font-size: 13px; }
+.p-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.p-command-text { color: #e2edf1; font-size: 16px; }
+.p-algorithm-card .p-slot { min-width: 76px; border: 1px dashed #608292; background: #14262f; font-family: Consolas, monospace; }
+.p-algorithm-card .p-slot.active { border: 2px solid #79e7ad; background: #173d32; }
+.p-output { margin: 0; padding: 0 14px 18px; color: #94e7ba; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.p-output:empty { padding-bottom: 0; }
+.p-progress { color: #91a8c1; font-size: 12px !important; }
+.p-task { font-size: 18px !important; font-weight: 700; }
+.p-bank button { font-family: Consolas, monospace; box-shadow: 0 3px 0 #101b2d; }
+
+.p-program-card { width: min(100%, 880px); }
+.p-program-layout { display: grid; grid-template-columns: minmax(210px, 1fr) minmax(0, 1.25fr); gap: 24px; }
+.p-program-shelf { display: grid; gap: 10px; }
+.p-program-tile { display: flex; flex-direction: column; gap: 6px; text-align: left; user-select: none; touch-action: none !important; }
+.p-program-tile strong { color: #a8e6ff; font-size: 16px; }
+.p-program-tile span { font-size: 12px; line-height: 1.45; color: #c5d3e5; }
+.p-program-tile[aria-pressed="true"] { border-color: #7de5b0; background: #1c443e; }
+.p-program-tile.dragging { opacity: .45; }
+.p-algorithm-card .p-program-drop { display: grid; place-items: center; width: 100%; min-height: 130px; margin: 18px 0; border: 2px dashed #6a97b5; background: #0c1727; color: #aed8f4; line-height: 1.5; }
+.p-algorithm-card .p-program-drop.drag-over { border-color: #90f1be; background: #184c3b; }
+.p-algorithm-card .p-program-drop.correct { opacity: 1; border-color: #65dba2; color: #a0f4c7; background: #16382e; }
+.p-algorithm-card .p-program-drop.incorrect { border-color: #efad79; }
+.p-program-history { padding-left: 20px; font-size: 13px; line-height: 1.7; color: #a8d8bc; }
+.p-program-next { width: 100%; margin-top: 12px; }
+.p-minigame-exit { margin: 0 0 12px; border-color: #b78a64 !important; color: #ffd3ab !important; }
+.p-exit-confirm.qconfirm { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: 16px; border-radius: 0; overflow-y: auto; }
+.p-exit-confirm .qconfirm-box { box-sizing: border-box; width: min(100%,500px); margin: auto; }
+.p-exit-confirm .btnrow { flex-wrap: wrap; }
+.p-exit-confirm button { min-height: 44px; }
+.p-server-memo { padding: 0 14px 12px; border: 1px solid #36506a; border-radius: 12px; background: #101c2d; }
+.p-server-memo dl { margin: 0; }
+.p-server-memo dt { margin-top: 15px; color: #a2edc7; font: 12px/1.6 Consolas, monospace; overflow-wrap: anywhere; }
+.p-server-memo dd { margin: 4px 0 0; color: #c4d3e6; font-size: 12px; line-height: 1.5; }
+.p-server-code { padding: 16px 14px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 2.6; color: #d6eee4; font: 14px/2.6 Consolas, monospace; }
+.p-server-input { box-sizing: border-box; width: min(100%, 195px); min-height: 44px; padding: 8px; border: 2px solid #72c7a0; border-radius: 6px; background: #18382e; color: #effff8; font: inherit; line-height: 1.4; }
+.p-server-input:focus { outline: 2px solid #a4e4ff; outline-offset: 2px; }
+.p-server-input[aria-invalid="true"] { border-color: #f1ae81; }
+.p-server-input:disabled { opacity: 1; }
+.p-server-check, .p-server-next { width: 100%; margin-top: 10px; }
+.p-server-memo summary { padding: 14px 0 4px; cursor: pointer; color: #a8e6ff; font-weight: 700; }
+.p-server-options { position: sticky; bottom: -1px; padding: 10px 0 max(12px, env(safe-area-inset-bottom)); background: #151e34; border-top: 1px solid #3d5572; margin-top: 14px; }
+.p-server-options h3 { margin: 0 0 10px; }
+.p-server-choices { display: flex; flex-wrap: wrap; gap: 10px; }
+.p-server-choice { flex: 1 1 auto; min-height: 48px !important; font-family: Consolas, monospace !important; touch-action: none !important; user-select: none; overflow-wrap: anywhere; }
+.p-server-input.drag-over { background: #245b43; outline: 3px solid #a5efbe; }
+.p-selection-bottom { grid-template-columns: minmax(0,1fr); gap: 8px; }
+.p-selection-bottom > aside { padding: 12px 0 max(12px, env(safe-area-inset-bottom)); background: #151e34; border-top: 1px solid #3d5572; }
+.p-selection-bottom .p-program-shelf { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.p-program-ghost { position: fixed; z-index: 2000; pointer-events: none; transform: translate(-50%, -50%); padding: 15px 24px; border: 2px solid #88e9b7; border-radius: 12px; background: #194136; color: #edfff7; font: 700 16px system-ui, sans-serif; box-shadow: 0 12px 32px #0008; }
+.p-linux-overlay { background: radial-gradient(ellipse at 50% 0, #253042d9, #070a10f5 80%); padding: 20px; }
+.p-linux-game { box-sizing: border-box; display: grid; grid-template-columns: minmax(240px,.9fr) minmax(0,2fr); gap: 16px; width: min(1280px,100%); max-height: calc(100dvh - 40px); overflow-y: auto; color: #f0eff3; font-family: system-ui, sans-serif; }
+.p-linux-memo, .p-linux-main { box-sizing: border-box; min-width: 0; padding: 22px; border: 1px solid #858394; border-top-color: #b49a78; border-left-color: #e99a39; border-radius: 22px; background: linear-gradient(135deg,#28282df5,#14171ff7); box-shadow: inset 0 0 24px #ffffff05,0 12px 35px #0006; }
+.p-linux-memo { align-self: start; }
+.p-linux-memo summary { display: flex; align-items: center; gap: 16px; cursor: pointer; font-size: 25px; font-weight: 750; line-height: 1.25; list-style: none; }
+.p-linux-memo summary::-webkit-details-marker { display: none; }
+.p-linux-memo em { color: #ff9c2c; font-style: normal; }
+.p-linux-penguin { display: block; width: 74px; height: 82px; flex: 0 0 74px; object-fit: contain; filter: drop-shadow(0 3px 3px #0007); }
+.p-linux-memo-list { margin: 20px 0 0; }
+.p-linux-memo-list > div { display: grid; grid-template-columns: minmax(75px,.85fr) minmax(0,1.5fr); gap: 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid #67697670; }
+.p-linux-memo-list dt { padding: 4px 8px; border: 1px solid #777584; border-radius: 9px; background: linear-gradient(#34333c,#25252e); text-align: center; color: #ff9d2e; font: 700 17px/1.4 Consolas,monospace; overflow-wrap: anywhere; }
+.p-linux-memo-list dd { margin: 0; font-size: 13px; line-height: 1.4; color: #e2dfe5; }
+.p-linux-header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.p-linux-header small { font-size: 10px; letter-spacing: .08em; color: #aaa8b7; }
+.p-linux-header h2 { margin: 8px 0 12px; font-size: 32px; line-height: 1.2; }
+.p-linux-header h2 span { color: #ffa138; margin-right: 12px; }
+.p-linux-game button { appearance: none; min-height: 46px; padding: 10px 16px; border: 1px solid #8f8a9c; border-radius: 12px; background: linear-gradient(#35343e,#191b24); color: #f4f0f6; font: inherit; cursor: pointer; touch-action: manipulation; }
+.p-linux-game button:focus-visible, .p-linux-memo summary:focus-visible { outline: 3px solid #ffc46f; outline-offset: 3px; }
+.p-linux-game button:disabled { opacity: .4; cursor: default; }
+.p-linux-game button[hidden] { display: none; }
+.p-linux-game .p-minigame-exit { font-size: 12px; white-space: nowrap; }
+.p-linux-game .p-progress { margin: 0; color: #e1ac69; font-size: 12px; }
+.p-linux-game .p-stage-title { margin: 8px 0; font-size: 18px; }
+.p-linux-game .p-task { margin: 8px 0 20px; color: #e8e5ed; font-size: 17px !important; line-height: 1.55; font-weight: 400; }
+.p-linux-editor { overflow: hidden; border: 1px solid #9691a5; border-left-color: #ed9a31; border-radius: 16px; background: radial-gradient(ellipse at 65% 50%,#240d20,#110e19); }
+.p-linux-editor-bar { display: flex; align-items: center; gap: 14px; min-height: 44px; padding: 0 16px; border-bottom: 1px solid #5f596c; background: linear-gradient(#34323d,#22232b); }
+.p-linux-terminal-icon { font: 700 21px Consolas,monospace; }
+.p-linux-file { padding: 10px 16px; background: #ffffff0a; border-radius: 8px 8px 0 0; font-size: 14px; }
+.p-linux-lights { display: flex; gap: 9px; margin-left: auto; }
+.p-linux-lights i { width: 11px; height: 11px; border-radius: 50%; background: #ff505c; }
+.p-linux-lights i:nth-child(2) { background: #f4cb48; }
+.p-linux-lights i:nth-child(3) { background: #5fce56; }
+.p-linux-lines { padding: 12px 12px 16px 0; }
+.p-linux-line { display: grid; grid-template-columns: 48px minmax(0,1fr); align-items: center; min-height: 43px; gap: 8px; }
+.p-linux-number { align-self: stretch; display: grid; place-items: center; color: #a09aaf; background: #1719239c; font: 15px Consolas,monospace; }
+.p-linux-line code { white-space: pre-wrap; overflow-wrap: anywhere; font: 16px/1.6 Consolas,monospace; }
+.p-linux-comment { color: #79c943; font-style: italic !important; }
+.p-linux-command { color: #bd78f2; }
+.p-linux-game .p-linux-slot { width: min(100%,340px); min-width: 0; margin: 4px 0; padding: 7px 12px; border: 2px dashed #aaa0b6; border-radius: 10px; background: #39203766; font: 15px/1.5 Consolas,monospace; text-align: left; overflow-wrap: anywhere; }
+.p-linux-game .p-linux-slot.active { border-color: #ffc36a; }
+.p-linux-game .p-linux-slot.drag-over { border-color: #ffc36a; background: #705124; }
+.p-linux-game .p-linux-slot.incorrect { border-color: #ff7783; background: #6b27384d; }
+.p-linux-game .p-linux-slot.correct { opacity: 1; border-style: solid; border-color: #79bd94; background: #1c3c2d; }
+.p-linux-output { margin: 0; padding: 12px 16px; border-top: 1px solid #645568; color: #a6dbaa; font: 13px/1.6 Consolas,monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.p-linux-output:empty { display: none; }
+.p-linux-game .p-feedback { margin: 12px 0; min-height: 20px; color: #e8c38c; font-size: 14px; line-height: 1.5; }
+.p-linux-options { border-top: 1px solid #5c5867; padding: 12px 0 18px; }
+.p-linux-options p { margin: 0 0 14px; line-height: 1.5; }
+.p-linux-options small { display: block; margin-top: 12px; color: #b4afbe; font-size: 12px; }
+.p-linux-game .p-server-choices { gap: 10px; }
+.p-linux-game .p-server-choice { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; text-align: left; box-shadow: 0 3px 8px #0005; font-size: 14px; }
+.p-linux-grip { color: #aaa0bd; font-size: 22px; }
+.p-linux-actions { display: flex; gap: 12px; justify-content: space-between; padding-top: 18px; border-top: 1px solid #5c5867; }
+.p-linux-game .p-server-check, .p-linux-game .p-server-next { width: auto; margin: 0; min-width: 180px; color: #1f1408; background: linear-gradient(#ffc36c,#ff8f17 55%,#ee7604); border-color: #ffba61; font-weight: 750; box-shadow: inset 0 1px 0 #fff5; }
+.p-linux-exit-note { display: block; margin-top: 14px; font-size: 11px; color: #b5afbc; }
+.p-linux-ghost { border-color: #ffc36a; color: #fff1d8; background: #403027; font: 14px Consolas,monospace; max-width: 75vw; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+ .p-linux-overlay { padding: 8px; }
+ .p-linux-game { grid-template-columns: minmax(0,1fr); max-height: calc(100dvh - 16px); gap: 10px; }
+ .p-linux-memo, .p-linux-main { padding: 14px; border-radius: 16px; }
+ .p-linux-memo summary { font-size: 17px; }
+ .p-linux-penguin { width: 44px; height: 49px; flex-basis: 44px; }
+ .p-linux-header { flex-wrap: wrap; gap: 4px; }
+ .p-linux-header h2 { font-size: 25px; }
+ .p-linux-header .p-minigame-exit { min-height: 44px; }
+ .p-linux-game .p-task { font-size: 14px !important; margin-bottom: 12px; }
+ .p-linux-line { grid-template-columns: 28px minmax(0,1fr); gap: 5px; }
+ .p-linux-line code, .p-linux-game .p-linux-slot { font-size: 12px; }
+ .p-linux-lines { padding-right: 8px; }
+ .p-linux-game .p-server-choice { flex: 1 1 calc(50% - 10px); min-width: 0; font-size: 12px; padding: 9px; }
+ .p-linux-options p { font-size: 13px; }
+ .p-linux-actions { flex-wrap: wrap; padding-bottom: env(safe-area-inset-bottom); }
+ .p-linux-actions button { flex: 1 1 110px; }
+ .p-linux-game .p-server-check, .p-linux-game .p-server-next { min-width: 0; }
+}
+@media (max-width: 600px) {
+ .p-program-layout { grid-template-columns: 1fr; gap: 8px; }
+ .p-program-shelf { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+ .p-program-tile { padding: 10px !important; overflow-wrap: anywhere; }
+ .p-program-tile strong { font-size: 14px; }
+ .p-program-tile span { font-size: 11px; }
+ .p-algorithm-card .p-program-drop { min-height: 76px; }
+}
+
+/* Компоновка по визуальному образцу: памятка и рабочая панель. */
+.p-linux-game { width: min(1360px,100%); grid-template-columns: minmax(260px,.96fr) minmax(0,2fr); align-items: stretch; gap: 16px; }
+.p-linux-memo { align-self: stretch; padding: 22px 18px; }
+.p-linux-main { padding: 20px 24px 14px; }
+.p-linux-memo-list { border: 1px solid #66657270; border-radius: 12px; overflow: hidden; }
+.p-linux-memo-list > div { padding: 6px 10px; gap: 20px; }
+.p-linux-memo-list > div:last-child { border-bottom: 0; }
+.p-linux-memo-list dt { font-size: 19px; }
+.p-linux-memo-list dd { font-size: 14px; }
+.p-linux-header { align-items: center; gap: 22px; }
+.p-linux-server-icon { width: 102px; height: 108px; flex: 0 0 102px; filter: drop-shadow(0 7px 5px #0008); }
+.p-linux-heading { min-width: 0; }
+.p-linux-header h2 { font-size: 34px; margin: 0 0 4px; }
+.p-linux-game .p-task { margin: 0; font-size: 19px !important; line-height: 1.5; }
+.p-linux-inline-code { display: inline; padding: 1px 8px; border: 1px solid #c9843b; border-radius: 9px; background: linear-gradient(#6a4027,#3c2922); color: #fff0df; font: inherit; box-decoration-break: clone; -webkit-box-decoration-break: clone; overflow-wrap: anywhere; }
+.p-linux-game .p-progress { text-align: right; margin: 2px 0 8px; color: #aba4b5; }
+.p-linux-editor { border-radius: 17px; }
+.p-linux-editor-bar { min-height: 40px; }
+.p-linux-file { font-size: 18px; }
+.p-linux-lines { padding: 12px 14px 14px 0; min-height: 205px; }
+.p-linux-line { grid-template-columns: 52px minmax(0,1fr); min-height: 40px; }
+.p-linux-line code { font-size: 21px; }
+.p-linux-game .p-linux-slot { min-height: 38px; width: min(100%,310px); font-size: 17px; }
+.p-linux-game .p-linux-slot.active { border-color: #b7a4bc; }
+.p-linux-game .p-linux-slot.drag-over { border-color: #ffc36a; }
+.p-linux-game .p-feedback:empty { display: none; }
+.p-linux-options { margin-top: 14px; padding-top: 12px; padding-bottom: 20px; }
+.p-linux-options p { font-size: 18px; }
+.p-linux-game .p-server-choice { flex: 1 1 auto; font-family: system-ui,sans-serif !important; font-size: 15px; padding: 9px 12px; }
+.p-linux-actions { padding-top: 20px; }
+.p-linux-actions button { min-height: 50px; }
+.p-linux-game .p-server-check { min-width: 210px; font-size: 19px; }
+.p-linux-exit-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.p-linux-exit-row .p-linux-exit-note { margin: 0; }
+.p-linux-exit-row .p-minigame-exit { margin: 0; min-height: 44px; padding: 7px 10px; }
+.p-program-card, .p-linux-main { position: relative; }
+.p-program-card > h2 { padding-right: 48px; }
+.p-linux-header { padding-right: 48px; }
+.p-program-card .p-game-close, .p-linux-game .p-game-close {
+ position: absolute; top: 12px; right: 12px; z-index: 2;
+ display: grid; place-items: center; width: 44px; height: 44px; min-height: 44px;
+ margin: 0; padding: 0; border-radius: 9px; font-size: 18px; line-height: 1;
+ color: #b5b1bf !important; background: #ffffff0a; border: 1px solid #ffffff26 !important;
+}
+.p-program-card .p-game-close:hover, .p-linux-game .p-game-close:hover { color: #ffd0c9 !important; background: #e2564a24; border-color: #e2564a73 !important; }
+@media (max-width: 760px) {
+ .p-linux-game { grid-template-columns: minmax(0,1fr); }
+ .p-linux-main, .p-linux-memo { padding: 14px; }
+ .p-linux-memo-list dt { font-size: 16px; }
+ .p-linux-memo-list dd { font-size: 13px; }
+ .p-linux-header { flex-wrap: nowrap; gap: 10px; align-items: flex-start; }
+ .p-linux-server-icon { width: 52px; height: 58px; flex-basis: 52px; }
+ .p-linux-header h2 { font-size: 25px; }
+ .p-linux-game .p-task { font-size: 14px !important; }
+ .p-linux-game .p-progress { margin: 10px 0; }
+ .p-linux-line { grid-template-columns: 28px minmax(0,1fr); }
+ .p-linux-line code, .p-linux-game .p-linux-slot { font-size: 13px; }
+ .p-linux-game .p-linux-slot { min-height: 44px; }
+ .p-linux-lines { min-height: 0; padding-right: 8px; }
+ .p-linux-file { font-size: 14px; }
+ .p-linux-options p { font-size: 14px; }
+ .p-linux-game .p-server-choice { flex: 1 1 calc(50% - 10px); font-size: 12px; padding: 8px; }
+ .p-linux-game .p-server-check { min-width: 0; font-size: 16px; }
+ .p-linux-exit-row { flex-wrap: wrap; }
+}

@@ -4,7 +4,7 @@ const P_STATIONS = [
   {x:6,y:6,type:0}, {x:15,y:6,type:1}, {x:18,y:3,type:2},
   {x:9,y:10,type:3}
 ];
-const P_NAMES = ['Разработка приложений','Компьютерные сети','Серверное оборудование','Разработка игр'];
+const P_NAMES = ['DEV-01 · Приложения','NET-02 · Сети','SRV-03 · Сервер','GAME-04 · Игры'];
 // Мебель занимает клетки за рабочими точками; перед каждой есть свободный проход.
 function setupPMap(m){
   const block=(x,y,w,h)=>{for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)m[j][i]=1;};
@@ -207,9 +207,10 @@ function drawPStation(type,done,hard,now){
   for(const wx of [-18,14]){pRect(wx,70,5,3,'#0c1220');pRect(wx+1,70,2,1,'#65718b');}
  }
  ctx.restore();
- const label=type===2?'Серверное оборудование':P_NAMES[type];
+ const label=P_NAMES[type];
  pRect(-82,33,164,19,'#0c1425dc');pRect(-82,33,164,1,done?'#58bca1':'#aa8750');
  pText(label,0,46,10,done?'#77dcb3':'#d9d4cc','center');
+ pText(done?'✓ Задания выполнены':'▶ Подойдите: задания',0,63,9,done?'#77dcb3':'#9bd7ff','center');
 }
 function drawPExit(now){
  const x=exitCell.x*TILE+22,y=exitCell.y*TILE+22,c=exitOpen?'#7df3ca':'#ffc86d';
