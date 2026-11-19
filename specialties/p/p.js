@@ -15,17 +15,12 @@ function setupPMap(m){
   block(13,2,1,2);
 }
 function cleanupClicker(){ /* В этой комнате нет мини-игры калибровки. */ }
-function openCitySelect(){
-  state='title'; stopAuto(); speech=null;
-  ['startScreen','endScreen','qScreen'].forEach(id=>el(id).classList.add('hidden'));
-  el('cityScreen').classList.remove('hidden'); buildCities();
-}
-function startGame(city){
-  chosenCity=city; startKm=city.km; completedMines=0; runOre=0; totalMines=minesFor(city.km);
+function startGame(){
+  completedMines=0; runOre=0; totalMines=1;
   scheduledEvents.clear(); depth=1; score=0; fuel=100; hp=100; answerStreak=0;
   decks.easy=[]; decks.hard=[]; shake=0; flash=0; speech=null; newLevel();
-  ['startScreen','cityScreen','endScreen','qScreen'].forEach(id=>el(id).classList.add('hidden'));
-  state='playing'; updateHUD(); toast('Маршрут: ' + totalMines + ' лаборатории · по четыре задания в каждой.');
+  ['startScreen','endScreen','qScreen'].forEach(id=>el(id).classList.add('hidden'));
+  state='playing'; updateHUD(); toast('Выполните задания на четырёх станциях и подойдите к выходу.');
 }
 function pRect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
 function pText(t,x,y,size=10,c='#a8bacc',align='left'){

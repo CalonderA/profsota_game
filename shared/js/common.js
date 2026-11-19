@@ -241,7 +241,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   let state = 'title';               // title | playing | question | minigame | dead
   let map = [], seen = [], bright = [];
   let depth = 1, score = 0, answerStreak = 0;
-  let chosenCity = null, startKm = 0, totalMines = 3, completedMines = 0, runOre = 0;
+  let chosenCity = null, startKm = 0, totalMines = currentSpec === 'p' ? 1 : 3, completedMines = 0, runOre = 0;
   let fuel = 100, hp = 100;
   let needed = 3, collected = 0;
   let crystals = [], exitCell = { x: 1, y: 1 }, exitOpen = false;
@@ -438,7 +438,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     if (el('floorLabel')) el('floorLabel').textContent = '</> ' + specCfg.floorName;
     if (el('unitLabel')) el('unitLabel').textContent = '💎 ' + specCfg.unitName;
     el('mineVal').textContent = Math.min(completedMines + 1, totalMines) + '/' + totalMines;
-    el('distVal').textContent = leftKm() + ' км';
+    if (el('distVal')) el('distVal').textContent = leftKm() + ' км';
     el('oreVal').textContent = collected + '/' + needed;
     el('scoreVal').textContent = score;
     el('comboVal').textContent = '×' + answerStreak;
@@ -1046,16 +1046,6 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
     newLevel();
     updateHUD();
-    if (currentSpec === 'p' && typeof window.startPTransition === 'function'){
-      state = 'minigame';
-      stopAuto();
-      window.startPTransition(completedMines, bonus => {
-        score += bonus;
-        updateHUD();
-        closeFloorEvent();
-      }, cancelPMinigame);
-      return;
-    }
     const eventId = scheduledEvents.get(completedMines);
     if (eventId && MINI_GAMES[eventId]){
       startFloorEvent(eventId);
@@ -1078,7 +1068,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     }
     const specCfg = SPECS[currentSpec] || SPECS.kip;
     el('endTitle').textContent = 'Дошли до СОТЫ!';
-    el('endText').textContent = 'Старт: ' + chosenCity.name + ' · ' + startKm + ' км позади. Награда за практику: +' + bonus + ' очков.';
+    el('endText').textContent = currentSpec === 'p'
+      ? 'Практика завершена. Выполнено задач: ' + runOre + ' из ' + needed + '.'
+      : 'Старт: ' + chosenCity.name + ' · ' + startKm + ' км позади. Награда за практику: +' + bonus + ' очков.';
     if (el('endFloorName')) el('endFloorName').textContent = specCfg.floorName;
     if (el('endStationName')) el('endStationName').textContent = specCfg.unitName;
     el('endDepth').textContent = totalMines + '/' + totalMines;
@@ -2503,6 +2495,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   let moveCooldown = 0;
   window.addEventListener('keydown', e => {
     if (e.repeat) return;
+    if (currentSpec === 'p' && state === 'title') return;
     if (state === 'minigame' && currentSpec === 'p') return;
     const isArrow = e.code.startsWith('Arrow') || e.code === 'Space';
     if (isArrow) e.preventDefault();
@@ -2528,10 +2521,6 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const dir = KEYMAP[e.code];
     if (!dir) return;
 
-    if (state === 'title'){
-      if (e.code === 'Space' || e.code === 'Enter') openCitySelect();
-      return;
-    }
     if (state !== 'playing') return;
     if (performance.now() - moveCooldown < 90) return;
     moveCooldown = performance.now();
@@ -2541,22 +2530,43 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   document.querySelectorAll('.dpad button').forEach(btn => {
     const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-    const handler = e => {
-      e.preventDefault();
-      if (state !== 'playing') return;
+    let heldMove;
+    function stopHeldMove(){
+      clearInterval(heldMove);
+      heldMove = undefined;
+    }
+    function moveInDirection(){
+      if (state !== 'playing'){
+        stopHeldMove();
+        return;
+      }
       if (performance.now() - moveCooldown < 90) return;
       moveCooldown = performance.now();
       stopAuto();
-      const d = dirs[btn.dataset.dir];
-      tryMove(d[0], d[1]);
+      const [dx, dy] = dirs[btn.dataset.dir];
+      tryMove(dx, dy);
+    }
+    const handler = e => {
+      e.preventDefault();
+      if (state !== 'playing') return;
+      moveInDirection();
+      if (currentSpec === 'p' && e.pointerType === 'touch' && state === 'playing'){
+        stopHeldMove();
+        btn.setPointerCapture(e.pointerId);
+        heldMove = setInterval(moveInDirection, 140);
+      }
     };
     btn.addEventListener('pointerdown', handler);
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(event => {
+      btn.addEventListener(event, stopHeldMove);
+    });
     btn.addEventListener('contextmenu', e => e.preventDefault());
   });
 
-  el('startBtn').addEventListener('click', openCitySelect);
-  el('againBtn').addEventListener('click', openCitySelect);
-  el('backBtn').addEventListener('click', () => {
+  const beginPractice = currentSpec === 'p' ? startGame : openCitySelect;
+  el('startBtn').addEventListener('click', beginPractice);
+  el('againBtn').addEventListener('click', beginPractice);
+  el('backBtn')?.addEventListener('click', () => {
     el('cityScreen').classList.add('hidden');
     el('startScreen').classList.remove('hidden');
     state = 'title';

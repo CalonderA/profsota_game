@@ -77,14 +77,12 @@ const P_PROGRAM_LABS = [
 ];
 
 window.startPStation = function(type, floor, done, cancel){
+ if(type===0){window.openPApplicationGame(done,cancel);return;}
+ if(type===1){window.openPNetworkGame(done,cancel);return;}
  if(type===2){window.openPServerGame(done,cancel);return;}
+ if(type===3){window.openPGameDevelopment(done,cancel);return;}
  openPProgramGame(P_PROGRAM_LABS[type] || P_PROGRAM_LABS[0], P_NAMES[type] || P_NAMES[0], done, 'Вернуться к оборудованию', cancel);
 };
-window.startPTransition = function(round, done, cancel){
- if((round-1)%P_PROGRAM_LABS.length===2){window.openPServerGame(done,cancel);return;}
- openPProgramGame(P_PROGRAM_LABS[(round-1)%P_PROGRAM_LABS.length], 'Переход в лабораторию '+(round+1), done, 'Войти в лабораторию', cancel);
-};
-
 function openPProgramGame(lab, label, done, finishLabel, cancel){
  let stage=0, mistakes=0, solved=false, closed=false, selected=null, drag=null;
  const previousFocus=document.activeElement;
@@ -103,6 +101,11 @@ function openPProgramGame(lab, label, done, finishLabel, cancel){
  const q=s=>overlay.querySelector(s);
  q('.p-equipment').textContent=label+' · МИНИ-ИГРА';q('#pProgramTitle').textContent=lab.title;
  const shelf=q('.p-program-shelf'),target=q('.p-program-drop'),next=q('.p-program-next'),feedback=q('.p-feedback');
+ const touchControls = window.matchMedia('(pointer: coarse)').matches;
+ if(touchControls){
+  q('.p-program-instructions').textContent='Коснитесь программы, которая подходит для задания.';
+  target.hidden=true;
+ }
  q('.p-program-layout').classList.add('p-selection-bottom');
  q('.p-program-layout').appendChild(shelf.parentElement);
  function leave(){
@@ -138,9 +141,9 @@ function openPProgramGame(lab, label, done, finishLabel, cancel){
   let skipClick=false;
   const button=document.createElement('button');button.type='button';button.className='p-program-tile';button.dataset.program=id;button.setAttribute('aria-pressed','false');
   const title=document.createElement('strong'),info=document.createElement('span');title.textContent=name;info.textContent=description;button.append(title,info);
-  button.onclick=()=>{if(skipClick){skipClick=false;return;}choose(id);if(!solved)feedback.textContent='Выбрано: '+name+'. Перетащите программу или нажмите на карточку задания.';};
+  button.onclick=()=>{if(skipClick){skipClick=false;return;}if(touchControls){submit(id);return;}choose(id);if(!solved)feedback.textContent='Выбрано: '+name+'. Перетащите программу или нажмите на карточку задания.';};
   button.addEventListener('pointerdown',event=>{
-   if(solved||closed||event.button!==0)return;
+   if(solved||closed||event.button!==0||event.pointerType==='touch'||touchControls)return;
    skipClick=false;clearDrag();choose(id);button.setPointerCapture(event.pointerId);drag={id,button,pointer:event.pointerId,x:event.clientX,y:event.clientY,ghost:null};
   });
   button.addEventListener('pointermove',event=>{
@@ -168,7 +171,13 @@ function openPProgramGame(lab, label, done, finishLabel, cancel){
  }
  next.onclick=()=>{
   if(!solved||closed)return;
-  if(stage<lab.steps.length-1){stage++;load();shelf.querySelector('button').focus();return;}
+  if(stage<lab.steps.length-1){
+   stage++;
+   load();
+   if(touchControls)q('.p-program-card').scrollTop=0;
+   shelf.querySelector('button').focus({preventScroll:touchControls});
+   return;
+  }
   closed=true;clearDrag();overlay.remove();if(previousFocus?.isConnected)previousFocus.focus();done(Math.max(50,200-mistakes*25));
  };
  overlay.addEventListener('keydown',event=>{
@@ -178,5 +187,5 @@ function openPProgramGame(lab, label, done, finishLabel, cancel){
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
  });
- document.body.appendChild(overlay);load();shelf.querySelector('button').focus();
+ document.body.appendChild(overlay);load();shelf.querySelector('button').focus({preventScroll:true});
 }

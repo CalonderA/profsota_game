@@ -6,8 +6,9 @@
   <title>СОТА — IT-отдел П (09.02.07)</title>
   <link rel="stylesheet" href="../../shared/css/common.css">
   <link rel="stylesheet" href="p.css">
+  <link rel="stylesheet" href="application.css">
 </head>
-<body>
+<body class="p-lab">
   <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
   <div class="brand-header-bar">
     <a href="../../menu.html" class="brand-header-logo" title="В главное меню">
@@ -36,9 +37,8 @@
       <span id="hudBrand" style="color:var(--amber-2);font-weight:800;letter-spacing:.07em">ПУТЬ К СОТЕ</span>
       <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· IT-центр</span>
     </div>
-    <div class="stat"><span id="floorLabel">&lt;/&gt; Цех</span> <b id="mineVal">1/3</b></div>
-    <div class="stat"><span id="distLabel">📍 До СОТЫ</span> <b id="distVal">0 км</b></div>
-    <div class="stat"><span id="unitLabel">💎 Станки</span> <b id="oreVal">0/3</b></div>
+    <div class="stat"><span id="floorLabel">&lt;/&gt; Сектор</span> <b id="mineVal">1/1</b></div>
+    <div class="stat"><span id="unitLabel">💎 Задачи</span> <b id="oreVal">0/4</b></div>
     <div class="stat">⭐ Очки <b id="scoreVal">0</b></div>
     <div class="stat">🔥 Серия <b id="comboVal">×0</b></div>
     <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
@@ -66,7 +66,7 @@
         <div class="rules" id="rulesGrid">
           <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
           <div><b id="ruleUnitTitle">Рабочая станция</b>Подойдите к маркеру — решите задачу</div>
-          <div><b>Четыре мини-игры</b>Перетаскивайте программы к заданиям. У сервера дописывайте команды Linux по памятке. Выход из мини-игры: −15 света.</div>
+          <div><b>Четыре мини-игры</b>Допишите код Java, соберите сеть, настройте сервер и задайте движение игровому герою. Выход из мини-игры: −15 света.</div>
           <div><b>Авария</b>Свет погас или силы мастера на нуле</div>
         </div>
         <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
@@ -76,22 +76,6 @@
         <div class="btnrow" style="margin-top:12px">
           <button class="btn" id="startBtn">Войти в IT-центр</button>
           <a href="../../menu.html" class="btn ghost">Выбор специальности</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="screen hidden" id="cityScreen">
-      <div class="card">
-        <h1>Откуда начнём?</h1>
-        <p class="sub">Выберите город Смоленской области. Цель — СОТА в Смоленске (Смоленская областная технологическая академия): чем дальше город, тем больше лабораторий: от 2 до 5. В каждой — четыре станции с мини-играми: приложения, сети, Linux-сервер и игры. В последней вас ждёт здание СОТА.</p>
-        <div class="city-filter-row">
-          <button type="button" class="city-filter-btn active" data-filter="all">Все города</button>
-          <button type="button" class="city-filter-btn" data-filter="major">★ Крупные промцентры</button>
-          <button type="button" class="city-filter-btn" data-filter="far">Дальние города</button>
-        </div>
-        <div class="citygrid" id="cityGrid"></div>
-        <div class="btnrow" style="margin-top:12px">
-          <button class="btn ghost" id="backBtn" type="button">Назад к скинам</button>
         </div>
       </div>
     </div>
@@ -138,8 +122,8 @@
           <div class="cap">СОТА · Смоленская областная технологическая академия</div>
         </div>
         <div class="rules" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr))">
-          <div><b id="endFloorName">Цеха</b><span id="endDepth">0/3</span></div>
-          <div><b id="endStationName">Станки</b><span id="endOre">0</span></div>
+          <div><b id="endFloorName">Сектор</b><span id="endDepth">1/1</span></div>
+          <div><b id="endStationName">Задачи</b><span id="endOre">0</span></div>
           <div><b>Очки</b><span id="endScore">0</span></div>
           <div><b>Рекорд</b><span id="endBest">0</span></div>
         </div>
@@ -159,6 +143,7 @@
       <span class="kb">На компьютере: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.</span>
     </div>
     <a href="../../menu.html" class="exit-btn" id="exitMenuBtn">Выйти</a>
+    <p class="p-touch-hint">Нажмите на станцию, чтобы подойти к ней.</p>
     <div class="dpad">
       <button class="u" data-dir="up" aria-label="Вверх">▲</button>
       <button class="l" data-dir="left" aria-label="Влево">◀</button>
@@ -172,7 +157,9 @@
   <script src="questions.js"></script>
   <script src="p.js"></script>
   <script src="programs.js"></script>
+  <script src="application.js"></script>
   <script src="server.js"></script>
+  <script src="network.js"></script>
   <script src="../../shared/js/common.js"></script>
 </body>
 </html>
