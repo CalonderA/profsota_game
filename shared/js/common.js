@@ -233,6 +233,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   if (!SPECS[currentSpec]) { window.location.replace('../../menu.html'); throw new Error('Неизвестная специальность: ' + currentSpec); }
   window.currentSpec = currentSpec;
+  const directPractice = currentSpec === 'p' || currentSpec === 'ksk';
 
   /* ============================================================
      Состояние игры
@@ -241,7 +242,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   let state = 'title';               // title | playing | question | minigame | dead
   let map = [], seen = [], bright = [];
   let depth = 1, score = 0, answerStreak = 0;
-  let chosenCity = null, startKm = 0, totalMines = currentSpec === 'p' ? 1 : 3, completedMines = 0, runOre = 0;
+  let chosenCity = null, startKm = 0, totalMines = directPractice ? 1 : 3, completedMines = 0, runOre = 0;
   let fuel = 100, hp = 100;
   let needed = 3, collected = 0;
   let crystals = [], exitCell = { x: 1, y: 1 }, exitOpen = false;
@@ -485,11 +486,12 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function openQuestion(crystal){
-    if (currentSpec === 'p' && typeof window.startPStation === 'function'){
+    const assemblePC = currentSpec === 'ksk' && crystal?.stationType === 0;
+    if (assemblePC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
       if (!crystal || crystal.done || state !== 'playing') return;
       state = 'minigame';
       stopAuto();
-      window.startPStation(crystal.stationType, completedMines, bonus => {
+      const completeStation = bonus => {
         if (crystal.done) return;
         crystal.done = true;
         collected++;
@@ -503,7 +505,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         sfx.good();
         updateHUD();
         toast(exitOpen ? 'Все задания выполнены! Дверь к СОТЕ открыта.' : 'Оборудование настроено · ' + collected + '/' + needed);
-      }, cancelPMinigame);
+      };
+      if (assemblePC) window.openKskAssembly(completeStation, cancelStationMinigame);
+      else window.startPStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       return;
     }
     if (currentSpec === 'ksk' && (!crystal || crystal.done)) return;
@@ -1022,7 +1026,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     updateHUD();
   }
 
-  function cancelPMinigame(){
+  function cancelStationMinigame(){
     fuel = Math.max(0, fuel - 15);
     answerStreak = 0;
     state = 'playing';
@@ -1068,7 +1072,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     }
     const specCfg = SPECS[currentSpec] || SPECS.kip;
     el('endTitle').textContent = 'Дошли до СОТЫ!';
-    el('endText').textContent = currentSpec === 'p'
+    el('endText').textContent = directPractice
       ? 'Практика завершена. Выполнено задач: ' + runOre + ' из ' + needed + '.'
       : 'Старт: ' + chosenCity.name + ' · ' + startKm + ' км позади. Награда за практику: +' + bonus + ' очков.';
     if (el('endFloorName')) el('endFloorName').textContent = specCfg.floorName;
@@ -2563,7 +2567,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     btn.addEventListener('contextmenu', e => e.preventDefault());
   });
 
-  const beginPractice = currentSpec === 'p' ? startGame : openCitySelect;
+  const beginPractice = directPractice ? startGame : openCitySelect;
   el('startBtn').addEventListener('click', beginPractice);
   el('againBtn').addEventListener('click', beginPractice);
   el('backBtn')?.addEventListener('click', () => {

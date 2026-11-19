@@ -15,16 +15,11 @@ function nextKskQuestion(station){
  return kskDecks.get(topic).pop();
 }
 function cleanupClicker(){}
-function openCitySelect(){
- state='title';stopAuto();speech=null;
- ['startScreen','endScreen','qScreen'].forEach(id=>el(id).classList.add('hidden'));
- el('cityScreen').classList.remove('hidden');buildCities();
-}
-function startGame(city){
- chosenCity=city;startKm=city.km;completedMines=0;runOre=0;totalMines=minesFor(city.km);scheduledEvents.clear();kskDecks.clear();
+function startGame(){
+ completedMines=0;runOre=0;totalMines=1;scheduledEvents.clear();kskDecks.clear();
  depth=1;score=0;fuel=100;hp=100;answerStreak=0;decks.easy=[];decks.hard=[];shake=0;flash=0;speech=null;newLevel();
- ['startScreen','cityScreen','endScreen','qScreen'].forEach(id=>el(id).classList.add('hidden'));
- state='playing';updateHUD();toast('Маршрут: ' + totalMines + ' лаборатории · по пять заданий в каждой.');
+ ['startScreen','endScreen','qScreen'].forEach(id=>el(id).classList.add('hidden'));
+ state='playing';updateHUD();toast('Выполните задания на пяти станциях и подойдите к выходу.');
 }
 function kr(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
 function kt(t,x,y,size=10,c='#b9d4df',align='left'){ctx.font=`bold ${size}px monospace`;ctx.textAlign=align;ctx.textBaseline='alphabetic';ctx.fillStyle=c;ctx.fillText(t,x,y);}

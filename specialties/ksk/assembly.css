@@ -1,0 +1,155 @@
+.ksk-assembly {
+ box-sizing: border-box;
+ width: min(720px, calc(100% - 16px));
+ max-height: calc(100dvh - 16px);
+ margin: auto;
+ padding: clamp(12px, 3vw, 24px);
+ overflow: auto;
+ overscroll-behavior: contain;
+ border: 1px solid #477981;
+ border-radius: 18px;
+ background: #101e2a;
+ color: #e8f4f1;
+ font: 16px/1.4 system-ui, sans-serif;
+}
+.ksk-assembly::backdrop { background: #06101bd9; }
+.ksk-assembly header, .ksk-assembly footer { display: flex; align-items: center; gap: 12px; }
+.ksk-assembly header { justify-content: space-between; }
+.ksk-assembly h2 { margin: 0; font-size: clamp(21px, 4vw, 30px); }
+.ksk-assembly p { margin: 4px 0; }
+.assembly-objective {
+ margin-top: 10px;
+ padding: 8px 12px;
+ border-inline-start: 3px solid #8fe8c3;
+ border-radius: 8px;
+ background: #142935;
+}
+.ksk-assembly .assembly-task { margin: 0; color: #bcf3e1; font-weight: 700; }
+.ksk-assembly .assembly-guide { margin: 4px 0 0; color: #d5e7ec; font-size: 14px; }
+.ksk-assembly .assembly-dismiss[hidden] { display: none; }
+.ksk-assembly button {
+ min-height: 44px;
+ padding: 7px 10px;
+ border: 1px solid #4e737f;
+ border-radius: 9px;
+ background: #203747;
+ color: inherit;
+ font: inherit;
+ cursor: pointer;
+}
+.ksk-assembly button:focus-visible { outline: 3px solid #ffcf76; outline-offset: 2px; }
+.assembly-case {
+ position: relative;
+ width: min(100%, clamp(320px, 61dvh, 620px));
+ aspect-ratio: 1;
+ margin: 12px auto;
+ border-radius: 8px;
+ background: #10151e url("../../assets/ksk-case.jpg") center / contain no-repeat;
+}
+.assembly-board { position: absolute; inset: 0; }
+.assembly-board button {
+ position: absolute;
+ display: grid;
+ place-items: center;
+ box-sizing: border-box;
+ min-height: 0;
+ padding: 0;
+ border: 2px dashed #6dd9ff;
+ border-radius: 5px;
+ background: #008bd016;
+ box-shadow: 0 0 8px #009dff8c, inset 0 0 8px #00bfff40;
+}
+.assembly-board button span {
+ position: absolute;
+ bottom: 100%;
+ left: 50%;
+ transform: translateX(-50%);
+ padding: 1px 4px;
+ border-radius: 3px;
+ color: #d6f7ff;
+ background: #091522e8;
+ font: 650 clamp(10px, 1.8vw, 13px)/1.35 system-ui,sans-serif;
+ white-space: nowrap;
+ pointer-events: none;
+}
+.assembly-board [data-slot="cpu"] { left: 40.5%; top: 26%; width: 12%; height: 16%; }
+.assembly-board [data-slot="ram"] { left: 59.8%; top: 17%; width: 9%; height: 32%; }
+.assembly-board [data-slot="ssd"] { left: 34%; top: 50%; width: 20%; height: 6.5%; }
+.assembly-board [data-slot="gpu"] { left: 20%; top: 60%; width: 35%; height: 10%; }
+.assembly-board [data-slot="ssd"] span,
+.assembly-board [data-slot="gpu"] span { bottom: auto; left: 102%; transform: none; }
+.assembly-board button::before { content: ''; position: absolute; inset: -4px; }
+.assembly-board .incorrect { border-color: #ffa19d; }
+.assembly-board .assembly-hinted { border: 2px solid #ffcf76; box-shadow: 0 0 10px #ffcf7680; }
+.assembly-show-hint footer {
+ position: sticky;
+ bottom: 0;
+ z-index: 1;
+ padding: 8px 10px;
+ border: 1px solid #aa8650;
+ border-radius: 8px;
+ background: #202a30;
+ font-size: 14px;
+}
+.assembly-show-hint:has(.assembly-drag) footer { position: static; }
+.assembly-board .over { border-style: solid; background: #36caff3a; box-shadow: 0 0 14px #35c8ff; }
+.assembly-board button:disabled { cursor: default; border-color: transparent; box-shadow: none; background: transparent; }
+.assembly-board button:disabled span { color: #aff4c7; }
+.assembly-board .assembly-piece { animation: assembly-seat .24s ease-out; filter: drop-shadow(2px 4px 3px #000a); }
+@keyframes assembly-seat { from { translate: -4px -7px; scale: 1.14; } }
+@media (prefers-reduced-motion: reduce) { .assembly-board .assembly-piece { animation: none; } }
+.assembly-bank { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.assembly-bank button {
+ display: grid;
+ justify-items: center;
+ align-content: center;
+ gap: 8px;
+ touch-action: none;
+ user-select: none;
+ cursor: grab;
+ overflow-wrap: anywhere;
+}
+.assembly-bank button:disabled { opacity: .45; cursor: default; }
+.assembly-piece {
+ display: block;
+ box-sizing: border-box;
+ width: 54px;
+ height: 20px;
+ border: 2px solid #66877f;
+ border-bottom: 4px solid #cea754;
+ background: repeating-linear-gradient(90deg,#28645b 0 5px,#202e34 5px 13px);
+}
+.assembly-piece[data-hardware="cpu"] { width: 27px; height: 27px; border: 3px dashed #cab77a; background: #b2c3cd; }
+.assembly-piece[data-hardware="ssd"] { width: 46px; height: 16px; border-right: 5px solid #e0ba68; background: linear-gradient(90deg,#45877d 12%,#28393b 12% 76%,#45877d 76%); }
+.assembly-piece[data-hardware="gpu"] { height: 25px; background: radial-gradient(circle,#6c8794 15%,#263d49 17% 34%,#80949b 36% 41%,#28353c 43%) 0 0 / 50% 100%; }
+.ksk-assembly footer { margin-top: 14px; flex-wrap: wrap; }
+.ksk-assembly footer p { flex: 1 1 160px; }
+.assembly-count { color: #8fe8c3; }
+.assembly-show-hint .assembly-dismiss { border-color: #aa8650; background: #35312a; }
+.assembly-drag { position: fixed; z-index: 2; transform: translate(-50%,-110%); pointer-events: none; filter: drop-shadow(0 3px 4px #000b); }
+@media (max-width: 520px) {
+ .assembly-bank { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+
+ .assembly-bank button { font-size: 14px; }
+}
+
+.assembly-piece[data-hardware="cpu"] {
+ border: 3px solid #367c77;
+ border-radius: 5px;
+ background: linear-gradient(125deg,#d4dbe3,#a1a4ad 48%,#dde0df);
+ box-shadow: inset 0 0 0 2px #888e96, inset 0 1px 4px white;
+}
+.assembly-board [data-hardware="cpu"] { width: 83%; height: 74%; }
+.assembly-board [data-hardware="ram"] {
+ width: 25%; height: 98%; min-width: 7px;
+ border: 1px solid #627780; border-right: 2px solid #b9a67e;
+ background: repeating-linear-gradient(#23574c 0 6%,#172127 7% 17%);
+}
+.assembly-board [data-hardware="gpu"] {
+ width: 100%; height: 98%; border-radius: 4px;
+ background: radial-gradient(circle,#53657a 0 11%,transparent 13% 32%,#181e27 36% 43%,#566474 45%,#2b3540 49%),
+ repeating-conic-gradient(#162332 0 19deg,#5a7081 22deg 38deg,#202a35 41deg 45deg);
+ background-size: 50% 100%;
+}
+.assembly-board [data-hardware="ssd"] { width: 97%; height: 70%; }
