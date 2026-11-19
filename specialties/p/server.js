@@ -40,7 +40,7 @@ window.openPServerGame = function(done,cancel){
  <div class="p-linux-tools"><p class="p-progress"></p><button type="button" class="p-linux-help" aria-haspopup="dialog">Памятка Linux</button></div><h3 class="p-stage-title" hidden></h3>
  <div class="p-linux-editor"><div class="p-linux-editor-bar"><span class="p-linux-terminal-icon">&gt;_</span><span class="p-linux-file"></span><span class="p-linux-lights" aria-hidden="true"><i></i><i></i><i></i></span></div><div class="p-linux-lines"></div><pre class="p-linux-output" aria-label="Результат выполнения"></pre></div>
  <p class="p-feedback" role="status" aria-live="polite"></p>
- <div class="p-linux-options"><p>Выберите фрагмент для выделенного пропуска.</p><div class="p-server-choices" role="group" aria-label="Фрагменты скрипта"></div><small>Чтобы изменить строку, нажмите на неё и выберите новый фрагмент.</small></div>
+ <div class="p-linux-options"><p>Перетащите фрагмент в нужный пропуск.</p><div class="p-server-choices" role="group" aria-label="Фрагменты скрипта"></div><small>Можно также нажать на пропуск, а затем на фрагмент.</small></div>
  <footer class="p-linux-actions"><button type="button" class="p-server-reset">⟳ Сбросить</button><button type="button" class="p-server-check">✓ Проверить</button><button type="button" class="p-server-next" hidden>Следующий этап →</button></footer>
  <div class="p-linux-exit-row"><small class="p-linux-exit-note">Выход по крестику или Escape: −15 света. Практика начнётся заново.</small></div></div>
  <dialog class="p-linux-reference" aria-labelledby="pLinuxReferenceTitle">
@@ -51,7 +51,7 @@ window.openPServerGame = function(done,cancel){
   <dl class="p-linux-reference-list" tabindex="0" aria-label="Список команд и примеров"></dl>
  </dialog></section>`;
  const q=s=>overlay.querySelector(s),bank=q('.p-server-choices'),check=q('.p-server-check'),next=q('.p-server-next'),reset=q('.p-server-reset'),feedback=q('.p-feedback');
- const reference=q('.p-linux-reference'),help=q('.p-linux-help'),referenceList=q('.p-linux-reference-list');
+ const game=q('.p-linux-game'),reference=q('.p-linux-reference'),help=q('.p-linux-help'),referenceList=q('.p-linux-reference-list');
  const filters=[...reference.querySelectorAll('[data-memo]')];
  function renderReference(mode){
   const commands=mode==='step' ? P_LINUX_MEMO_BY_STEP[stage] : P_LINUX_MEMO.map(([command])=>command);
@@ -71,6 +71,7 @@ window.openPServerGame = function(done,cancel){
   referenceList.scrollTop=0;
  }
  help.onclick=()=>{
+  clearDrag();
   renderReference('step');
   reference.showModal();
   q('.p-linux-back').focus({preventScroll:true});
@@ -79,7 +80,26 @@ window.openPServerGame = function(done,cancel){
  q('.p-linux-back').onclick=()=>reference.close();
  reference.addEventListener('close',()=>help.focus({preventScroll:true}));
  reference.addEventListener('keydown',event=>event.stopPropagation());
- function clearDrag(){if(!drag)return;drag.ghost?.remove();drag=null;slots.forEach(slot=>slot.classList.remove('drag-over'));}
+ function slotAtPoint(x,y){
+  return slots.indexOf(document.elementFromPoint(x,y)?.closest('.p-linux-slot'));
+ }
+ function updateDrag(){
+  if(!drag?.ghost)return;
+  const bounds=game.getBoundingClientRect();
+  if(drag.y<bounds.top+36)game.scrollTop-=8;
+  else if(drag.y>bounds.bottom-36)game.scrollTop+=8;
+  const target=slotAtPoint(drag.x,drag.y);
+  slots.forEach((slot,index)=>slot.classList.toggle('drag-over',index===target));
+  drag.frame=requestAnimationFrame(updateDrag);
+ }
+ function clearDrag(){
+  if(!drag)return;
+  if(drag.frame!==undefined)cancelAnimationFrame(drag.frame);
+  drag.ghost?.remove();
+  drag.button.classList.remove('dragging');
+  drag=null;
+  slots.forEach(slot=>slot.classList.remove('drag-over'));
+ }
  function focusSlot(index){activeSlot=index;slots.forEach((slot,i)=>slot.classList.toggle('active',i===index&&!solved));}
  function update(){
   slots.forEach((slot,i)=>{slot.textContent=values[i]||'Выбрать фрагмент';slot.setAttribute('aria-label','Пропуск '+(i+1)+': '+(values[i]||'пусто'));});
@@ -119,16 +139,44 @@ window.openPServerGame = function(done,cancel){
   words.forEach(word=>{
    const button=document.createElement('button');button.type='button';button.className='p-server-choice';button.dataset.fragment=word;
    const grip=document.createElement('span');grip.className='p-linux-grip';grip.textContent='⠿';grip.setAttribute('aria-hidden','true');button.append(grip,document.createTextNode(word));let skipClick=false;
-   button.onclick=()=>{if(skipClick){skipClick=false;return;}insert(word);};
-   button.addEventListener('pointerdown',event=>{if(solved||closed||event.button!==0||event.pointerType==='touch')return;clearDrag();skipClick=false;button.setPointerCapture(event.pointerId);drag={pointer:event.pointerId,x:event.clientX,y:event.clientY,ghost:null};});
-   function hit(event){return slots.findIndex(slot=>{const r=slot.getBoundingClientRect();return event.clientX>=r.left&&event.clientX<=r.right&&event.clientY>=r.top&&event.clientY<=r.bottom;});}
-   button.addEventListener('pointermove',event=>{
-    if(!drag||drag.pointer!==event.pointerId)return;if(!drag.ghost&&Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<7)return;
-    if(!drag.ghost){drag.ghost=document.createElement('div');drag.ghost.className='p-program-ghost p-linux-ghost';drag.ghost.textContent=word;document.body.appendChild(drag.ghost);}
-    drag.ghost.style.left=event.clientX+'px';drag.ghost.style.top=event.clientY+'px';const index=hit(event);slots.forEach((slot,i)=>slot.classList.toggle('drag-over',i===index));
+   button.onclick=event=>{
+    if(skipClick&&event.detail!==0){skipClick=false;return;}
+    insert(word);
+   };
+   button.addEventListener('pointerdown',event=>{
+    if(solved||closed||drag||!event.isPrimary||event.button!==0)return;
+    skipClick=false;
+    button.setPointerCapture(event.pointerId);
+    drag={button,pointer:event.pointerId,x:event.clientX,y:event.clientY};
    });
-   button.addEventListener('pointerup',event=>{if(!drag||drag.pointer!==event.pointerId)return;const moved=!!drag.ghost,index=hit(event);clearDrag();if(moved){skipClick=true;event.preventDefault();if(index!==-1)insert(word,index);}});
-   button.addEventListener('pointercancel',clearDrag);button.addEventListener('lostpointercapture',clearDrag);bank.appendChild(button);
+   button.addEventListener('pointermove',event=>{
+    if(drag?.pointer!==event.pointerId)return;
+    if(!drag.ghost){
+     if(Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<7)return;
+     drag.ghost=document.createElement('div');
+     drag.ghost.className='p-program-ghost p-linux-ghost';
+     drag.ghost.textContent=word;
+     drag.ghost.setAttribute('aria-hidden','true');
+     overlay.appendChild(drag.ghost);
+     button.classList.add('dragging');
+     drag.frame=requestAnimationFrame(updateDrag);
+    }
+    drag.x=event.clientX;
+    drag.y=event.clientY;
+    drag.ghost.style.left=drag.x+'px';
+    drag.ghost.style.top=drag.y+'px';
+   });
+   button.addEventListener('pointerup',event=>{
+    if(drag?.pointer!==event.pointerId)return;
+    skipClick=!!drag.ghost;
+    const target=skipClick ? slotAtPoint(event.clientX,event.clientY) : -1;
+    clearDrag();
+    if(target!==-1)insert(word,target);
+   });
+   for(const type of ['pointercancel','lostpointercapture']){
+    button.addEventListener(type,event=>{if(drag?.pointer===event.pointerId)clearDrag();});
+   }
+   bank.appendChild(button);
   });
   check.hidden=false;next.hidden=true;reset.disabled=false;feedback.textContent='';focusSlot(0);update();q('.p-linux-game').scrollTop=0;slots[0].focus({preventScroll:true});
  }
