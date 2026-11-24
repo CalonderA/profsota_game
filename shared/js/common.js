@@ -19,6 +19,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  window.ctx = ctx;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   // Размер холста подгоняется под контейнер: камера показывает доступную
@@ -80,7 +81,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     if (window.CURRENT_SPEC === 'p' && window.P_QUESTIONS) QUESTIONS = window.P_QUESTIONS;
     if (window.CURRENT_SPEC === 'ksk' && window.KSK_QUESTIONS) QUESTIONS = window.KSK_QUESTIONS;
     try {
-            let res = null;
+      let res = null;
       const candidates = (currentSpec === 'p' || currentSpec === 'ksk') ? ['../../questions.json', '../../data/questions.json'] : ['/data/questions.json', '../../data/questions.json', 'data/questions.json', '/questions.json', 'questions.json'];
       for (const p of candidates) {
         try {
@@ -182,10 +183,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ts: {
       code: 'ТС',
       codeFull: '13.02.02',
-      title: 'Теплопункт ТС',
+      title: 'Лаборатория ТС',
       specName: 'Теплоснабжение и теплотехническое оборудование',
-      floorName: 'Участок',
-      unitName: 'Узлы',
+      floorName: 'Цех',
+      unitName: 'Задания',
       unitSingular: 'узел',
       eventSeq: ['pipes', 'bypass', 'exchanger', 'pipes']
     },
@@ -194,8 +195,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       codeFull: '13.02.13',
       title: 'Электроучасток Э',
       specName: 'Электрооборудование и электрохозяйство',
-      floorName: 'Участок',
-      unitName: 'Узлы',
+      floorName: 'Цех',
+      unitName: 'Задания',
       unitSingular: 'узел',
       eventSeq: []
     },
@@ -212,7 +213,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     p: {
       code: 'П',
       codeFull: '09.02.07',
-      title: 'IT-центр · Программирование',
+      title: 'IT-отдел П',
       specName: 'Информационные системы и программирование',
       floorName: 'Сектор',
       unitName: 'Задачи',
@@ -222,18 +223,21 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ksk: {
       code: 'КСК',
       codeFull: '09.02.01',
-      title: 'Лаборатория КСК',
+      title: 'Серверная КСК',
       specName: 'Компьютерные системы и комплексы',
-      floorName: 'Лаборатория',
-      unitName: 'Станции',
-      unitSingular: 'станцию',
+      floorName: 'Сектор',
+      unitName: 'Стойки',
+      unitSingular: 'стойку',
       eventSeq: []
     }
   };
 
-  if (!SPECS[currentSpec]) { window.location.replace('../../menu.html'); throw new Error('Неизвестная специальность: ' + currentSpec); }
+  if (!SPECS[currentSpec]) {
+    try { window.location.replace('../../menu.html'); } catch(_) {}
+    currentSpec = 'kip';
+  }
   window.currentSpec = currentSpec;
-  const directPractice = currentSpec === 'p' || currentSpec === 'ksk';
+  const directPractice = currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'kip' || currentSpec === 'ts';
 
   /* ============================================================
      Состояние игры
@@ -242,7 +246,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   let state = 'title';               // title | playing | question | minigame | dead
   let map = [], seen = [], bright = [];
   let depth = 1, score = 0, answerStreak = 0;
-  let chosenCity = null, startKm = 0, totalMines = directPractice ? 1 : 3, completedMines = 0, runOre = 0;
+  let chosenCity = null, startKm = 0, totalMines = 3, completedMines = 0, runOre = 0;
   let fuel = 100, hp = 100;
   let needed = 3, collected = 0;
   let crystals = [], exitCell = { x: 1, y: 1 }, exitOpen = false;
@@ -345,68 +349,185 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     return best;
   }
 
+  /* ============================================================
+     Конфигурация рабочих станций по специальностям (5 станций)
+     ============================================================ */
+  const WORKSTATION_DEFS = {
+    kip: [
+      {
+        x: 4, y: 4, type: 0,
+        title: 'Контрольно-измерительные приборы',
+        icon: '⏱',
+        actionType: 'question',
+        filterKeyword: 'прибор|мультиметр|манометр|измерени',
+        hard: false
+      },
+      {
+        x: 11, y: 4, type: 1,
+        title: 'Диагностика и наладка оборудования',
+        icon: '〰',
+        actionType: 'question',
+        filterKeyword: 'наладить|сигнал|осциллограф|ошибк|калибров',
+        hard: false
+      },
+      {
+        x: 18, y: 4, type: 2,
+        title: 'Исполнительные механизмы и приводы',
+        icon: '⚙',
+        actionType: 'minigame',
+        minigameId: 'pid',
+        hard: true
+      },
+      {
+        x: 4, y: 10, type: 3,
+        title: 'Датчики и измерительные системы',
+        icon: '🛜',
+        actionType: 'minigame',
+        minigameId: 'calib',
+        hard: false
+      },
+      {
+        x: 18, y: 10, type: 4,
+        title: 'Электрические схемы и щитное оборудование',
+        icon: '⚡',
+        actionType: 'minigame',
+        minigameId: 'wires',
+        hard: false
+      }
+    ],
+    ts: [
+      {
+        x: 4, y: 4, type: 0,
+        title: 'Контрольно-измерительные приборы (КИП)',
+        icon: '⏱',
+        actionType: 'question',
+        filterKeyword: 'манометр|термометр|давление|расход',
+        hard: false
+      },
+      {
+        x: 11, y: 4, type: 1,
+        title: 'Теплогенерирующее и насосное оборудование',
+        icon: '⚙',
+        actionType: 'minigame',
+        minigameId: 'bypass',
+        hard: false
+      },
+      {
+        x: 18, y: 4, type: 2,
+        title: 'Котельные установки и системы теплоснабжения',
+        icon: '🔥',
+        actionType: 'question',
+        filterKeyword: 'котел|горелк|пар|тэг|тэц|теплоснабжени',
+        hard: true
+      },
+      {
+        x: 4, y: 10, type: 3,
+        title: 'Трубопроводы и арматура (монтаж и наладка)',
+        icon: '🔧',
+        actionType: 'minigame',
+        minigameId: 'pipes',
+        hard: false
+      },
+      {
+        x: 18, y: 10, type: 4,
+        title: 'Теплообменное оборудование и теплотехника',
+        icon: '♨',
+        actionType: 'minigame',
+        minigameId: 'exchanger',
+        hard: true
+      }
+    ]
+  };
+
+  function getStationDefs(){
+    return WORKSTATION_DEFS[currentSpec] || [
+      { x: 4, y: 4, type: 0, title: 'Узел 1: Диагностика', icon: '⏱', actionType: 'question', hard: false },
+      { x: 11, y: 4, type: 1, title: 'Узел 2: Наладка', icon: '⚙', actionType: 'question', hard: false },
+      { x: 18, y: 4, type: 2, title: 'Узел 3: Контроль', icon: '〰', actionType: 'question', hard: true },
+      { x: 4, y: 10, type: 3, title: 'Узел 4: Системы', icon: '🛜', actionType: 'question', hard: false },
+      { x: 18, y: 10, type: 4, title: 'Узел 5: Автоматика', icon: '⚡', actionType: 'question', hard: false }
+    ];
+  }
+
   function makeWorkshop(){
     const m = [];
     for (let y = 0; y < H; y++){
       const row = [];
       for (let x = 0; x < W; x++){
-        // Верхние 2 ряда (y = 0..1) — стена цеха с экранами и лампами
-        // Нижний ряд (y = 14) — защитный бортик / перила
+        // Верхние 2 ряда (y = 0..1) — стена цеха
+        // Нижний ряд (y = 14) — защитный бортик
         // Левый (x = 0) и правый (x = 22) столбцы — боковые стены
         const isWall = (y <= 1) || (y === H - 1) || (x === 0) || (x === W - 1);
         row.push(isWall ? WALL : FLOOR);
       }
       m.push(row);
     }
+    // Центральный стол с чертежами (x = 10..12, y = 8) — физическое препятствие для реалистичной навигации
+    m[8][10] = WALL;
+    m[8][11] = WALL;
+    m[8][12] = WALL;
     return m;
   }
 
   function newLevel(){
     stopAuto();
     map = makeWorkshop();
-    if (currentSpec === 'p') setupPMap(map);
-    if (currentSpec === 'ksk') setupKskMap(map);
+    if (currentSpec === 'p' && typeof setupPMap === 'function') setupPMap(map);
+    if (currentSpec === 'ksk' && typeof setupKskMap === 'function') setupKskMap(map);
     seen = Array.from({ length: H }, () => new Array(W).fill(1));
     bright = Array.from({ length: H }, () => new Array(W).fill(1));
 
-    needed = currentSpec === 'p' ? P_STATIONS.length : currentSpec === 'ksk' ? KSK_STATIONS.length : Math.min(3 + Math.floor((depth - 1) / 2), 5);
+    needed = 5;
     collected = 0;
     exitOpen = false;
 
-    // Игрок стартует в центральном проходе цеха (как на референсе)
+    // Игрок стартует в центральном проходе цеха (перед чертёжным столом)
     const start = { x: 11, y: 6 };
     player.gx = start.x; player.gy = start.y;
     player.x = start.x * TILE + TILE / 2;
     player.y = start.y * TILE + TILE / 2;
     player.dir = 1;
 
-    // Выходная дверь на правой стене цеха рядом с серверной
-    exitCell = { x: 21, y: 5 };
+    // Выходная золотая дверь на правой стене
+    exitCell = { x: 21, y: 6 };
 
-    // 6 рабочих станций/станков (органично и хаотично расставлены по залу, в точности по референсу)
-    const stationSpots = currentSpec === 'ksk' ? KSK_STATIONS : currentSpec === 'p' ? P_STATIONS : [
-      { x: 15, y: 3, type: 2, hard: false }, // Шкафы автоматики / серверная стойка (справа у стены)
-      { x: 6,  y: 6, type: 0, hard: false }, // Рабочий остров слева (стол с двумя мониторами и растением)
-      { x: 16, y: 6, type: 1, hard: true  }, // Рабочий остров справа (стол со схемой сети/контура)
-      { x: 16, y: 9, type: 3, hard: true  }, // Рабочий остров снизу-справа (стол с экраном безопасности)
-      { x: 10, y: 3, type: 4, hard: false }, // Диспетчерский стол у задней стены (под настенными мониторами)
-      { x: 10, y: 9, type: 5, hard: false }  // Командный стол внизу по центру (с тремя ноутбуками)
-    ];
-
-    crystals = stationSpots.map((s, i) => ({
+    // 5 специализированных рабочих мест (в точности по референсам)
+    let defs = getStationDefs();
+    if (currentSpec === 'ksk' && typeof KSK_STATIONS !== 'undefined') {
+      defs = KSK_STATIONS.map((s, i) => ({
+        x: s.x, y: s.y, type: s.type,
+        title: s.title || ('Станция ' + (s.type + 1)),
+        icon: s.icon || '💻',
+        actionType: s.actionType || 'question',
+        minigameId: s.minigameId || null,
+        hard: !!s.hard
+      }));
+    } else if (currentSpec === 'p' && typeof P_STATIONS !== 'undefined') {
+      defs = P_STATIONS.map((s, i) => ({
+        x: s.x, y: s.y, type: s.type,
+        title: s.title || ('Узел ' + (s.type + 1)),
+        icon: s.icon || '⚡',
+        actionType: s.actionType || 'question',
+        minigameId: s.minigameId || null,
+        hard: !!s.hard
+      }));
+    }
+    crystals = defs.map((s, i) => ({
+      id: i,
       x: s.x, y: s.y,
       stationType: s.type,
+      title: s.title,
+      icon: s.icon,
+      actionType: s.actionType,
+      minigameId: s.minigameId || null,
+      filterKeyword: s.filterKeyword || null,
       done: false, cracked: false,
       hard: !!s.hard,
       seed: (i + 1) * 31.4
     }));
 
-    // Инструменты и расходники в цеху (аптечка и смазка)
-    pickups = [
-      { x: 4, y: 8, type: 'oil', seed: 1.5 },
-      { x: 13, y: 6, type: 'med', seed: 3.8 }
-    ];
-
+    if (currentSpec === 'p' || currentSpec === 'ksk') needed = crystals.length;
+    pickups = [];
     particles = [];
     updateHUD();
   }
@@ -423,41 +544,53 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     }
     if (el('specTitle')) el('specTitle').textContent = specCfg.title;
     if (el('specSub')) el('specSub').textContent = 'Специальность ' + specCfg.codeFull;
-    if (el('ruleUnitTitle')) el('ruleUnitTitle').textContent = (currentSpec === 'p' || currentSpec === 'ksk') ? 'Рабочая станция' : 'Станок ' + specCfg.code;
+    if (el('ruleUnitTitle')) el('ruleUnitTitle').textContent = 'Станции цеха';
     if (el('startMainTitle')) el('startMainTitle').textContent = 'ПУТЬ К СОТЕ: ' + specCfg.title;
     if (el('hudBrand')) el('hudBrand').textContent = 'ПУТЬ К СОТЕ';
     if (el('hudSub')) el('hudSub').textContent = ' · ' + specCfg.title;
-    if (el('floorLabel')) el('floorLabel').textContent = '</> ' + specCfg.floorName;
-    if (el('unitLabel')) el('unitLabel').textContent = '💎 ' + specCfg.unitName;
-    if (el('distLabel')) el('distLabel').textContent = '📍 До СОТЫ';
+    if (el('floorLabel')) el('floorLabel').textContent = '</> ' + (specCfg.floorName || 'Цех');
+    if (el('unitLabel')) el('unitLabel').textContent = '💎 Задания';
     if (el('modeBadge')) el('modeBadge').textContent = 'Практика · ' + specCfg.code;
+
+    // Скрываем свет, силы и дистанцию
+    ['fuelMeter', 'hpMeter', 'distVal'].forEach(id => {
+      const node = el(id);
+      if (node && node.parentElement) node.parentElement.style.display = 'none';
+    });
   }
 
   function updateHUD(){
     const specCfg = SPECS[currentSpec] || SPECS.kip;
     if (el('hudSub')) el('hudSub').textContent = ' · ' + specCfg.title;
-    if (el('floorLabel')) el('floorLabel').textContent = '</> ' + specCfg.floorName;
-    if (el('unitLabel')) el('unitLabel').textContent = '💎 ' + specCfg.unitName;
-    el('mineVal').textContent = Math.min(completedMines + 1, totalMines) + '/' + totalMines;
-    if (el('distVal')) el('distVal').textContent = leftKm() + ' км';
-    el('oreVal').textContent = collected + '/' + needed;
-    el('scoreVal').textContent = score;
-    el('comboVal').textContent = '×' + answerStreak;
-    el('fuelBar').style.width = clamp(fuel, 0, 100) + '%';
-    el('hpBar').style.width = clamp(hp, 0, 100) + '%';
-    el('fuelMeter').classList.toggle('low', fuel < 28);
-    el('hpMeter').classList.toggle('low', hp < 28);
+    if (el('floorLabel')) el('floorLabel').textContent = '</> ' + (specCfg.floorName || 'Цех');
+    if (el('unitLabel')) el('unitLabel').textContent = '💎 Задания';
+    if (el('mineVal')) el('mineVal').textContent = (completedMines + 1) + '/' + totalMines;
+    if (el('oreVal')) el('oreVal').textContent = collected + '/' + needed;
+    if (el('scoreVal')) el('scoreVal').textContent = score;
+    if (el('comboVal')) el('comboVal').textContent = '×' + answerStreak;
+
+    // СВЕТ: возвращаем полноценную полоску света в HUD
+    if (el('fuelBar')) el('fuelBar').style.width = clamp(fuel, 0, 100) + '%';
+    if (el('fuelMeter')) {
+      el('fuelMeter').classList.toggle('low', fuel < 28);
+      if (el('fuelMeter').parentElement) el('fuelMeter').parentElement.style.display = '';
+    }
+
+    // Силы и км скрыты
+    ['hpMeter', 'distVal'].forEach(id => {
+      const node = el(id);
+      if (node && node.parentElement) node.parentElement.style.display = 'none';
+    });
   }
-  function leftKm(){
-    return Math.max(0, Math.round(startKm * (totalMines - completedMines) / totalMines));
-  }
+  function leftKm(){ return 0; }
   let toastTimer = null;
   function toast(msg){
     const t = el('toast');
+    if (!t) return;
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
   }
 
   /* ============================================================
@@ -602,7 +735,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const hb = el('hintBtn');
     hb.hidden = q.type === 'tf' || q.type === 'slider';
     hb.disabled = false;
-    hb.textContent = 'Подсказка: убрать 2 неверных · −10 света';
+    hb.textContent = 'Подсказка: убрать 2 неверных';
 
     const fb = el('qFeedback');
     fb.className = 'qfeedback hidden';
@@ -610,7 +743,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     el('qNextBtn').classList.add('hidden');
     el('qFoot').textContent = q.type === 'slider'
       ? 'Двигайте ползунок: чем ближе к регламенту, тем выше оценка.'
-      : (hard ? 'Экспертный уровень: награда удвоена (+160 очков)!' : 'За верный ответ — очки и энергия смены.');
+      : (hard ? 'Экспертный уровень: награда удвоена (+160 очков)!' : 'За верный ответ — очки и доступ к СОТЕ.');
 
     el('qScreen').classList.remove('hidden');
     sfx.pick();
@@ -619,18 +752,18 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   el('hintBtn').addEventListener('click', () => {
     if (state !== 'question' || hintUsed) return;
     if (fuel <= 10){
-      el('qFoot').textContent = 'Мало света для подсказки.';
+      el('qFoot').textContent = 'Мало света для подсказки (требуется 10).';
       return;
     }
     hintUsed = true;
     fuel = Math.max(0, fuel - 10);
+    updateHUD();
     const wrong = Array.from(el('qAnswers').children).filter(b => b.dataset.ok === '0');
     shuffle(wrong).slice(0, 2).forEach(b => b.classList.add('removed'));
     el('hintBtn').disabled = true;
     el('hintBtn').textContent = 'Подсказка использована';
-    el('qFoot').textContent = 'Два неверных варианта убраны. −10 света.';
+    el('qFoot').textContent = 'Два неверных варианта исключены. −10 света.';
     sfx.pick();
-    updateHUD();
   });
 
   function addMark(btn, sym){
@@ -666,36 +799,38 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     if (ok){
       btn.classList.add('correct');
       answerStreak++;
-      const gain = hard ? 24 : 16;
       const bonus = Math.round((120 + depth * 40 + answerStreak * 25) * (hard ? 2 : 1));
       score += bonus;
-      fuel = Math.min(100, fuel + gain);
-      hp = Math.min(100, hp + (hard ? 5 : 3));
+      fuel = Math.min(100, fuel + (hard ? 20 : 15));
       collected++;
       runOre++;
       if (activeCrystal) activeCrystal.done = true;
       sfx.good();
       flash = 0.35; flashColor = hard ? '185,150,255' : '120,220,160';
       fb.className = 'qfeedback ok';
-      fb.textContent = (hard ? 'Алмаз расколот! ' : 'Верно! ') + '+' + bonus + ' очков, +' + gain + ' света.';
-      nextBtn.textContent = collected >= needed && completedMines === totalMines - 1 ? 'К СОТЕ' : collected >= needed ? ((currentSpec === 'p' || currentSpec === 'ksk') ? 'К двери' : 'К лестнице') : 'Дальше';
+      fb.textContent = (hard ? 'Экспертное задание выполнено! ' : 'Верно! ') + '+' + bonus + ' очков.';
+      nextBtn.textContent = collected >= needed ? 'К двери СОТЫ' : 'Дальше';
       if (collected >= needed && !exitOpen){
         exitOpen = true;
-        setTimeout(() => toast(completedMines === totalMines - 1 ? 'Вход в СОТУ открыт!' : (currentSpec === 'p' || currentSpec === 'ksk') ? 'Дверь «К СОТЕ» открыта!' : 'Лестница открыта — ищите спуск!'), 400);
+        setTimeout(() => toast('Все 5 заданий выполнены! Дверь К СОТЕ открыта >>'), 400);
       }
     } else {
       btn.classList.add('wrong');
       answerStreak = 0;
-      fuel = Math.max(0, fuel - 12);
-      hp = Math.max(0, hp - 11);
       score = Math.max(0, score - 40);
+      fuel = Math.max(0, fuel - 12);
       if (activeCrystal) activeCrystal.cracked = true;
       sfx.bad();
       shake = 1;
       flash = 0.4; flashColor = '235,90,70';
       fb.className = 'qfeedback bad';
-      fb.textContent = '⚠ Неверно. −40 очков, −12 света, −11 сил. Кристалл треснул, но остался — можно попробовать снова.';
+      fb.textContent = '⚠ Неверно. −40 очков, −12 света. Попробуйте снова.';
       nextBtn.textContent = 'Попробовать снова';
+      if (fuel <= 0){
+        el('qScreen').classList.add('hidden');
+        gameOver('Энергосеть цеха обесточена. Требуется перезапуск питания.');
+        return;
+      }
     }
 
     if (activeQuestion && activeQuestion.fact){
@@ -753,7 +888,6 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       const bonus = Math.round(base * (0.3 + 0.7 * acc) * (hard ? 2 : 1));
       score += bonus;
       fuel = Math.min(100, fuel + (hard ? 24 : 16));
-      hp = Math.min(100, hp + (hard ? 5 : 3));
       collected++;
       runOre++;
       if (activeCrystal) activeCrystal.done = true;
@@ -761,57 +895,34 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       flash = 0.35; flashColor = hard ? '185,150,255' : '120,220,160';
       fb.className = 'qfeedback ok';
       fb.textContent = '✓ Точность ' + accPct + '% · +' + bonus + ' очков. ' + truth;
-      nextBtn.textContent = collected >= needed && completedMines === totalMines - 1 ? 'К СОТЕ' : collected >= needed ? ((currentSpec === 'p' || currentSpec === 'ksk') ? 'К двери' : 'К лестнице') : 'Дальше';
+      nextBtn.textContent = collected >= needed ? 'К двери СОТЫ' : 'Дальше';
       if (collected >= needed && !exitOpen){
         exitOpen = true;
-        setTimeout(() => toast(completedMines === totalMines - 1 ? 'Вход в СОТУ открыт!' : (currentSpec === 'p' || currentSpec === 'ksk') ? 'Дверь «К СОТЕ» открыта!' : 'Лестница открыта — ищите спуск!'), 400);
+        setTimeout(() => toast('Все 5 заданий выполнены! Дверь К СОТЕ открыта >>'), 400);
       }
     } else {
       answerStreak = 0;
-      fuel = Math.max(0, fuel - 12);
-      hp = Math.max(0, hp - 11);
       score = Math.max(0, score - 20);
+      fuel = Math.max(0, fuel - 12);
       if (activeCrystal) activeCrystal.cracked = true;
       sfx.bad();
       shake = 1;
       flash = 0.4; flashColor = '235,90,70';
       fb.className = 'qfeedback bad';
-      fb.textContent = '⚠ Мимо: точность ' + accPct + '%. −20 очков, −12 света, −11 сил. ' + truth;
+      fb.textContent = '⚠ Мимо: точность ' + accPct + '%. −20 очков, −12 света. ' + truth;
       nextBtn.textContent = 'Попробовать снова';
+      if (fuel <= 0){
+        el('qScreen').classList.add('hidden');
+        gameOver('Энергосеть цеха обесточена. Требуется перезапуск питания.');
+        return;
+      }
     }
-
-    if (q.fact){
-      const f = document.createElement('div');
-      f.className = 'qfact';
-      f.textContent = '💡 ' + q.fact;
-      fb.appendChild(f);
-    }
-    const sk = currentSkin();
-    const lines = sk.lines && (ok ? sk.lines.correct : sk.lines.wrong);
-    if (lines && lines.length){
-      const line = document.createElement('div');
-      line.className = 'qspeak';
-      line.textContent = '— ' + lines[Math.floor(Math.random() * lines.length)];
-      fb.appendChild(line);
-    }
-    updateHUD();
   }
 
   el('qNextBtn').addEventListener('click', () => {
     if (state !== 'question') return;
     const wasOk = lastAnswerOk;
     const crystal = activeCrystal;
-
-    if (hp <= 0){
-      el('qScreen').classList.add('hidden');
-      gameOver('Смена окончена: наладчик исчерпал силы на сегодня.');
-      return;
-    }
-    if (fuel <= 0){
-      el('qScreen').classList.add('hidden');
-      gameOver('Энергосеть цеха обесточена. Требуется перезапуск питания.');
-      return;
-    }
 
     if (!wasOk && crystal && !crystal.done){
       answerLock = false;
@@ -826,7 +937,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     state = 'playing';
     if (collected >= needed){
       const sCfg = SPECS[currentSpec] || SPECS.kip;
-      toast(completedMines === totalMines - 1 ? 'Все задания выполнены — подойдите к зданию СОТА.' : (currentSpec === 'p' || currentSpec === 'ksk') ? 'Все задания выполнены — подойдите к двери «К СОТЕ».' : 'Переход открыт — ищите выход в следующий ' + (currentSpec === 'ts' ? 'участок' : 'цех'));
+      toast('Переход открыт — ищите выход в следующий ' + (currentSpec === 'ts' ? 'участок' : 'цех'));
     }
   });
 
@@ -859,7 +970,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
   // Маршрут по проходимым клеткам (BFS), без стартовой клетки
-  function planPath(tx, ty, avoidInteractions = false){
+  function planPath(tx, ty){
     if (tx < 0 || ty < 0 || tx >= W || ty >= H) return null;
     if (map[ty][tx] !== FLOOR) return null;
     if (tx === player.gx && ty === player.gy) return [];
@@ -876,11 +987,6 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         const nx = x + dx, ny = y + dy;
         if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
         if (map[ny][nx] !== FLOOR || visited[ny][nx]) continue;
-        if (avoidInteractions && (nx !== tx || ny !== ty) && (
-          crystals.some(cr => !cr.done && cr.x === nx && cr.y === ny) ||
-          pickups.some(pk => pk.x === nx && pk.y === ny) ||
-          (exitCell.x === nx && exitCell.y === ny)
-        )) continue;
         visited[ny][nx] = true;
         prev[ny][nx] = [x, y];
         queue.push([nx, ny]);
@@ -909,13 +1015,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     // Если игрок уже рядом со станком и тапает по нему — сразу открываем задачу
     const nearStation = crystals.find(cr => !cr.done && cr.x === cell.x && cr.y === cell.y);
     if (nearStation && Math.abs(player.gx - cell.x) + Math.abs(player.gy - cell.y) <= 1){
-      stopAuto();
       openQuestion(nearStation);
       return;
     }
-    // Сначала обходим другие задания и предметы; в узком проходе можно пройти
-    // через их клетки, но взаимодействие произойдёт только у выбранной цели.
-    const path = planPath(cell.x, cell.y, true) || planPath(cell.x, cell.y);
+    const path = planPath(cell.x, cell.y);
     if (!path || path.length === 0){
       if (path === null){
         if (map[cell.y] && map[cell.y][cell.x] === WALL) sfx.bump();
@@ -931,46 +1034,17 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     autoNext = performance.now() + 40;
   }
 
-  function pointerToWorld(e){
+  function pointerToCell(e){
     const rect = canvas.getBoundingClientRect();
-    return { x: camX + (e.clientX - rect.left) / zoom, y: camY + (e.clientY - rect.top) / zoom };
-  }
-
-  function stationAtPoint(point){
-    const now = performance.now();
-    // Значок расположен над клеткой взаимодействия, а стол занимает несколько клеток.
-    // Сначала проверяем значки, чтобы мебель соседнего места не перехватила нажатие.
-    const active = crystals.filter(cr => !cr.done);
-    const badge = active.find(cr => {
-      const dx = point.x - (cr.x * TILE + TILE / 2);
-      const dy = point.y - (cr.y * TILE + TILE / 2);
-      const badgeY = -38 + Math.sin(now * 0.004 + cr.seed) * 3.5;
-      return Math.hypot(dx, dy - badgeY) <= 20;
-    });
-    if (badge) return badge;
-    return active.filter(cr => {
-      const dx = point.x - (cr.x * TILE + TILE / 2);
-      const dy = point.y - (cr.y * TILE + TILE / 2);
-      if (currentSpec === 'p'){
-        const server = cr.stationType === 2;
-        const equipment = server ? dx >= -32 && dx <= 34 && dy >= -64 && dy <= 16
-          : dx >= -65 && dx <= 70 && dy >= -80 && dy <= 32;
-        const label = Math.abs(dx) <= 82 && dy >= 33 && dy <= 65;
-        return equipment || label;
-      }
-      return Math.abs(dx) <= 32 && dy >= -68 && dy <= 28;
-    }).sort((a, b) => {
-      const distance = cr => Math.hypot(point.x - (cr.x * TILE + TILE / 2), point.y - (cr.y * TILE + TILE / 2));
-      return distance(a) - distance(b);
-    })[0] || null;
+    const wx = camX + (e.clientX - rect.left) / zoom;
+    const wy = camY + (e.clientY - rect.top) / zoom;
+    return { x: Math.floor(wx / TILE), y: Math.floor(wy / TILE) };
   }
 
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     if (state !== 'playing') return;
-    const point = pointerToWorld(e);
-    const station = stationAtPoint(point);
-    tapTo(station ? { x: station.x, y: station.y } : { x: Math.floor(point.x / TILE), y: Math.floor(point.y / TILE) });
+    tapTo(pointerToCell(e));
   });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -990,23 +1064,28 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     onEnterTile();
   }
 
-  function onEnterTile(){
-    if (tapTarget){
-      if (player.gx !== tapTarget.x || player.gy !== tapTarget.y) return;
-      stopAuto();
+  function interactStation(c){
+    if (!c || c.done) return;
+    activeCrystal = c;
+    if (c.actionType === 'minigame' && c.minigameId && window.MINI_GAMES && window.MINI_GAMES[c.minigameId]){
+      startFloorEvent(c.minigameId);
+    } else {
+      openQuestion(c);
     }
+  }
+
+  function onEnterTile(){
     const pk = pickups.find(p => p.x === player.gx && p.y === player.gy);
     if (pk){ takePickup(pk); return; }
 
     const c = crystals.find(cr => !cr.done && cr.x === player.gx && cr.y === player.gy);
-    if (c){ openQuestion(c); return; }
+    if (c){ interactStation(c); return; }
 
     if (player.gx === exitCell.x && player.gy === exitCell.y){
       if (exitOpen){
         descend();
       } else {
-        const specCfg = SPECS[currentSpec] || SPECS.kip;
-        toast('Переход закрыт: нужно обслужить ещё ' + Math.max(0, needed - collected) + ' ' + (currentSpec === 'ts' ? 'станка' : 'прибора'));
+        toast('Дверь закрыта: нужно выполнить ещё ' + Math.max(0, needed - collected) + ' заданий!');
         sfx.bump();
       }
     }
@@ -1014,17 +1093,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   function takePickup(pk){
     pickups = pickups.filter(p => p !== pk);
-    if (pk.type === 'oil'){
-      fuel = Math.min(100, fuel + 20);
-      toast('Запас питания: +20 света');
-      flash = 0.25; flashColor = '255,200,120';
-    } else {
-      hp = Math.min(100, hp + 18);
-      toast('Инструменты и аптечка: +18 сил');
-      flash = 0.25; flashColor = '130,235,170';
-    }
-    score += 30;
-    sfx.pick();
+    score += 50;
+    answerStreak++;
+    toast('Инструменты найдены: +50 очков!');
+    flash = 0.25; flashColor = '255,200,120';
     updateHUD();
   }
 
@@ -1040,56 +1112,48 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   function descend(){
     completedMines++;
-    depth = completedMines + 1;
-    score += 300 + depth * 60;
-    fuel = Math.min(100, fuel + 30);
-    hp = Math.min(100, hp + 12);
+    score += 500;
     answerStreak = 0;
     sfx.descend();
     flash = 0.5; flashColor = '255,210,140';
-
-    if (completedMines >= totalMines){ victory(); return; }
-
-    newLevel();
-    updateHUD();
-    const eventId = scheduledEvents.get(completedMines);
-    if (eventId && MINI_GAMES[eventId]){
-      startFloorEvent(eventId);
-      return;
-    }
-    say(currentSkin().lines.descend);
-    const specCfg = SPECS[currentSpec] || SPECS.kip;
-    toast(specCfg.floorName + ' ' + (completedMines + 1) + '/' + totalMines + ' · до СОТЫ ' + leftKm() + ' км');
+    // 1 цех на постоянку: переход в дверь К СОТЕ ведет сразу к экрану СОТЫ
+    victory();
   }
 
   function victory(){
-    cleanupClicker();
+    try {
+      for (const k in window.MINI_GAMES){
+        if (window.MINI_GAMES[k] && typeof window.MINI_GAMES[k].cleanup === 'function') window.MINI_GAMES[k].cleanup();
+      }
+    } catch(_) {}
     state = 'dead';
     stopAuto();
-    const bonus = Math.round(startKm * 15);
+    const bonus = 500;
     score += bonus;
     if (score > best){
       best = score;
       try { localStorage.setItem('mine_best', String(best)); } catch (e) {}
     }
     const specCfg = SPECS[currentSpec] || SPECS.kip;
-    el('endTitle').textContent = 'Дошли до СОТЫ!';
-    el('endText').textContent = directPractice
-      ? 'Практика завершена. Выполнено задач: ' + runOre + ' из ' + needed + '.'
-      : 'Старт: ' + chosenCity.name + ' · ' + startKm + ' км позади. Награда за практику: +' + bonus + ' очков.';
-    if (el('endFloorName')) el('endFloorName').textContent = specCfg.floorName;
-    if (el('endStationName')) el('endStationName').textContent = specCfg.unitName;
-    el('endDepth').textContent = totalMines + '/' + totalMines;
+    el('endTitle').textContent = 'Поздравляем! Вы дошли до СОТЫ!';
+    el('endText').textContent = 'Все 5 практических заданий лаборатории успешно выполнены! Награда за отличную смену: +' + bonus + ' очков.';
+    if (el('endFloorName')) el('endFloorName').textContent = specCfg.floorName || 'Лаборатория';
+    if (el('endStationName')) el('endStationName').textContent = specCfg.unitName || 'Станции';
+    el('endDepth').textContent = '1/1';
     el('endOre').textContent = runOre;
     el('endScore').textContent = score;
     el('endBest').textContent = best;
-    el('sotaWrap').classList.remove('hidden');
+    if (el('sotaWrap')) el('sotaWrap').classList.remove('hidden');
     drawSotaBuilding();
     el('endScreen').classList.remove('hidden');
   }
 
   function gameOver(reason){
-    cleanupClicker();
+    try {
+      for (const k in window.MINI_GAMES){
+        if (window.MINI_GAMES[k] && typeof window.MINI_GAMES[k].cleanup === 'function') window.MINI_GAMES[k].cleanup();
+      }
+    } catch(_) {}
     state = 'dead';
     stopAuto();
     if (score > best){
@@ -1098,18 +1162,17 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     }
     const specCfg = SPECS[currentSpec] || SPECS.kip;
     el('endTitle').textContent = 'Смена окончена';
-    el('endText').textContent = reason;
-    if (el('endFloorName')) el('endFloorName').textContent = specCfg.floorName;
-    if (el('endStationName')) el('endStationName').textContent = specCfg.unitName;
-    el('endDepth').textContent = Math.min(completedMines + 1, totalMines) + '/' + totalMines;
+    el('endText').textContent = reason || 'Смена завершена.';
+    if (el('endFloorName')) el('endFloorName').textContent = specCfg.floorName || 'Лаборатория';
+    if (el('endStationName')) el('endStationName').textContent = specCfg.unitName || 'Станции';
+    el('endDepth').textContent = '1/1';
     el('endOre').textContent = runOre;
     el('endScore').textContent = score;
     el('endBest').textContent = best;
-    el('sotaWrap').classList.add('hidden');
+    if (el('sotaWrap')) el('sotaWrap').classList.add('hidden');
     el('endScreen').classList.remove('hidden');
   }
 
-  const SOTA_PHOTO_DATA = 'data:image/jpeg;base64,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';
   let sotaSprite = null, sotaLoading = false;
   function getSotaSprite(){
     if (sotaSprite) return sotaSprite;
@@ -1117,18 +1180,31 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     sotaLoading = true;
     const img = new Image();
     img.onload = () => {
-      // Готовый pixel-art здания сохраняем без уменьшения и постеризации.
-      sotaSprite = img;
+      const up = document.createElement('canvas');
+      up.width = img.naturalWidth || 640;
+      up.height = img.naturalHeight || 427;
+      const cg = up.getContext('2d');
+      cg.imageSmoothingEnabled = false;
+      cg.drawImage(img, 0, 0, up.width, up.height);
+      sotaSprite = up;
       sotaLoading = false;
-      drawSotaBuilding();
+      const endSc = el('endScreen');
+      if (endSc && !endSc.classList.contains('hidden')) drawSotaBuilding();
     };
     img.onerror = () => {
-      if (img.dataset.fallback) return;
-      img.dataset.fallback = '1';
-      img.src = SOTA_PHOTO_DATA;
+      if (!img.dataset.fb1) {
+        img.dataset.fb1 = '1';
+        img.src = '/assets/sota-building.jpg';
+        return;
+      }
+      if (!img.dataset.fb2) {
+        img.dataset.fb2 = '1';
+        img.src = 'assets/sota-building.jpg';
+        return;
+      }
+      sotaLoading = false;
     };
-    img.src = window.location.pathname.includes('/specialties/')
-      ? '../../assets/sota-building.png' : 'assets/sota-building.png';
+    img.src = window.location.pathname.includes('/specialties/') ? '../../assets/sota-building.jpg' : 'assets/sota-building.jpg';
     return null;
   }
 
@@ -1136,15 +1212,13 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const cv = el('sotaCanvas');
     if (!cv) return;
     const sp = getSotaSprite();
-    if (!sp) return;
-    cv.width = sp.naturalWidth;
-    cv.height = sp.naturalHeight;
+    if (!sp){ setTimeout(drawSotaBuilding, 100); return; }
+    cv.width = sp.width;
+    cv.height = sp.height;
     const g = cv.getContext('2d');
     g.imageSmoothingEnabled = false;
     g.drawImage(sp, 0, 0);
-  }
-
-  let activeCityFilter = 'all';
+  }let activeCityFilter = 'all';
 
   function initCityFiltersOnce(){
     const row = document.querySelector('.city-filter-row');
@@ -1201,28 +1275,6 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   /* ============================================================
      События между уровнями (Модульный диспетчер мини-игр)
      ============================================================ */
-  function plannedEventsFor(mines){
-    const fallback = Math.max(1, mines - 1);
-    return clamp(EVENT_COUNT_BY_MINES[mines] ?? fallback, 0, Math.max(0, mines - 1));
-  }
-
-  function scheduleRunEvents(mines){
-    scheduledEvents.clear();
-    const transitions = [];
-    for (let i = 1; i < mines; i++) transitions.push(i);
-    const count = plannedEventsFor(mines);
-    const picked = transitions.slice(0, count);
-
-    const kipSeq = ['calib', 'wires', 'pid', 'calib'];
-    const tsSeq  = ['pipes', 'bypass', 'exchanger', 'pipes'];
-    const specSeq = (currentSpec === 'ts') ? tsSeq : kipSeq;
-
-    picked.forEach((idx, i) => {
-      const eventId = specSeq[i % specSeq.length];
-      scheduledEvents.set(idx, eventId);
-    });
-  }
-
   function startFloorEvent(eventId){
     state = 'minigame';
     stopAuto();
@@ -1237,7 +1289,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     }
   }
 
-  function closeFloorEvent(){
+  function closeFloorEvent(won){
+    const isSuccess = (won !== false);
     for (const key in window.MINI_GAMES){
       if (window.MINI_GAMES[key] && typeof window.MINI_GAMES[key].cleanup === 'function'){
         try { window.MINI_GAMES[key].cleanup(); } catch(e){ console.error(e); }
@@ -1250,38 +1303,85 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       const bNode = el(id.replace('Screen', 'Banner'));
       if (bNode) bNode.classList.add('hidden');
     });
+
+    if (activeCrystal && !activeCrystal.done){
+      if (isSuccess){
+        activeCrystal.done = true;
+        collected++;
+        runOre++;
+        updateHUD();
+        if (collected >= needed && !exitOpen){
+          exitOpen = true;
+          setTimeout(() => toast('Все 5 заданий выполнены! Дверь К СОТЕ открыта >>'), 300);
+        }
+      } else {
+        toast('Задание не выполнено. Попробуйте снова!');
+      }
+    }
+
     if (state === 'minigame'){
       state = 'playing';
       try {
-        if (currentSkin() && currentSkin().lines) say(currentSkin().lines.descend);
+        if (currentSkin() && currentSkin().lines){
+          if (isSuccess){
+            say(currentSkin().lines.correct ? currentSkin().lines.correct[0] : 'Задание выполнено!');
+          } else {
+            say('Нужно перепроверить и настроить заново!');
+          }
+        }
         const specCfg = SPECS[currentSpec] || SPECS.kip;
-        toast(specCfg.floorName + ' ' + (completedMines + 1) + '/' + totalMines + ' · до СОТЫ ' + leftKm() + ' км');
-      } catch (err){
-        console.error('closeFloorEvent err:', err);
-      }
+        toast((specCfg.floorName || 'Лаборатория') + ' 1/1 · Выполнено ' + collected + '/' + needed);
+      } catch(_) {}
     }
   }
 
-  /* ============================================================
-     Отрисовка
-     ============================================================ */
+  function startGame(city){
+    for (const k in window.MINI_GAMES){
+      if (window.MINI_GAMES[k] && window.MINI_GAMES[k].cleanup) window.MINI_GAMES[k].cleanup();
+    }
+    chosenCity = city || null;
+    startKm = city ? city.km : 0;
+    completedMines = 0;
+    runOre = 0;
+    totalMines = 1; // 1 цех на постоянку
+    depth = 1;
+    score = 0; answerStreak = 0;
+    fuel = 100; // Свет на 100%
+    hp = 100;
+    decks.easy = []; decks.hard = [];
+    shake = 0; flash = 0; speech = null;
+    newLevel();
+    ['endScreen', 'qScreen', 'clickerScreen', 'pipeScreen', 'startScreen', 'cityScreen'].forEach(id => {
+      const n = el(id);
+      if (n) n.classList.add('hidden');
+    });
+    state = 'playing';
+    updateHUD();
+    const specCfg = SPECS[currentSpec] || SPECS.kip;
+    toast('Добро пожаловать в ' + specCfg.title + '! Обслужите 5 рабочих станций.');
+  }
+
+  function openCitySelect(){
+    // Прямой вход в практику без выбора городов (сохраняя возможность возврата)
+    startGame(null);
+  }
+
   /* ============================================================
      Отрисовка цеха СОТА
      ============================================================ */
   function computeBrightness(now){
-    // В цеху СОТА работает промышленное освещение: всё видно ясно и чётко
+    // Полное яркое освещение современного цеха СОТА
     for (let y = 0; y < H; y++){
       for (let x = 0; x < W; x++){
-        seen[y][x] = 1;
         bright[y][x] = 1.0;
+        seen[y][x] = 1;
       }
     }
-    return 10;
   }
 
   function drawFloor(x, y, b){
     if (currentSpec === 'ksk') return drawKskFloor(x,y);
-    if (currentSpec === 'p') return drawPFloor(x, y);
+    if (currentSpec === 'p') return drawPFloor(x,y);
     const px = x * TILE, py = y * TILE;
     const isDark = (x + y) % 2 === 0;
 
@@ -1315,62 +1415,45 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function drawHazardZones(){
-    if (currentSpec === 'ksk') return undefined;
-    if (currentSpec === 'p') return undefined;
-    // Разметка зон безопасности: жёлто-чёрная полоса вокруг каждого станка
+    if (currentSpec === 'p' || currentSpec === 'ksk') return;
+    // Разметка зон безопасности: жёлто-чёрная полоса вокруг каждого станка и чертежного стола
     for (const c of crystals){
       const cx = c.x * TILE, cy = c.y * TILE;
       const x0 = cx - 22, y0 = cy - 14, w = TILE + 44, h = TILE + 28;
 
       ctx.save();
-      // Жёлто-чёрная рамка
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       ctx.strokeStyle = '#f59e0b';
       ctx.strokeRect(x0, y0, w, h);
 
-      // Диагональные штрихи безопасности по периметру
       ctx.strokeStyle = '#141414';
-      ctx.lineWidth = 4;
-      ctx.setLineDash([6, 6]);
+      ctx.lineWidth = 3;
+      ctx.setLineDash([5, 5]);
       ctx.strokeRect(x0, y0, w, h);
       ctx.setLineDash([]);
 
-      // Угловые маркеры безопасности
       ctx.fillStyle = '#f59e0b';
-      const sz = 5;
-      ctx.fillRect(x0 - 2, y0 - 2, sz, sz);
-      ctx.fillRect(x0 + w - 3, y0 - 2, sz, sz);
-      ctx.fillRect(x0 - 2, y0 + h - 3, sz, sz);
+      const sz = 4;
+      ctx.fillRect(x0 - 1, y0 - 1, sz, sz);
+      ctx.fillRect(x0 + w - 3, y0 - 1, sz, sz);
+      ctx.fillRect(x0 - 1, y0 + h - 3, sz, sz);
       ctx.fillRect(x0 + w - 3, y0 + h - 3, sz, sz);
-
-      // Стрелки направления на полу рядом со станком
-      ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
-      ctx.beginPath();
-      ctx.moveTo(x0 + w + 4, cy + 18);
-      ctx.lineTo(x0 + w + 9, cy + 22);
-      ctx.lineTo(x0 + w + 4, cy + 26);
-      ctx.fill();
-
       ctx.restore();
     }
   }
 
   function drawWall(x, y, b){
     if (currentSpec === 'ksk') return drawKskWall(x,y);
-    if (currentSpec === 'p') return drawPWall(x, y);
+    if (currentSpec === 'p') return drawPWall(x,y);
     const px = x * TILE, py = y * TILE;
-
-    // Боковые стены (x = 0, x = W - 1) и нижний бортик (y = H - 1)
     ctx.fillStyle = '#0f131a';
     ctx.fillRect(px, py, TILE, TILE);
 
-    // Стальные панели и отбойники
     ctx.fillStyle = '#1e2633';
     ctx.fillRect(px, py, TILE, 3);
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(px, py + TILE - 2, TILE, 2);
 
-    // Жёлто-чёрная защитная полоса на нижнем ограждении
     if (y === H - 1){
       ctx.fillStyle = '#f59e0b';
       ctx.fillRect(px, py, TILE, 4);
@@ -1384,336 +1467,713 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawBackWall(now){
     if (currentSpec === 'ksk') return drawKskBackWall(now);
     if (currentSpec === 'p') return drawPBackWall(now);
-    // Задняя стена цеха (y = 0..1, высота 88px)
-    const wallH = 2 * TILE;
-
-    // Фоновые стальные панели
+    const wallH = 114;
+    // 1. Основа задней кирпично-панельной стены (темный индустриальный антрацит)
     ctx.fillStyle = '#0f141d';
     ctx.fillRect(0, 0, VW, wallH);
 
-    // Вертикальные швы панелей
-    ctx.fillStyle = '#171f2c';
-    for (let x = 0; x < VW; x += TILE * 2){
+    // Вертикальные швы модульных панелей (каждые 64px) и стальные заклепки
+    ctx.fillStyle = '#17202e';
+    for (let x = 0; x < VW; x += 64){
       ctx.fillRect(x, 0, 2, wallH);
-      // Заклёпки
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.fillRect(x - 1, 8, 4, 3);
-      ctx.fillRect(x - 1, 32, 4, 3);
-      ctx.fillRect(x - 1, 60, 4, 3);
-      ctx.fillStyle = '#171f2c';
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillRect(x - 1, 20, 4, 3);
+      ctx.fillRect(x - 1, 52, 4, 3);
+      ctx.fillRect(x - 1, 84, 4, 3);
+      ctx.fillRect(x - 1, 104, 4, 3);
+      ctx.fillStyle = '#17202e';
     }
 
-    // Верхняя несущая балка с трубами
-    ctx.fillStyle = '#0a0d14';
-    ctx.fillRect(0, 0, VW, 18);
-    ctx.fillStyle = '#222c3d';
-    ctx.fillRect(0, 16, VW, 2);
+    // Нижний стальной плинтус / отбойник на границе стены и пола (y = 110..114)
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 110, VW, 4);
+    ctx.fillStyle = '#334155'; ctx.fillRect(0, 110, VW, 1);
+    ctx.fillStyle = '#020617'; ctx.fillRect(0, 114, VW, 2);
 
-    // Труба теплоносителя (красная) с фланцами
-    ctx.fillStyle = '#b91c1c';
-    ctx.fillRect(0, 5, VW, 5);
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(0, 6, VW, 1.5);
-    for (let x = 60; x < VW; x += 110){
-      ctx.fillStyle = '#475569';
-      ctx.fillRect(x, 3, 5, 9);
-    }
-
-    // Тонкий кабель-канал (серебристый)
-    ctx.fillStyle = '#64748b';
-    ctx.fillRect(0, 12, VW, 2);
-
-    // 1. ВЫВЕСКА СОТА (слева)
-    const signX = 40, signY = 20, signW = 230, signH = 58;
+    // ============================================================
+    // ВЕРХНЯЯ АРХИТЕКТУРНАЯ СТАЛЬНАЯ БАЛКА (y = 8..62)
+    // Содержит:
+    // 1) Вентиляционную решетку слева ([ ≡≡≡ ])
+    // 2) Настенную вывеску СОТА с неоновой подсветкой по центру
+    // 3) Электронное табло статуса справа (ONLINE 24/7)
+    // В точности как на референсе media_1795538078759_63b9902f.png!
+    // ============================================================
+    const beamY = 8, beamH = 54;
     ctx.save();
-    // Фоновая пластина с золотым свечением
-    ctx.fillStyle = '#0a0e17';
-    ctx.beginPath();
-    ctx.roundRect(signX, signY, signW, signH, 8);
-    ctx.fill();
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
 
-    // Эмблема СОТА (шестиугольник)
-    const hx = signX + 28, hy = signY + signH / 2;
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++){
-      const angle = (i * 60) * Math.PI / 180;
-      const ppx = hx + 15 * Math.cos(angle);
-      const ppy = hy + 15 * Math.sin(angle);
-      if (i === 0) ctx.moveTo(ppx, ppy); else ctx.lineTo(ppx, ppy);
+    // Несущий канал балки
+    ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, beamY, VW, beamH);
+    ctx.fillStyle = '#161d2a'; ctx.fillRect(0, beamY + 2, VW, beamH - 4);
+
+    // Верхний фиолетовый неоновый световой рельс вдоль всей балки (#a855f7 / #c084fc)
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.35)'; ctx.fillRect(0, beamY - 1, VW, 5);
+    ctx.fillStyle = '#a855f7'; ctx.fillRect(0, beamY, VW, 2.5);
+    ctx.fillStyle = '#e9d5ff'; ctx.fillRect(0, beamY + 0.5, VW, 1);
+
+    // Нижний кант балки
+    ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, beamY + beamH - 2, VW, 2);
+    ctx.fillStyle = '#334155'; ctx.fillRect(0, beamY + beamH - 3, VW, 1);
+
+    // 1) ВЕНТИЛЯЦИОННАЯ РЕШЕТКА СЛЕВА ([ ≡≡≡ ])
+    const vGrdX = 180, vGrdY = 16, vGrdW = 84, vGrdH = 38;
+    // Наружный металлический фланец с винтами
+    ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.roundRect(vGrdX, vGrdY, vGrdW, vGrdH, 3); ctx.fill();
+    ctx.strokeStyle = '#374151'; ctx.lineWidth = 1.2; ctx.stroke();
+    // 4 угловых крепежных винта
+    ctx.fillStyle = '#9ca3af';
+    [[vGrdX + 4, vGrdY + 4], [vGrdX + vGrdW - 6, vGrdY + 4], [vGrdX + 4, vGrdY + vGrdH - 6], [vGrdX + vGrdW - 6, vGrdY + vGrdH - 6]].forEach(([bx, by]) => {
+      ctx.fillRect(bx, by, 2.5, 2.5);
+    });
+    // Темная вентиляционная ниша
+    ctx.fillStyle = '#030712'; ctx.fillRect(vGrdX + 8, vGrdY + 6, vGrdW - 16, vGrdH - 12);
+    // Горизонтальные жалюзи
+    for (let ly = vGrdY + 9; ly < vGrdY + vGrdH - 8; ly += 4.5){
+      ctx.fillStyle = '#1f2937'; ctx.fillRect(vGrdX + 9, ly, vGrdW - 18, 2);
+      ctx.fillStyle = '#4b5563'; ctx.fillRect(vGrdX + 9, ly, vGrdW - 18, 0.8);
     }
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
-    ctx.fill();
 
-    // Текст вывески
-    ctx.textAlign = 'left';
+    // 2) ЦЕНТРАЛЬНАЯ ВЫВЕСКА ЛАБОРАТОРИИ, ВМОНТИРОВАННАЯ В СТЕНУ
+    const isTS = (currentSpec === 'ts');
+    const signW = 440, signH = 46;
+    const signX = (VW - signW) / 2, signY = 12;
+
+    // Боковые стальные крепежные пластины с болтами к балке
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(signX - 12, signY + 8, 14, signH - 16);
+    ctx.fillRect(signX + signW - 2, signY + 8, 14, signH - 16);
+    ctx.fillStyle = '#64748b';
+    // Болты крепления
+    [signY + 12, signY + 22, signY + 32].forEach(by => {
+      ctx.fillRect(signX - 9, by, 3, 3);
+      ctx.fillRect(signX + signW + 6, by, 3, 3);
+    });
+
+    // Корпус вывески (скошенный металлический профиль)
+    ctx.fillStyle = '#070a10';
+    ctx.beginPath(); ctx.roundRect(signX, signY, signW, signH, 4); ctx.fill();
+    ctx.strokeStyle = '#273349'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Верхняя фиолетово-неоновая планка вывески (как на референсе)
+    ctx.fillStyle = '#a855f7'; ctx.fillRect(signX + 6, signY + 2, signW - 12, 2.5);
+    ctx.fillStyle = '#f3e8ff'; ctx.fillRect(signX + 16, signY + 2.5, signW - 32, 1);
+
+    // Заголовок вывески: СОТА • ЛАБОРАТОРИЯ КИП / ТС
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = 'bold 15px "Trebuchet MS", sans-serif';
-    ctx.fillStyle = '#fbbf24';
-    ctx.fillText('COTA', signX + 54, signY + 18);
-
-    ctx.font = 'bold 12px "Trebuchet MS", sans-serif';
+    ctx.font = 'bold 16px "Segoe UI", "Trebuchet MS", sans-serif';
     ctx.fillStyle = '#f8fafc';
-    ctx.fillText(currentSpec === 'ts' ? 'ТЕПЛОПУНКТ ТС' : 'ЦЕХ КИП', signX + 54, signY + 34);
+    const mainTitle = isTS ? 'СОТА  •  ЛАБОРАТОРИЯ ТС' : 'СОТА  •  ЛАБОРАТОРИЯ КИП';
+    ctx.fillText(mainTitle, signX + signW / 2, signY + 18);
 
-    ctx.font = '10px "Segoe UI", sans-serif';
+    // Разделительная полоса
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(signX + 24, signY + 29, signW - 48, 1);
+
+    // Подзаголовок квалификации (светящийся бирюзовый/циан как на референсе)
+    ctx.font = 'bold 9.5px "Segoe UI", monospace';
+    ctx.fillStyle = '#38bdf8';
+    const subTitle = isTS ? '13.02.02  /  ТЕПЛОСНАБЖЕНИЕ И ТЕПЛОТЕХНИКА' : '15.01.31  /  СЛЕСАРЬ-НАЛАДЧИК КИП И АСУ';
+    ctx.fillText(subTitle, signX + signW / 2, signY + 38);
+
+    // 3) ЭЛЕКТРОННОЕ ТАБЛО СТАТУСА СПРАВА (SERVER ROOM / ONLINE 24/7)
+    const stX = 776, stY = 16, stW = 120, stH = 38;
+    ctx.fillStyle = '#090e17'; ctx.beginPath(); ctx.roundRect(stX, stY, stW, stH, 3); ctx.fill();
+    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 10px "Segoe UI", monospace';
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(isTS ? 'ТЕПЛОСЕТЬ' : 'АСУ ТП', stX + 8, stY + 14);
+
+    ctx.font = '8px monospace';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText(isTS ? '13.02.02' : '15.01.31', stX + 76, stY + 14);
+
+    // Мигающий зеленый светодиод и надпись В СЕТИ • 24 / 7
+    const ledOn = Math.sin(now * 0.005) > -0.2;
+    ctx.fillStyle = ledOn ? '#22c55e' : '#14532d';
+    ctx.beginPath(); ctx.arc(stX + 12, stY + 27, 3, 0, Math.PI * 2); ctx.fill();
+    if (ledOn){
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.4)';
+      ctx.beginPath(); ctx.arc(stX + 12, stY + 27, 5.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.font = 'bold 9px monospace';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText(currentSpec === 'ts' ? 'Теплоснабжение СОТА' : 'Автоматика и метрология', signX + 54, signY + 48);
+    ctx.fillText(isTS ? 'В РАБОТЕ · 24 / 7' : 'В СЕТИ · 24 / 7', stX + 22, stY + 28);
+
     ctx.restore();
+  }
 
-    // 2. СТЕНДЫ И ТЕЛЕМЕТРИЯ СПЕЦИАЛЬНОСТИ (по центру)
-    if (currentSpec === 'ts'){
-      // ТЕПЛОСНАБЖЕНИЕ (ТС): Стенд образцов трубопроводов + Пьезометрический график
-      const boardX = 285, boardY = 18, boardW = 185, boardH = 62;
-      ctx.save();
-      ctx.fillStyle = '#0a0e17';
-      ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 6); ctx.fill();
-      ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1.2; ctx.stroke();
+  function drawWallDecor(now){
+    if (currentSpec === 'p' || currentSpec === 'ksk') return;
+    ctx.save();
+    if (currentSpec === 'kip'){
+      // ============================================================
+      // КИП: НАСТЕННЫЙ ДЕКОР
+      // 1. Слева: Большая функциональная P&ID схема контура автоматизации и график ПИД на доске
+      // 2. Центр-лево: Перфорированная панель с инструментами (мультиметры, щупы, отвертки VDE)
+      // 3. Центр-право: Полка технической документации (ПУЭ-7, ГОСТ, схемы АСУ ТП)
+      // 4. Справа: Плакат электробезопасности 220В и промышленные аналоговые часы
+      // ============================================================
 
-      ctx.font = 'bold 9px "Segoe UI", sans-serif';
-      ctx.fillStyle = '#fdba74';
-      ctx.fillText('ОБРАЗЦЫ ТРУБОПРОВОДОВ И АРМАТУРЫ', boardX + 6, boardY + 11);
+      // --- 1. ДОСКА СХЕМ АВТОМАТИЗАЦИИ (x = 88..270, y = 64..112) ---
+      const bX = 88, bY = 64, bW = 182, bH = 46;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(bX + 2, bY + 2, bW, bH);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(bX, bY, bW, bH);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(bX, bY, bW, bH);
+      ctx.fillStyle = '#09131d'; ctx.fillRect(bX + 4, bY + 4, bW - 8, bH - 8);
 
-      // Образец 1: Труба ППУ-ПЭ в разрезе
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(boardX + 10, boardY + 18, 44, 38);
-      // Стальная труба
-      ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.arc(boardX + 32, boardY + 36, 12, 0, Math.PI * 2); ctx.fill();
-      // ППУ изоляция (жёлтая пена)
-      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(boardX + 32, boardY + 36, 9, 0, Math.PI * 2); ctx.fill();
-      // Внутренний теплоноситель
-      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(boardX + 32, boardY + 36, 5, 0, Math.PI * 2); ctx.fill();
-      // Сигнальные провода ОДК
-      ctx.fillStyle = '#b45309'; ctx.fillRect(boardX + 27, boardY + 28, 2, 2); ctx.fillRect(boardX + 35, boardY + 28, 2, 2);
-      ctx.font = '7.5px sans-serif'; ctx.fillStyle = '#e2e8f0'; ctx.fillText('ППУ+ОДК', boardX + 13, boardY + 54);
-
-      // Образец 2: Шаровой кран в разрезе
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(boardX + 64, boardY + 18, 48, 38);
-      ctx.fillStyle = '#d97706'; ctx.fillRect(boardX + 68, boardY + 31, 40, 10); // латунный корпус
-      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(boardX + 88, boardY + 36, 6, 0, Math.PI * 2); ctx.fill(); // шар
-      ctx.fillStyle = '#dc2626'; ctx.fillRect(boardX + 86, boardY + 21, 16, 4); // красная ручка
-      ctx.fillStyle = '#38bdf8'; ctx.fillRect(boardX + 84, boardY + 34, 8, 4); // проходной канал
-      ctx.font = '7.5px sans-serif'; ctx.fillStyle = '#e2e8f0'; ctx.fillText('Кран шаровой', boardX + 66, boardY + 54);
-
-      // Образец 3: Задвижка клиновая
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(boardX + 122, boardY + 18, 52, 38);
-      ctx.fillStyle = '#475569'; ctx.fillRect(boardX + 128, boardY + 32, 40, 8); // чугунный корпус
-      ctx.fillStyle = '#cbd5e1'; ctx.fillRect(boardX + 145, boardY + 22, 6, 12); // шток
-      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(boardX + 148, boardY + 20, 5.5, 0, Math.PI * 2); ctx.stroke(); // маховик
-      ctx.font = '7.5px sans-serif'; ctx.fillStyle = '#e2e8f0'; ctx.fillText('Задвижка ДУ50', boardX + 124, boardY + 54);
-      ctx.restore();
-
-      // Экран 2: Пьезометрический график теплосети
-      const scr2X = 480, scr2Y = 18, scr2W = 160, scr2H = 62;
-      ctx.save();
-      ctx.fillStyle = '#040914';
-      ctx.beginPath(); ctx.roundRect(scr2X, scr2Y, scr2W, scr2H, 6); ctx.fill();
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.2; ctx.stroke();
-
-      ctx.font = 'bold 8.5px monospace';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText('ПЬЕЗОМЕТРИЧЕСКИЙ ГРАФИК', scr2X + 6, scr2Y + 11);
-
-      // Оси графика
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+      // Схема функционального контура: [Датчик PT-101] -> [ПИД-регулятор] -> [Клапан]
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1;
+      // Кружок датчика PT-101
+      ctx.beginPath(); ctx.arc(bX + 22, bY + 16, 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#e0f2fe'; ctx.font = '6px monospace'; ctx.textAlign = 'center'; ctx.fillText('PT', bX + 22, bY + 18);
+      // Линия связи
+      ctx.beginPath(); ctx.moveTo(bX + 29, bY + 16); ctx.lineTo(bX + 46, bY + 16); ctx.stroke();
+      // Блок ПИД
+      ctx.strokeRect(bX + 46, bY + 9, 26, 14);
+      ctx.fillStyle = '#facc15'; ctx.font = 'bold 6px monospace'; ctx.fillText('PID', bX + 59, bY + 18);
+      // Линия к приводу
+      ctx.beginPath(); ctx.moveTo(bX + 72, bY + 16); ctx.lineTo(bX + 88, bY + 16); ctx.stroke();
+      // Символ клапана |><|
+      ctx.fillStyle = '#f87171';
       ctx.beginPath();
-      ctx.moveTo(scr2X + 16, scr2Y + 16); ctx.lineTo(scr2X + 16, scr2Y + 54);
-      ctx.lineTo(scr2X + scr2W - 8, scr2Y + 54); ctx.stroke();
+      ctx.moveTo(bX + 88, bY + 11); ctx.lineTo(bX + 98, bY + 21); ctx.lineTo(bX + 98, bY + 11); ctx.lineTo(bX + 88, bY + 21);
+      ctx.closePath(); ctx.fill();
 
-      // Линия статического напора (пунктир)
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-      ctx.beginPath(); ctx.moveTo(scr2X + 16, scr2Y + 24); ctx.lineTo(scr2X + scr2W - 8, scr2Y + 24); ctx.stroke();
+      // График переходной характеристики регулятора (затухающая синусоида с уставкой SP)
+      const gX = bX + 112, gY = bY + 8, gW = 60, gH = 26;
+      ctx.fillStyle = '#030b14'; ctx.fillRect(gX, gY, gW, gH);
+      ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.8; ctx.strokeRect(gX, gY, gW, gH);
+      // Зеленая линия уставки SP = 1.0
+      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 0.8; ctx.setLineDash([2, 2]);
+      ctx.beginPath(); ctx.moveTo(gX, gY + 13); ctx.lineTo(gX + gW, gY + 13); ctx.stroke();
       ctx.setLineDash([]);
-
-      // Линия подачи (красная ниспадающая)
-      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.moveTo(scr2X + 16, scr2Y + 28); ctx.lineTo(scr2X + scr2W - 12, scr2Y + 40); ctx.stroke();
-
-      // Линия обратки (синяя восходящая)
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.moveTo(scr2X + 16, scr2Y + 50); ctx.lineTo(scr2X + scr2W - 12, scr2Y + 46); ctx.stroke();
-
-      ctx.font = '7.5px monospace';
-      ctx.fillStyle = '#ef4444'; ctx.fillText('H1: 65м', scr2X + 20, scr2Y + 26);
-      ctx.fillStyle = '#38bdf8'; ctx.fillText('H2: 20м', scr2X + 20, scr2Y + 48);
-      ctx.restore();
-    } else {
-      // КИПиА: Стенд датчиков в разрезе + Стенд схемы автоматики и ПЛК
-      const boardX = 285, boardY = 18, boardW = 185, boardH = 62;
-      ctx.save();
-      ctx.fillStyle = '#0a0e17';
-      ctx.beginPath(); ctx.roundRect(boardX, boardY, boardW, boardH, 6); ctx.fill();
-      ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 1.2; ctx.stroke();
-
-      ctx.font = 'bold 9px "Segoe UI", sans-serif';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText('ОБРАЗЦЫ ДАТЧИКОВ И ИЗМЕРИТЕЛЕЙ КИП', boardX + 6, boardY + 11);
-
-      // Датчик 1: Манометр с трубкой Бурдона в разрезе
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(boardX + 10, boardY + 18, 48, 38);
-      ctx.fillStyle = '#d97706'; ctx.fillRect(boardX + 31, boardY + 44, 6, 8); // латунный штуцер
-      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(boardX + 34, boardY + 34, 11, 0, Math.PI * 2); ctx.stroke(); // корпус
-      // Трубка Бурдона (C-образная дуга)
-      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(boardX + 34, boardY + 34, 7.5, Math.PI * 0.4, Math.PI * 1.8); ctx.stroke();
-      // Красная стрелка
-      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(boardX + 34, boardY + 34); ctx.lineTo(boardX + 39, boardY + 29); ctx.stroke();
-      ctx.font = '7.5px sans-serif'; ctx.fillStyle = '#e2e8f0'; ctx.fillText('Манометр КИП', boardX + 12, boardY + 54);
-
-      // Датчик 2: Термопара ТХА в разрезе
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(boardX + 66, boardY + 18, 50, 38);
-      ctx.fillStyle = '#64748b'; ctx.fillRect(boardX + 70, boardY + 34, 34, 3); // стальной чехол
-      // Спай термопары на конце
-      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(boardX + 104, boardY + 35.5, 3, 0, Math.PI * 2); ctx.fill();
-      // Клеммная головка
-      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(boardX + 68, boardY + 26, 12, 18, 2); ctx.fill();
-      ctx.font = '7.5px sans-serif'; ctx.fillStyle = '#e2e8f0'; ctx.fillText('Термопара ТХА', boardX + 68, boardY + 54);
-
-      // Датчик 3: Аналоговый преобразователь 4-20 мА
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(boardX + 124, boardY + 18, 50, 38);
-      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(boardX + 130, boardY + 22, 38, 20, 3); ctx.fill();
-      ctx.fillStyle = '#22c55e'; ctx.font = 'bold 7px monospace'; ctx.fillText('4-20 mA', boardX + 133, boardY + 32);
-      ctx.fillStyle = '#f59e0b'; ctx.fillRect(boardX + 133, boardY + 36, 32, 2.5);
-      ctx.font = '7.5px sans-serif'; ctx.fillStyle = '#e2e8f0'; ctx.fillText('Токовая петля', boardX + 126, boardY + 54);
-      ctx.restore();
-
-      // Экран 2: Осциллограмма токового сигнала + Ladder Logic
-      const scr2X = 480, scr2Y = 18, scr2W = 160, scr2H = 62;
-      ctx.save();
-      ctx.fillStyle = '#040914';
-      ctx.beginPath(); ctx.roundRect(scr2X, scr2Y, scr2W, scr2H, 6); ctx.fill();
-      ctx.strokeStyle = '#10b981'; ctx.lineWidth = 1.2; ctx.stroke();
-
-      ctx.font = 'bold 8.5px monospace';
-      ctx.fillStyle = '#10b981';
-      ctx.fillText('АСУ ТП · СИГНАЛ 4-20 мА', scr2X + 6, scr2Y + 11);
-
-      // Сетка экрана
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.15)'; ctx.lineWidth = 0.8;
+      // Желтая кривая настройки ПИД (затухание колебаний)
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.2;
       ctx.beginPath();
-      for (let x = scr2X + 12; x < scr2X + scr2W; x += 16){ ctx.moveTo(x, scr2Y + 14); ctx.lineTo(x, scr2Y + scr2H - 4); }
-      for (let y = scr2Y + 18; y < scr2Y + scr2H; y += 12){ ctx.moveTo(scr2X + 4, y); ctx.lineTo(scr2X + scr2W - 4, y); }
-      ctx.stroke();
-
-      // Живая осциллограмма
-      ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      for (let i = 0; i < scr2W - 12; i++){
-        const wx = scr2X + 6 + i;
-        const wy = scr2Y + scr2H / 2 + 6 + Math.sin(i * 0.12 + now * 0.008) * 12;
-        if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+      for (let x = 0; x < gW; x++){
+        const decay = Math.exp(-x * 0.07);
+        const wy = gY + 13 + Math.sin(x * 0.35 + now * 0.003) * 10 * decay;
+        if (x === 0) ctx.moveTo(gX + x, wy);
+        else ctx.lineTo(gX + x, wy);
       }
       ctx.stroke();
 
-      ctx.font = '7.5px monospace';
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillText('I = 12.04 мА · В ДОПУСКЕ', scr2X + 8, scr2Y + 56);
-      ctx.restore();
-    }
+      // Текстовая подпись на доске мелом
+      ctx.fillStyle = '#94a3b8'; ctx.font = '5.5px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText('КОНТУР 01: P = 6.00 бар (норма)', bX + 8, bY + 36);
 
-    // 3. СТЕКЛЯННАЯ ЩИТОВАЯ / КОТЕЛЬНАЯ (справа)
-    const glassX = 650, glassY = 16, glassW = 210, glassH = 68;
-    ctx.save();
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-    ctx.fillRect(glassX, glassY, glassW, glassH);
-    const glassGlow = ctx.createLinearGradient(glassX, glassY, glassX + glassW, glassY + glassH);
-    glassGlow.addColorStop(0, currentSpec === 'ts' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)');
-    glassGlow.addColorStop(1, currentSpec === 'ts' ? 'rgba(245, 158, 11, 0.18)' : 'rgba(147, 51, 234, 0.18)');
-    ctx.fillStyle = glassGlow;
-    ctx.fillRect(glassX, glassY, glassW, glassH);
+      // --- 2. ИНСТРУМЕНТАЛЬНАЯ ПЕРФОПАНЕЛЬ (x = 300..424, y = 64..112) ---
+      const pX = 300, pY = 64, pW = 124, pH = 46;
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(pX + 2, pY + 2, pW, pH);
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(pX, pY, pW, pH, 3); ctx.fill();
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; ctx.stroke();
+      // Перфорация (точки)
+      ctx.fillStyle = '#1e293b';
+      for (let px = pX + 8; px < pX + pW - 6; px += 8){
+        for (let py = pY + 6; py < pY + pH - 4; py += 7){
+          ctx.fillRect(px, py, 1.5, 1.5);
+        }
+      }
+      // Набор диэлектрических отверток VDE (красно-желтые ручки)
+      [0, 1, 2, 3].forEach(i => {
+        const ox = pX + 12 + i * 8;
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(ox, pY + 8, 3.5, 12 + i * 2);
+        ctx.fillStyle = '#eab308'; ctx.fillRect(ox, pY + 20 + i * 2, 3.5, 6);
+        ctx.fillStyle = '#94a3b8'; ctx.fillRect(ox + 1, pY + 26 + i * 2, 1.5, 8);
+      });
+      // Пассатижи и стриппер для зачистки проводов
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(pX + 48, pY + 8, 7, 24);
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(pX + 49.5, pY + 32, 4, 6);
+      // Цифровой мультиметр Fluke на крючке
+      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(pX + 66, pY + 8, 20, 32, 3); ctx.fill();
+      ctx.fillStyle = '#020617'; ctx.fillRect(pX + 69, pY + 11, 14, 10);
+      ctx.fillStyle = '#22c55e'; ctx.font = '6px monospace'; ctx.textAlign = 'center'; ctx.fillText('12.0', pX + 76, pY + 19);
+      // Круговой селектор мультиметра
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(pX + 76, pY + 28, 4, 0, Math.PI * 2); ctx.fill();
+      // Красный и черный измерительные щупы
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pX + 72, pY + 38); ctx.lineTo(pX + 68, pY + 45); ctx.stroke();
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pX + 80, pY + 38); ctx.lineTo(pX + 84, pY + 45); ctx.stroke();
+      // Осциллографический щуп с коаксиальным разъемом BNC
+      ctx.fillStyle = '#475569'; ctx.fillRect(pX + 96, pY + 10, 16, 12);
+      ctx.fillStyle = '#38bdf8'; ctx.font = '5px sans-serif'; ctx.fillText('BNC-01', pX + 104, pY + 18);
 
-    ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
-    ctx.strokeRect(glassX, glassY, glassW, glassH);
-    ctx.beginPath();
-    ctx.moveTo(glassX + glassW / 2, glassY); ctx.lineTo(glassX + glassW / 2, glassY + glassH);
-    ctx.stroke();
+      // --- 3. ПОЛКА ТЕХНИЧЕСКОЙ ДОКУМЕНТАЦИИ (x = 640..776, y = 64..112) ---
+      const sX = 640, sY = 64, sW = 136, sH = 46;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(sX, sY + 38, sW, 4);
+      ctx.fillStyle = '#475569'; ctx.fillRect(sX, sY + 38, sW, 1);
+      // Треугольные кронштейны
+      [[sX + 12, sY + 38], [sX + sW - 16, sY + 38]].forEach(([kx, ky]) => {
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(kx, ky); ctx.lineTo(kx, ky + 9); ctx.lineTo(kx + 8, ky); ctx.stroke();
+      });
+      // Папки-регистраторы с техническими регламентами
+      const binders = [
+        { title: 'ПУЭ 7', col: '#ef4444' },
+        { title: 'ГОСТ', col: '#3b82f6' },
+        { title: 'ПТЭЭП', col: '#10b981' },
+        { title: 'КИПиА', col: '#f59e0b' },
+        { title: 'СХЕМЫ', col: '#8b5cf6' },
+        { title: 'РЕГЛ.', col: '#06b6d4' }
+      ];
+      binders.forEach((b, idx) => {
+        const bx = sX + 8 + idx * 16;
+        ctx.fillStyle = b.col;
+        ctx.beginPath(); ctx.roundRect(bx, sY + 12, 13, 26, 1.5); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(bx + 2, sY + 16, 9, 6);
+        ctx.fillStyle = '#0f172a'; ctx.fillRect(bx + 5, sY + 30, 3, 3);
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 4.5px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(b.title.slice(0, 4), bx + 6.5, sY + 21);
+      });
+      // Рулон сложенных синих чертежей на полке справа
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.ellipse(sX + sW - 20, sY + 28, 6, 8, -0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 0.8; ctx.stroke();
 
-    // Силуэты оборудования за стеклом
-    ctx.fillStyle = '#090d16';
-    ctx.fillRect(glassX + 16, glassY + 14, 34, 52);
-    ctx.fillRect(glassX + 62, glassY + 14, 34, 52);
-    ctx.fillRect(glassX + 118, glassY + 14, 34, 52);
-    ctx.fillRect(glassX + 164, glassY + 14, 34, 52);
+      // --- 4. ПЛАКАТ БЕЗОПАСНОСТИ 220В И ЧАСЫ (x = 796..960, y = 64..112) ---
+      const wX = 796, wY = 64;
+      // Плакат "⚡ 220В / ОПАСНО"
+      ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.roundRect(wX + 8, wY + 6, 68, 36, 2); ctx.fill();
+      ctx.strokeStyle = '#ca8a04'; ctx.lineWidth = 1.2; ctx.stroke();
+      // Знак молнии в треугольнике
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.moveTo(wX + 22, wY + 12); ctx.lineTo(wX + 14, wY + 28); ctx.lineTo(wX + 30, wY + 28); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fef08a'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('⚡', wX + 22, wY + 26);
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 6px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText('220 ВОЛЬТ', wX + 34, wY + 18);
+      ctx.font = '5px sans-serif'; ctx.fillText('РАБОТА В СИЗ!', wX + 34, wY + 28);
+      ctx.fillText('ГОСТ 12.1.009', wX + 34, wY + 36);
 
-    // Мигающие светодиоды в шкафах
-    const leds = [
-      { x: glassX + 24, y: glassY + 24, c: '#22c55e' },
-      { x: glassX + 24, y: glassY + 34, c: '#3b82f6' },
-      { x: glassX + 70, y: glassY + 24, c: '#a855f7' },
-      { x: glassX + 70, y: glassY + 34, c: '#22c55e' },
-      { x: glassX + 126, y: glassY + 24, c: '#3b82f6' },
-      { x: glassX + 172, y: glassY + 24, c: '#22c55e' }
-    ];
-    leds.forEach((ld, i) => {
-      const on = Math.sin(now * 0.008 + i * 1.7) > -0.2;
-      ctx.fillStyle = on ? ld.c : '#1e293b';
-      ctx.fillRect(ld.x, ld.y, 3, 3);
-    });
-
-    ctx.font = 'bold 10px "Segoe UI", sans-serif';
-    ctx.fillStyle = currentSpec === 'ts' ? '#f87171' : '#a78bfa';
-    ctx.fillText(currentSpec === 'ts' ? '🔥 КОТЕЛЬНАЯ И ИТП' : '⚡ ЩИТОВАЯ АСУ ТП 0.4 кВ', glassX + 20, glassY + 12);
-    ctx.restore();
-
-    // 4. ПОДВЕСНЫЕ ПРОМЫШЛЕННЫЕ ЛАМПЫ (светят вниз)
-    const lampX = [180, 370, 560, 755];
-    lampX.forEach(lx => {
-      ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, 26); ctx.stroke();
-
+      // Промышленные аналоговые круглые часы на стене справа
+      const clkX = wX + 116, clkY = wY + 24;
+      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(clkX, clkY, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.5; ctx.stroke();
+      // Деления циферблата
       ctx.fillStyle = '#334155';
-      ctx.beginPath();
-      ctx.moveTo(lx - 11, 26); ctx.lineTo(lx + 11, 26);
-      ctx.lineTo(lx + 14, 32); ctx.lineTo(lx - 14, 32);
-      ctx.closePath(); ctx.fill();
+      for (let i = 0; i < 12; i++){
+        const ang = i * Math.PI / 6;
+        ctx.fillRect(clkX + Math.cos(ang) * 12.5 - 0.75, clkY + Math.sin(ang) * 12.5 - 0.75, 1.5, 1.5);
+      }
+      // Стрелки часов (анимированные секундная и минутная)
+      const secAng = (now * 0.001) % (Math.PI * 2);
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(clkX, clkY); ctx.lineTo(clkX + 7, clkY - 4); ctx.stroke(); // часовая
+      ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(clkX, clkY); ctx.lineTo(clkX - 2, clkY - 10); ctx.stroke(); // минутная
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(clkX, clkY); ctx.lineTo(clkX + Math.cos(secAng) * 12, clkY + Math.sin(secAng) * 12); ctx.stroke();
 
-      ctx.fillStyle = '#fef08a';
-      ctx.beginPath(); ctx.arc(lx, 33, 4, 0, Math.PI * 2); ctx.fill();
+    } else if (currentSpec === 'ts'){
+      // ============================================================
+      // ТС: НАСТЕННЫЙ ДЕКОР
+      // 1. Слева: Принципиальная схема котельной и теплосети Т1/Т2 (КВ-ГМ, насосы, теплообменники)
+      // 2. Вверху: Двойная магистраль Т1 (95°C) и Т2 (70°C) с манометрами
+      // 3. Центр-лево: Слесарный инструментальный щит (тяжелые трубные ключи Stillson, маска)
+      // 4. Центр-право: Настенный микропроцессорный тепловычислитель ТСК с дисплеем
+      // 5. Справа: Плакат безопасности котельной и пожарный пост с гидрантом
+      // ============================================================
 
-      // Мягкий световой конус на пол
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      const cone = ctx.createRadialGradient(lx, 34, 4, lx, 140, 160);
-      cone.addColorStop(0, 'rgba(255, 220, 140, 0.18)');
-      cone.addColorStop(0.45, 'rgba(255, 200, 100, 0.06)');
-      cone.addColorStop(1, 'rgba(255, 180, 60, 0)');
-      ctx.fillStyle = cone;
-      ctx.beginPath();
-      ctx.moveTo(lx - 12, 33); ctx.lineTo(lx - 95, 230); ctx.lineTo(lx + 95, 230); ctx.lineTo(lx + 12, 33);
-      ctx.closePath(); ctx.fill();
-      ctx.restore();
-    });
+      // --- 1. ПРИНЦИПИАЛЬНАЯ СХЕМА ТЕПЛОСЕТИ (x = 88..270, y = 64..112) ---
+      const bX = 88, bY = 64, bW = 182, bH = 46;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(bX + 2, bY + 2, bW, bH);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(bX, bY, bW, bH);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(bX, bY, bW, bH);
+      ctx.fillStyle = '#0c131d'; ctx.fillRect(bX + 4, bY + 4, bW - 8, bH - 8);
+
+      // Символ котла [ КОТЕЛ КВ-ГМ ]
+      ctx.fillStyle = '#ea580c'; ctx.beginPath(); ctx.roundRect(bX + 10, bY + 10, 38, 22, 2); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.font = 'bold 6px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('КОТЕЛ', bX + 29, bY + 19);
+      ctx.font = '5px monospace'; ctx.fillText('КВ-ГМ', bX + 29, bY + 27);
+
+      // Красная линия подачи Т1 (95°C)
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bX + 48, bY + 16); ctx.lineTo(bX + 104, bY + 16); ctx.stroke();
+
+      // Циркуляционный сетевой насос (круг со стрелкой)
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.arc(bX + 74, bY + 16, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 7px sans-serif'; ctx.fillText('▶', bX + 75, bY + 18.5);
+
+      // Теплообменник пластинчатый [ Т/О ]
+      ctx.fillStyle = '#334155'; ctx.fillRect(bX + 104, bY + 10, 24, 26);
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 0.8;
+      for (let px = bX + 108; px < bX + 126; px += 4){
+        ctx.beginPath(); ctx.moveTo(px, bY + 10); ctx.lineTo(px, bY + 36); ctx.stroke();
+      }
+
+      // Синяя линия обратки Т2 (70°C)
+      ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bX + 104, bY + 30); ctx.lineTo(bX + 48, bY + 30); ctx.stroke();
+
+      // Легенда схемы
+      ctx.fillStyle = '#ef4444'; ctx.font = 'bold 5.5px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText('Т1: 95°C (6.0 бар)', bX + 132, bY + 18);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText('Т2: 70°C (4.2 бар)', bX + 132, bY + 28);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('ΔT = 25°C · НОРМА', bX + 132, bY + 38);
+
+      // --- 2. СЛЕСАРНЫЙ ЩИТ ТРУБОПРОВОДЧИКА (x = 300..424, y = 64..112) ---
+      const pX = 300, pY = 64, pW = 124, pH = 46;
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(pX + 2, pY + 2, pW, pH);
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(pX, pY, pW, pH, 3); ctx.fill();
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; ctx.stroke();
+      // Стальная сетка
+      ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 0.8;
+      for (let x = pX + 6; x < pX + pW; x += 8){ ctx.beginPath(); ctx.moveTo(x, pY); ctx.lineTo(x, pY + pH); ctx.stroke(); }
+      // 3 тяжелых трубных ключа Stillson с красными рукоятками
+      [0, 1, 2].forEach(i => {
+        const kx = pX + 14 + i * 14;
+        ctx.fillStyle = '#dc2626'; ctx.fillRect(kx, pY + 8, 4.5, 18 + i * 4);
+        ctx.fillStyle = '#475569'; ctx.fillRect(kx - 3, pY + 8, 10.5, 6);
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(kx - 1, pY + 14, 6.5, 2);
+      });
+      // Маска сварщика
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(pX + 62, pY + 10, 18, 24, 4); ctx.fill();
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(pX + 66, pY + 15, 10, 5);
+      // Строительный уровень (желтый с глазком)
+      ctx.fillStyle = '#eab308'; ctx.fillRect(pX + 88, pY + 12, 28, 6);
+      ctx.fillStyle = '#22c55e'; ctx.fillRect(pX + 100, pY + 13.5, 4, 3);
+      // Разводной ключ и рулетка
+      ctx.fillStyle = '#64748b'; ctx.fillRect(pX + 90, pY + 24, 18, 4);
+      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(pX + 114, pY + 28, 5, 0, Math.PI * 2); ctx.fill();
+
+      // --- 3. НАСТЕННЫЙ ТЕПЛОВЫЧИСЛИТЕЛЬ ТСК-7 (x = 640..776, y = 64..112) ---
+      const tX = 640, tY = 64, tW = 136, tH = 46;
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(tX + 2, tY + 2, tW, tH);
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(tX, tY, tW, tH, 3); ctx.fill();
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.stroke();
+      // Зеленый матричный LCD экран тепловычислителя
+      ctx.fillStyle = '#022c22'; ctx.fillRect(tX + 10, tY + 8, 86, 20);
+      ctx.strokeStyle = '#059669'; ctx.lineWidth = 0.8; ctx.strokeRect(tX + 10, tY + 8, 86, 20);
+      ctx.fillStyle = '#34d399'; ctx.font = 'bold 7.5px monospace'; ctx.textAlign = 'left';
+      ctx.fillText('Q = 1.08 Гкал/ч', tX + 14, tY + 17);
+      ctx.fillText('G = 42.5 т/ч', tX + 14, tY + 25);
+      // Мигающий индикатор импульса
+      const pGlow = Math.sin(now * 0.008) > 0;
+      ctx.fillStyle = pGlow ? '#22c55e' : '#14532d'; ctx.beginPath(); ctx.arc(tX + 88, tY + 13, 2.5, 0, Math.PI * 2); ctx.fill();
+      // Кнопки управления теплосчетчиком
+      ['#38bdf8', '#f59e0b', '#94a3b8'].forEach((btnCol, i) => {
+        ctx.fillStyle = btnCol; ctx.beginPath(); ctx.arc(tX + 108 + i * 8, tY + 16, 2.8, 0, Math.PI * 2); ctx.fill();
+      });
+      // Подпись прибора
+      ctx.fillStyle = '#cbd5e1'; ctx.font = 'bold 6px sans-serif';
+      ctx.fillText('ТЕПЛОВЫЧИСЛИТЕЛЬ ТСК-7 · УЗ-РАСХОДОМЕР', tX + 10, tY + 38);
+
+      // --- 4. ПЛАКАТ БЕЗОПАСНОСТИ КОТЕЛЬНОЙ И ОГНЕТУШИТЕЛЬ (x = 796..960, y = 64..112) ---
+      const wX = 796, wY = 64;
+      // Плакат "⚠ ОСТОРОЖНО: ГОРЯЧАЯ ВОДА И ПАР"
+      ctx.fillStyle = '#fed7aa'; ctx.beginPath(); ctx.roundRect(wX + 8, wY + 6, 76, 36, 2); ctx.fill();
+      ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = '#c2410c'; ctx.font = 'bold 6.5px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText('⚠ ВНИМАНИЕ!', wX + 14, wY + 16);
+      ctx.font = '5px sans-serif'; ctx.fillStyle = '#0f172a';
+      ctx.fillText('ТЕМПЕРАТУРА Т1 = 95°C', wX + 14, wY + 25);
+      ctx.fillText('ДАВЛЕНИЕ ДО 1.6 МПа', wX + 14, wY + 33);
+
+      // Пожарный шкаф ШПК (красный ящик с рукавом)
+      const fX = wX + 96, fY = wY + 6;
+      ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(fX, fY, 32, 36, 2); ctx.fill();
+      ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(fX + 5, fY + 5, 22, 26);
+      ctx.fillStyle = '#ef4444'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('ПК', fX + 16, fY + 18);
+      ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(fX + 16, fY + 25, 4.5, 0, Math.PI * 2); ctx.stroke();
+
+      // Манометры на подвесной трубе Т1 / Т2 (х = 260 и х = 600)
+      [260, 600].forEach((mx, idx) => {
+        const pVal = (idx === 0) ? '6.0' : '4.2';
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(mx, 46); ctx.lineTo(mx, 60); ctx.stroke();
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(mx, 62, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(mx, 62); ctx.lineTo(mx + 4, mx === 260 ? 58 : 64); ctx.stroke();
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 4.5px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(pVal, mx, 68);
+      });
+    }
+    ctx.restore();
   }
 
-  /* ============================================================
-     Интерьер и обстановка цеха: растения, зона отдыха, доска
-     ============================================================ */
   function drawRoomProps(now){
     if (currentSpec === 'ksk') return drawKskProps(now);
     if (currentSpec === 'p') return drawPProps(now);
-    // Растения в больших белых кадках (как на референсе)
-    const plants = [
-      { x: 1 * TILE + 20, y: 3 * TILE + 10 },
-      { x: 8 * TILE + 20, y: 2 * TILE + 36 },
-      { x: 1 * TILE + 20, y: 9 * TILE + 10 },
-      { x: 20 * TILE + 22, y: 12 * TILE + 10 }
-    ];
+    // ============================================================
+    // 1. БОЛЬШОЕ ОКНО СЛЕВА И РЕАЛИСТИЧНЫЙ СОЛНЕЧНЫЙ СВЕТ НА ПОЛУ
+    // ============================================================
+    const winX = 2, winY = 46, winW = 68, winH = 460;
+    ctx.save();
+    const skyG = ctx.createLinearGradient(winX, winY, winX + winW, winY + winH);
+    skyG.addColorStop(0, '#fde68a');
+    skyG.addColorStop(0.3, '#7dd3fc');
+    skyG.addColorStop(1, '#064e3b');
+    ctx.fillStyle = skyG;
+    ctx.fillRect(winX, winY, winW, winH);
 
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3.5;
+    ctx.strokeRect(winX, winY, winW, winH);
+    ctx.fillStyle = '#1e293b';
+    for (let py = winY + 65; py < winY + winH; py += 65){
+      ctx.fillRect(winX, py, winW, 3.5);
+    }
+    ctx.fillRect(winX + winW/2, winY, 3.5, winH);
+
+    ctx.fillStyle = '#15803d';
+    for (let i = 0; i < 9; i++){
+      const vx = winX + 6 + (i * 7) % 36;
+      const vy = winY + 4 + i * 9;
+      ctx.beginPath(); ctx.arc(vx, vy, 7, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = '#22c55e';
+    for (let i = 0; i < 7; i++){
+      const vx = winX + 10 + (i * 6) % 30;
+      const vy = winY + 8 + i * 8;
+      ctx.beginPath(); ctx.arc(vx, vy, 4.5, 0, Math.PI*2); ctx.fill();
+    }
+
+    // РЕАЛИСТИЧНАЯ ПРОЕКЦИЯ СВЕТА И ТЕНЕЙ ОТ РАМЫ НА ПОЛ
+    ctx.globalCompositeOperation = 'lighter';
+    const sunbeam = ctx.createLinearGradient(winX + winW, winY + 40, winX + 440, winY + 500);
+    sunbeam.addColorStop(0, 'rgba(251, 191, 36, 0.28)');
+    sunbeam.addColorStop(0.4, 'rgba(251, 191, 36, 0.12)');
+    sunbeam.addColorStop(0.85, 'rgba(251, 191, 36, 0.03)');
+    sunbeam.addColorStop(1, 'rgba(251, 191, 36, 0)');
+    ctx.fillStyle = sunbeam;
+    ctx.beginPath();
+    ctx.moveTo(winX + winW, winY + 20);
+    ctx.lineTo(winX + winW, winY + 360);
+    ctx.lineTo(winX + 460, winY + 520);
+    ctx.lineTo(winX + 160, winY + 520);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.08)';
+    for (let i = 0; i < 5; i++){
+      const y0 = winY + 50 + i * 65;
+      ctx.beginPath();
+      ctx.moveTo(winX + winW, y0);
+      ctx.lineTo(winX + winW, y0 + 42);
+      ctx.lineTo(winX + winW + 280, y0 + 175);
+      ctx.lineTo(winX + winW + 280, y0 + 140);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    for (let i = 0; i < 5; i++){
+      const y0 = winY + 92 + i * 65;
+      ctx.beginPath();
+      ctx.moveTo(winX + winW, y0);
+      ctx.lineTo(winX + winW, y0 + 5);
+      ctx.lineTo(winX + winW + 280, y0 + 145);
+      ctx.lineTo(winX + winW + 280, y0 + 140);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+    for (let i = 0; i < 14; i++){
+      const seed = i * 137.5;
+      const px = winX + winW + 30 + ((seed * 11 + now * 0.012) % 240);
+      const py = winY + 60 + ((seed * 19 + Math.sin(now * 0.001 + i) * 15) % 360);
+      ctx.beginPath();
+      ctx.arc(px, py, 1.2 + Math.sin(now * 0.003 + i) * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // ============================================================
+    // 2. ВЕРХНИЕ ИНДУСТРИАЛЬНЫЕ СВЕТИЛЬНИКИ И КАБЕЛЬНЫЙ ЛОТОК
+    // ============================================================
+    ctx.save();
+    ctx.fillStyle = '#334155'; ctx.fillRect(72, 38, 920, 6);
+    ctx.fillStyle = '#64748b'; ctx.fillRect(72, 40, 920, 2);
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(72, 41); ctx.lineTo(992, 41); ctx.stroke();
+    ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(72, 43); ctx.lineTo(992, 43); ctx.stroke();
+
+    [260, 530, 800].forEach(lx => {
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(lx, 44); ctx.lineTo(lx, 66); ctx.stroke();
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath(); ctx.moveTo(lx - 12, 74); ctx.lineTo(lx + 12, 74); ctx.lineTo(lx + 5, 66); ctx.lineTo(lx - 5, 66); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(lx, 75, 4, 0, Math.PI * 2); ctx.fill();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const lg = ctx.createLinearGradient(lx, 75, lx, 320);
+      lg.addColorStop(0, 'rgba(254, 240, 138, 0.16)');
+      lg.addColorStop(0.6, 'rgba(254, 240, 138, 0.04)');
+      lg.addColorStop(1, 'rgba(254, 240, 138, 0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.moveTo(lx - 12, 75);
+      ctx.lineTo(lx + 12, 75);
+      ctx.lineTo(lx + 80, 320);
+      ctx.lineTo(lx - 80, 320);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    });
+    ctx.restore();
+
+    // ============================================================
+    // 3. НАПОЛЬНЫЙ СПЕЦИАЛИЗИРОВАННЫЙ ДЕКОР
+    // ============================================================
+    if (currentSpec === 'kip'){
+      // МОБИЛЬНАЯ ПРИБОРНАЯ ТЕЛЕЖКА С ОСЦИЛЛОГРАФОМ (x = 2.5 * TILE, y = 10 * TILE)
+      const oscX = 2.5 * TILE, oscY = 10 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath(); ctx.ellipse(oscX + 16, oscY + 22, 22, 6, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#334155'; ctx.fillRect(oscX, oscY + 6, 32, 14);
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath(); ctx.arc(oscX + 4, oscY + 20, 3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(oscX + 28, oscY + 20, 3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(oscX + 2, oscY - 14, 28, 20, 2); ctx.fill();
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#022c22'; ctx.fillRect(oscX + 5, oscY - 11, 16, 14);
+      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x = 0; x < 16; x++){
+        const sy = oscY - 4 + Math.sin(now * 0.01 + x * 0.6) * 4;
+        if (x === 0) ctx.moveTo(oscX + 5 + x, sy);
+        else ctx.lineTo(oscX + 5 + x, sy);
+      }
+      ctx.stroke();
+      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(oscX + 24, oscY - 7, 2, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(oscX + 24, oscY + 1, 2, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+
+      // ОГНЕТУШИТЕЛЬ ОУ-3 НА СТЕНЕ (x = 19.5 * TILE, y = 4.5 * TILE)
+      const feX = 19.5 * TILE, feY = 4.5 * TILE;
+      ctx.save();
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.roundRect(feX, feY, 8, 22, 3); ctx.fill();
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(feX + 2, feY - 4, 4, 4);
+      ctx.fillStyle = '#334155'; ctx.fillRect(feX + 5, feY - 2, 6, 2);
+      ctx.fillStyle = '#f8fafc'; ctx.fillRect(feX + 2, feY + 8, 4, 6);
+      ctx.restore();
+
+    } else if (currentSpec === 'ts'){
+      // ДЫМОХОД / ГАЗОХОД КОТЛА ВДОЛЬ ПРАВОЙ СТЕНЫ
+      ctx.save();
+      const ductX = 21 * TILE - 8;
+      ctx.fillStyle = '#475569'; ctx.fillRect(ductX, 46, 26, 140);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.strokeRect(ductX, 46, 26, 140);
+      ctx.fillStyle = '#94a3b8';
+      for (let ry = 55; ry < 180; ry += 20){
+        ctx.fillRect(ductX, ry, 26, 2.5);
+      }
+      ctx.restore();
+
+      // БИМЕТАЛЛИЧЕСКИЙ РАДИАТОР ОТОПЛЕНИЯ (x = 2.5 * TILE, y = 10 * TILE)
+      ctx.save();
+      const radX = 2.5 * TILE, radY = 10 * TILE;
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.beginPath(); ctx.ellipse(radX + 22, radY + 20, 26, 6, 0, 0, Math.PI*2); ctx.fill();
+      for (let s = 0; s < 7; s++){
+        const sx = radX + s * 6;
+        ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.roundRect(sx, radY - 6, 4.5, 24, 1.5); ctx.fill();
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 0.8; ctx.stroke();
+      }
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(radX - 4, radY - 4, 4, 6);
+      ctx.fillStyle = '#94a3b8'; ctx.fillRect(radX - 4, radY + 14, 4, 3);
+      ctx.restore();
+
+      // КРАСНЫЙ ГИДРОАККУМУЛЯТОР (x = 18.5 * TILE, y = 9.5 * TILE)
+      ctx.save();
+      const expX = 18.5 * TILE, expY = 9.5 * TILE;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath(); ctx.ellipse(expX + 10, expY + 24, 14, 5, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(expX, expY - 10, 20, 32, 6); ctx.fill();
+      ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(expX + 2, expY + 22, 3, 5);
+      ctx.fillRect(expX + 15, expY + 22, 3, 5);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(expX + 8, expY - 14, 4, 4);
+      ctx.restore();
+
+      // СЛИВНЫЕ КАНАЛИЗАЦИОННЫЕ ТРАПЫ НА ПОЛУ
+      [7 * TILE, 15 * TILE].forEach(tx => {
+        ctx.save();
+        ctx.fillStyle = '#0f172a'; ctx.fillRect(tx, 6 * TILE, 24, 24);
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.strokeRect(tx, 6 * TILE, 24, 24);
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2;
+        for (let gx = tx + 4; gx < tx + 24; gx += 4){
+          ctx.beginPath(); ctx.moveTo(gx, 6 * TILE + 2); ctx.lineTo(gx, 6 * TILE + 22); ctx.stroke();
+        }
+        ctx.restore();
+      });
+    }
+// ============================================================
+    // 4. ЦЕНТРАЛЬНЫЙ ЧЕРТЕЖНЫЙ СТОЛ С ПЛАНОМ ЦЕХА, КАСКАМИ И ТАБУРЕТАМИ (x = 11, y = 8)
+    // ============================================================
+    const cx = 11 * TILE + TILE / 2;
+    const cy = 8 * TILE + TILE / 2;
+    const tblW = 106, tblH = 38;
+
+    ctx.save();
+    // Желто-черная разметка безопасности на полу под столом
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3;
+    ctx.strokeRect(cx - tblW/2 - 8, cy - tblH/2 - 4, tblW + 16, tblH + 24);
+    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
+    ctx.strokeRect(cx - tblW/2 - 8, cy - tblH/2 - 4, tblW + 16, tblH + 24);
+    ctx.setLineDash([]);
+
+    // Тень стола
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.ellipse(cx, cy + 18, tblW/2 + 6, 12, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Ножки стола
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(cx - tblW/2 + 6, cy - 4, 5, 20);
+    ctx.fillRect(cx + tblW/2 - 11, cy - 4, 5, 20);
+
+    // Столешница
+    ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(cx - tblW/2, cy - tblH/2, tblW, tblH, 4); ctx.fill();
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.stroke();
+
+    // Развернутый синий чертеж цеха с белыми линиями схем
+    ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(cx - 30, cy - tblH/2 + 4, 60, 26, 2); ctx.fill();
+    ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 0.8;
+    ctx.strokeRect(cx - 26, cy - tblH/2 + 7, 52, 20);
+    ctx.beginPath();
+    ctx.moveTo(cx - 20, cy - 2); ctx.lineTo(cx + 10, cy - 2); ctx.lineTo(cx + 10, cy + 6);
+    ctx.moveTo(cx - 6, cy - 6); ctx.lineTo(cx - 6, cy + 6);
+    ctx.stroke();
+
+    // Желтая защитная каска на чертеже слева
+    ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(cx - 36, cy + 2, 7, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#d97706'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#b45309'; ctx.fillRect(cx - 43, cy + 2, 14, 2.5);
+
+    // Подставка с карандашами и линейками справа
+    ctx.fillStyle = '#0f172a'; ctx.fillRect(cx + 34, cy - 10, 8, 12);
+    ctx.fillStyle = '#f59e0b'; ctx.fillRect(cx + 35, cy - 16, 2, 8);
+    ctx.fillStyle = '#38bdf8'; ctx.fillRect(cx + 38, cy - 18, 2, 10);
+
+    // Два круглых табурета перед столом
+    [-24, 24].forEach(sx => {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.beginPath(); ctx.ellipse(cx + sx, cy + 28, 9, 4, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.fillRect(cx + sx - 1.5, cy + 14, 3, 14);
+      ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); ctx.ellipse(cx + sx, cy + 14, 8, 4.5, 0, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.stroke();
+    });
+    ctx.restore();
+
+    // ============================================================
+    // 5. ЗЕЛЕНЫЕ РАСТЕНИЯ В КАДКАХ
+    // ============================================================
+    const plants = [
+      { x: 3 * TILE, y: 7 * TILE },
+      { x: 19 * TILE + 20, y: 8 * TILE }
+    ];
     plants.forEach(p => {
       ctx.save();
       ctx.translate(p.x, p.y);
-      // Тень кадки
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
       ctx.beginPath(); ctx.ellipse(0, 12, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
-      // Белая цилиндрическая кадка
-      ctx.fillStyle = '#e2e8f0';
-      ctx.beginPath(); ctx.roundRect(-8, 0, 16, 12, 2); ctx.fill();
+      ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); ctx.roundRect(-8, 0, 16, 12, 2); ctx.fill();
       ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.stroke();
-      // Зелёные листья монстеры / пальмы
       ctx.fillStyle = '#16a34a';
       for (let i = 0; i < 5; i++){
         const angle = -Math.PI * 0.8 + (i * Math.PI * 0.4);
@@ -1721,54 +2181,294 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         const ly = -6 + Math.sin(angle) * 14;
         ctx.beginPath(); ctx.ellipse(lx, ly, 6, 3, angle, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.fillStyle = '#22c55e';
-      ctx.beginPath(); ctx.arc(0, -6, 5, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     });
-
-    // Уголок отдыха на левой стене (диванчик и журнальный столик с ноутбуком)
-    const sofaX = 2 * TILE - 10, sofaY = 5 * TILE;
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.beginPath(); ctx.ellipse(sofaX + 22, sofaY + 28, 22, 8, 0, 0, Math.PI * 2); ctx.fill();
-    // Корпус дивана (тёмно-серый велюр)
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath(); ctx.roundRect(sofaX, sofaY, 44, 26, 6); ctx.fill();
-    ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; ctx.stroke();
-    // Подушки дивана
-    ctx.fillStyle = '#334155';
-    ctx.fillRect(sofaX + 4, sofaY + 4, 16, 14);
-    ctx.fillRect(sofaX + 24, sofaY + 4, 16, 14);
-    // Жёлтый пуф рядом
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath(); ctx.arc(sofaX + 56, sofaY + 16, 10, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#d97706';
-    ctx.beginPath(); ctx.arc(sofaX + 56, sofaY + 16, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-
-    // Маркерная доска на ножках (слева внизу)
-    const wbX = 3 * TILE - 14, wbY = 12 * TILE + 4;
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.beginPath(); ctx.ellipse(wbX + 22, wbY + 24, 20, 5, 0, 0, Math.PI * 2); ctx.fill();
-    // Металлические ножки
-    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(wbX + 6, wbY + 24); ctx.lineTo(wbX + 6, wbY + 6);
-    ctx.moveTo(wbX + 38, wbY + 24); ctx.lineTo(wbX + 38, wbY + 6);
-    ctx.stroke();
-    // Белая доска
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath(); ctx.roundRect(wbX, wbY - 14, 44, 22, 2); ctx.fill();
-    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.2; ctx.stroke();
-    // Схемы и жёлтые стикеры на доске
-    ctx.fillStyle = '#facc15'; ctx.fillRect(wbX + 6, wbY - 10, 6, 6);
-    ctx.fillStyle = '#38bdf8'; ctx.fillRect(wbX + 16, wbY - 10, 6, 6);
-    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(wbX + 26, wbY - 6); ctx.lineTo(wbX + 38, wbY - 6); ctx.stroke();
-    ctx.restore();
   }
 
+    /* ============================================================
+     ВСТРОЕННАЯ 2.5D ОТРИСОВКА СТАНКОВ И ОБОРУДОВАНИЯ КИП И ТС
+     Гарантирует 100% отрисовку столов независимо от скриптов!
+     ============================================================ */
+  function drawKIPStationInternal(type, done, hard, now, seed){
+    if (type === 0){
+      // 0. КОНТРОЛЬНО-ИЗМЕРИТЕЛЬНЫЕ ПРИБОРЫ (слева вверху)
+      // Настенная приборная панель над столом
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-42, -40, 84, 26);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; ctx.strokeRect(-42, -40, 84, 26);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-36, -30); ctx.lineTo(-20, -30); ctx.lineTo(-15, -34); ctx.lineTo(-4, -34);
+      ctx.moveTo(-20, -30); ctx.lineTo(-20, -23); ctx.lineTo(-6, -23);
+      ctx.stroke();
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath(); ctx.arc(16, -29, 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(16, -29); ctx.lineTo(19, -32); ctx.stroke();
+
+      // Стол лабораторный антистатический
+      const deskW = 84, dropH = 16;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-deskW/2, 4, deskW, dropH);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-deskW/2, 4, 5, dropH); ctx.fillRect(deskW/2 - 5, 4, 5, dropH);
+      // Столешница
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(-deskW/2, -8, deskW, 15, 3); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.fillRect(-deskW/2, 5, deskW, 2);
+
+      // Двухканальный осциллограф с зеленой осциллограммой
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-38, -26, 30, 20);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(-38, -26, 30, 20);
+      ctx.fillStyle = '#021814'; ctx.fillRect(-36, -24, 26, 16);
+      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      for (let i = 0; i < 24; i++){
+        const wx = -35 + i;
+        const wy = -16 + Math.sin(i * 0.45 + now * 0.008 + seed) * 5;
+        if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+      }
+      ctx.stroke();
+
+      // Блок питания и цифровой мультиметр
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-4, -25, 22, 18);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1; ctx.strokeRect(-4, -25, 22, 18);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(20, -22, 16, 14);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(22, -20, 12, 5);
+      // Провода измерительных щупов
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(24, -8); ctx.quadraticCurveTo(12, 8, 2, 0); ctx.stroke();
+      ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(29, -8); ctx.quadraticCurveTo(20, 10, 8, 1); ctx.stroke();
+    }
+    else if (type === 1){
+      // 1. ДИАГНОСТИКА И НАЛАДКА ОБОРУДОВАНИЯ (по центру вверху)
+      // Настенный перфорированный инструментальный щит
+      ctx.fillStyle = '#1e2633'; ctx.fillRect(-42, -42, 84, 28);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(-42, -42, 84, 28);
+      // Инструменты на подвесах
+      ctx.fillStyle = '#cbd5e1';
+      [-32, -24, -16, 16, 24, 32].forEach((ix, idx) => {
+        ctx.fillRect(ix, -38, 2.5, 14);
+        ctx.fillStyle = idx % 2 === 0 ? '#ea580c' : '#38bdf8';
+        ctx.fillRect(ix - 1, -40, 4.5, 4);
+        ctx.fillStyle = '#cbd5e1';
+      });
+
+      // Стол
+      const deskW = 84, dropH = 16;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-deskW/2, 4, deskW, dropH);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-deskW/2, 4, 5, dropH); ctx.fillRect(deskW/2 - 5, 4, 5, dropH);
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(-deskW/2, -8, deskW, 15, 3); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.fillRect(-deskW/2, 5, deskW, 2);
+
+      // Большой монитор диагностики с синей волной телеметрии
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-26, -30, 34, 22);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.2; ctx.strokeRect(-26, -30, 34, 22);
+      ctx.fillStyle = '#061325'; ctx.fillRect(-24, -28, 30, 18);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for (let i = 0; i < 28; i++){
+        const wx = -23 + i;
+        const wy = -19 + Math.sin(i * 0.38 + now * 0.007) * 5;
+        if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+      }
+      ctx.stroke();
+
+      // Калибратор сигналов справа на подставке
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(12, -24, 24, 16);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(14, -22, 10, 5);
+      ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(30, -16, 2.5, 0, Math.PI*2); ctx.fill();
+    }
+    else if (type === 2){
+      // 2. ИСПОЛНИТЕЛЬНЫЕ МЕХАНИЗМЫ И ПРИВОДЫ (справа вверху)
+      // Стеклянная камера гидравлических испытаний приводов
+      const boxW = 90, boxH = 50;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+      ctx.fillRect(-boxW/2, -boxH/2 - 6, boxW, boxH);
+      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#38bdf8');
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(-boxW/2, -boxH/2 - 6, boxW, boxH);
+      // Блики на стеклянном колпаке
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.beginPath();
+      ctx.moveTo(-boxW/2 + 5, -boxH/2 - 2); ctx.lineTo(-boxW/2 + 24, -boxH/2 - 2);
+      ctx.lineTo(-boxW/2 + 8, boxH/2 - 10); ctx.lineTo(-boxW/2 + 3, boxH/2 - 10);
+      ctx.fill();
+
+      // Трубы внутри камеры (желтые и серые)
+      ctx.fillStyle = '#eab308'; ctx.fillRect(-38, -8, 76, 7);
+      ctx.fillStyle = '#ca8a04'; ctx.fillRect(-38, -6, 76, 2.5);
+      // Фланцы
+      ctx.fillStyle = '#64748b';
+      [-32, -12, 12, 30].forEach(fx => ctx.fillRect(fx, -12, 4.5, 14));
+
+      // Электропривод с красным маховиком по центру
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(-9, -28, 18, 20, 2); ctx.fill();
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.1; ctx.stroke();
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, -28, 7, 0, Math.PI*2); ctx.fill();
+      // Манометр
+      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(24, -19, 5.5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.1; ctx.stroke();
+      ctx.strokeStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(24, -19); ctx.lineTo(26, -22); ctx.stroke();
+    }
+    else if (type === 3){
+      // 3. ДАТЧИКИ И ИЗМЕРИТЕЛЬНЫЕ СИСТЕМЫ (слева внизу)
+      // Трубный стенд поверки датчиков давления и расхода
+      const standW = 88, standH = 30;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-standW/2, 4, standW, 16);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-standW/2, 4, 5, 16); ctx.fillRect(standW/2 - 5, 4, 5, 16);
+      ctx.fillStyle = '#334155'; ctx.fillRect(-standW/2, -2, standW, 9);
+
+      // Нержавеющие трубы стенда с U-образным отводом
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(-38, -15, 76, 6);
+      ctx.fillRect(-38, -4, 76, 5);
+      ctx.fillRect(-38, -15, 6, 14);
+      ctx.fillRect(32, -15, 6, 14);
+
+      // Промышленные датчики давления (синие «бочонки» типа Метран / Rosemount)
+      [-22, 4, 24].forEach((sx, idx) => {
+        ctx.fillStyle = '#64748b'; ctx.fillRect(sx + 3, -19, 2.5, 7);
+        ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(sx - 3, -30, 14, 13, 2); ctx.fill();
+        ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 0.9; ctx.stroke();
+        ctx.fillStyle = '#042f2e'; ctx.beginPath(); ctx.arc(sx + 4, -23, 4, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#34d399'; ctx.fillRect(sx + 2, -24.5, 4, 2);
+      });
+
+      // Цифровой терминал стенда
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-11, -24, 18, 14);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(-11, -24, 18, 14);
+      ctx.fillStyle = '#38bdf8'; ctx.fillRect(-9, -20, 14, 2.5);
+    }
+    else {
+      // 4. ЭЛЕКТРИЧЕСКИЕ СХЕМЫ И ЩИТНОЕ ОБОРУДОВАНИЕ (справа внизу)
+      // Открытый шкаф автоматики
+      const cabW = 68, cabH = 50;
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(-cabW/2, -cabH/2 - 6, cabW, cabH, 3); ctx.fill();
+      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#f59e0b');
+      ctx.lineWidth = 1.5; ctx.stroke();
+
+      // DIN-рейки внутри шкафа
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(-cabW/2 + 6, -24, cabW - 12, 3);
+      ctx.fillRect(-cabW/2 + 6, -11, cabW - 12, 3);
+      ctx.fillRect(-cabW/2 + 6, 2, cabW - 12, 3);
+
+      // Клеммники и модули ПЛК
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(-24, -27, 14, 9);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(-8, -27, 9, 9);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(3, -27, 18, 9);
+      // Светодиоды модулей
+      const blink = Math.sin(now * 0.008 + seed) > 0;
+      ctx.fillStyle = blink ? '#22c55e' : '#0f172a'; ctx.fillRect(-22, -26, 2.5, 2.5);
+      ctx.fillStyle = '#38bdf8'; ctx.fillRect(-17, -26, 2.5, 2.5);
+
+      // Ноутбук инженера на столике рядом со шкафом
+      ctx.fillStyle = '#334155'; ctx.fillRect(22, -4, 24, 20);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(24, -15, 20, 12);
+      ctx.fillStyle = '#041d38'; ctx.fillRect(25, -14, 18, 10);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.moveTo(27, -10); ctx.lineTo(39, -10); ctx.stroke();
+    }
+  }
+
+  function drawTSStationInternal(type, done, hard, now, seed){
+    if (type === 0){
+      // 0. КОНТРОЛЬНО-ИЗМЕРИТЕЛЬНЫЕ ПРИБОРЫ (слева вверху)
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-40, -38, 80, 24);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(-40, -38, 80, 24);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(-34, -30); ctx.lineTo(-12, -30); ctx.lineTo(6, -24); ctx.lineTo(32, -24); ctx.stroke();
+      ctx.strokeStyle = '#0284c7';
+      ctx.beginPath(); ctx.moveTo(-34, -22); ctx.lineTo(-10, -22); ctx.lineTo(8, -28); ctx.lineTo(32, -28); ctx.stroke();
+
+      // Стол с манометрами
+      const deskW = 80, dropH = 15;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-deskW/2, 4, deskW, dropH);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-deskW/2, 4, 5, dropH); ctx.fillRect(deskW/2 - 5, 4, 5, dropH);
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(-deskW/2, -8, deskW, 15, 3); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.fillRect(-deskW/2, 5, deskW, 2);
+
+      // Манометры на стойках
+      [-24, -4, 16].forEach(mx => {
+        ctx.fillStyle = '#64748b'; ctx.fillRect(mx + 3, -17, 2.5, 9);
+        ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(mx + 4, -21, 6.5, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.1; ctx.stroke();
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.1;
+        ctx.beginPath(); ctx.moveTo(mx + 4, -21); ctx.lineTo(mx + 7, -24); ctx.stroke();
+      });
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(26, -19, 11, 15);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(27, -17, 9, 5);
+    }
+    else if (type === 1){
+      // 1. ТЕПЛОГЕНЕРИРУЮЩЕЕ И НАСОСНОЕ ОБОРУДОВАНИЕ (по центру вверху)
+      const w = 86, h = 34;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-w/2, 6, w, 13);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(-w/2, 6, w, 13);
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(-w/2 + 4, -24, w - 8, 6);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(-w/2 + 4, -3, w - 8, 6);
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(-24, -24, 6, 27);
+      ctx.fillRect(18, -24, 6, 27);
+
+      // Насос 1 (красный)
+      ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(-36, -17, 18, 17, 3); ctx.fill();
+      ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(-27, -8, 7, 0, Math.PI*2); ctx.fill();
+      // Насос 2 (синий)
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(6, -17, 18, 17, 3); ctx.fill();
+      ctx.fillStyle = '#0369a1'; ctx.beginPath(); ctx.arc(15, -8, 7, 0, Math.PI*2); ctx.fill();
+
+      // Манометры на нагнетании
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath(); ctx.arc(-27, -28, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(15, -28, 5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 0.9; ctx.stroke();
+    }
+    else if (type === 2){
+      // 2. КОТЕЛЬНЫЕ УСТАНОВКИ И СИСТЕМЫ ТЕПЛОСНАБЖЕНИЯ (справа вверху)
+      const boilW = 90, boilH = 48;
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(-boilW/2, -boilH/2 - 6, boilW, boilH, 6); ctx.fill();
+      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#f97316');
+      ctx.lineWidth = 1.8; ctx.stroke();
+      ctx.fillStyle = '#64748b'; ctx.fillRect(-boilW/2 + 4, -boilH/2 - 2, boilW - 8, 5);
+      // Дымовая труба
+      ctx.fillStyle = '#334155'; ctx.fillRect(22, -boilH/2 - 26, 15, 22);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1; ctx.strokeRect(22, -boilH/2 - 26, 15, 22);
+      // Окно топки с пламенем
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(-15, -8, 13, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2.2; ctx.stroke();
+      ctx.fillStyle = '#ea580c'; ctx.beginPath(); ctx.arc(-15, -7, 9, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(-15, -6, 5, 0, Math.PI*2); ctx.fill();
+    }
+    else if (type === 3){
+      // 3. ТРУБОПРОВОДЫ И АРМАТУРА (слева внизу)
+      const standW = 88;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-standW/2, 4, standW, 16);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-standW/2, 4, 5, 16); ctx.fillRect(standW/2 - 5, 4, 5, 16);
+      ctx.fillStyle = '#334155'; ctx.fillRect(-standW/2, -2, standW, 9);
+      // Труба и арматура
+      ctx.fillStyle = '#94a3b8'; ctx.fillRect(-38, -16, 76, 7);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(-38, -14, 76, 2.5);
+      [-26, 20].forEach(vx => {
+        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(vx + 3, -24, 7, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#334155'; ctx.fillRect(vx + 1.5, -17, 3, 6);
+      });
+      // Грязевик
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(-5, -23, 14, 20, 3); ctx.fill();
+    }
+    else {
+      // 4. ТЕПЛООБМЕННОЕ ОБОРУДОВАНИЕ (справа внизу)
+      // Пластинчатый теплообменник
+      const exW = 34, exH = 46;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-36, -exH/2 - 4, exW, exH);
+      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#f59e0b');
+      ctx.lineWidth = 1.4; ctx.strokeRect(-36, -exH/2 - 4, exW, exH);
+      ctx.fillStyle = '#38bdf8';
+      for (let py = -exH/2 + 2; py < exH/2 - 6; py += 4){
+        ctx.fillRect(-34, py, exW - 4, 1.8);
+      }
+      // Красный мембранный бак
+      ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(8, -26, 22, 36, 6); ctx.fill();
+      ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(17, -30, 4, 5);
+    }
+  }
 
   function drawStation(c, now){
     const px = c.x * TILE + TILE / 2;
@@ -1783,333 +2483,442 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
     // 1. Мягкая тень под основанием станции
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath(); ctx.ellipse(0, 16, 26, 9, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 16, 34, 10, 0, 0, Math.PI * 2); ctx.fill();
 
     // 2. Свечение активной зоны под станцией
     if (!done){
       const glowColor = hard ? '192, 132, 252' : (currentSpec === 'ts' ? '245, 158, 11' : '56, 189, 248');
-      const g = ctx.createRadialGradient(0, 8, 4, 0, 8, 36);
-      g.addColorStop(0, 'rgba(' + glowColor + ',' + (0.32 * pulse) + ')');
+      const g = ctx.createRadialGradient(0, 8, 4, 0, 8, 42);
+      g.addColorStop(0, 'rgba(' + glowColor + ',' + (0.35 * pulse) + ')');
       g.addColorStop(1, 'rgba(' + glowColor + ',0)');
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(0, 8, 36, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 8, 42, 0, Math.PI * 2); ctx.fill();
     }
 
-    // 3. Отрисовка специализированного оборудования
+    // 3. Отрисовка специализированного оборудования (гарантированная)
     if (window.STATION_RENDERERS && window.STATION_RENDERERS[currentSpec]){
       window.STATION_RENDERERS[currentSpec](stType, done, hard, now, c.seed);
-    } else if (window.STATION_RENDERERS && window.STATION_RENDERERS['kip']){
-      window.STATION_RENDERERS['kip'](stType, done, hard, now, c.seed);
+    } else if (currentSpec === 'ts'){
+      drawTSStationInternal(stType, done, hard, now, c.seed);
+    } else {
+      drawKIPStationInternal(stType, done, hard, now, c.seed);
     }
 
-    // 4. ЗНАЧОК «?» С ПУЛЬСИРУЮЩИМ ОРЕОЛОМ (КАК НА РЕФЕРЕНСЕ!)
+    // 4. ПУЛЬСИРУЮЩИЙ ЗНАЧОК СВЕРХУ: [ ! ] ЕСЛИ НЕ ВЫПОЛНЕНО, [ ✓ ] ЕСЛИ СДАНО
+    const badgeY = -42 + Math.sin(now * 0.004 + c.seed) * 3;
+    ctx.save();
     if (!done){
-      const badgeY = -38 + Math.sin(now * 0.004 + c.seed) * 3.5;
-      const badgeColor = hard ? '#c084fc' : '#f59e0b';
-
-      // Ореол
+      // Золотистый ореол
       const bg = ctx.createRadialGradient(0, badgeY, 2, 0, badgeY, 18);
-      bg.addColorStop(0, hard ? 'rgba(192, 132, 252, 0.5)' : 'rgba(245, 158, 11, 0.5)');
+      bg.addColorStop(0, hard ? 'rgba(192, 132, 252, 0.55)' : 'rgba(245, 158, 11, 0.55)');
       bg.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = bg;
       ctx.beginPath(); ctx.arc(0, badgeY, 18, 0, Math.PI * 2); ctx.fill();
 
       // Кружок бейджа
       ctx.fillStyle = '#0f141d';
-      ctx.beginPath(); ctx.arc(0, badgeY, 12, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = badgeColor;
-      ctx.lineWidth = 2.2;
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, badgeY, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = hard ? '#c084fc' : '#f59e0b';
+      ctx.lineWidth = 1.8; ctx.stroke();
 
-      // Символ «?»
-      ctx.font = 'bold 14px "Trebuchet MS", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = badgeColor;
-      ctx.fillText('?', 0, badgeY);
-
-      // Парящий неоновый кристалл
-      const gemX = 20, gemY = badgeY + Math.sin(now * 0.005 + c.seed) * 3;
-      ctx.fillStyle = hard ? '#c084fc' : (currentSpec === 'ts' ? '#f59e0b' : '#38bdf8');
-      ctx.beginPath();
-      ctx.moveTo(gemX, gemY - 7);
-      ctx.lineTo(gemX + 5, gemY);
-      ctx.lineTo(gemX, gemY + 7);
-      ctx.lineTo(gemX - 5, gemY);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(gemX - 1, gemY - 3, 2, 6);
+      // Значок восклицания
+      ctx.font = 'bold 12px "Trebuchet MS", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = hard ? '#e9d5ff' : '#fbbf24';
+      ctx.fillText('!', 0, badgeY);
     } else {
-      // Станок обслужен
+      // Зеленая галочка выполненного станка
+      ctx.fillStyle = '#064e3b';
+      ctx.beginPath(); ctx.arc(0, badgeY, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1.8; ctx.stroke();
       ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#10b981';
-      ctx.fillText('✔ ОБСЛУЖЕНО', 0, -28);
-    }
-
-    ctx.restore();
-  }
-
-  function drawCrystal(c, now){
-    drawStation(c, now);
-  }
-
-  function drawPickup(pk, now){
-    const px = pk.x * TILE + TILE / 2;
-    const py = pk.y * TILE + TILE / 2;
-    const bob = Math.sin(now * 0.003 + pk.seed) * 2;
-
-    ctx.save();
-    ctx.translate(px, py + bob);
-
-    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 22);
-    glow.addColorStop(0, pk.type === 'oil' ? 'rgba(255,190,90,.35)' : 'rgba(120,235,160,.32)');
-    glow.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(0, 0, 22, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.shadowBlur = 10;
-    if (pk.type === 'oil'){
-      ctx.shadowColor = 'rgba(255,190,90,.75)';
-      ctx.fillStyle = '#e2a53c';
-      ctx.beginPath();
-      ctx.roundRect(-7, -7, 14, 16, 4);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#fff1cd';
-      ctx.fillRect(-3, -11, 6, 5);
-      ctx.fillStyle = 'rgba(60,35,10,.45)';
-      ctx.fillRect(-4, -1, 8, 2);
-      ctx.fillRect(-4, 3, 8, 2);
-    } else {
-      ctx.shadowColor = 'rgba(120,235,160,.75)';
-      ctx.fillStyle = '#eaf6ee';
-      ctx.beginPath();
-      ctx.roundRect(-9, -7, 18, 15, 3);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#4fbf7a';
-      ctx.fillRect(-1.8, -4, 3.6, 9);
-      ctx.fillRect(-4.5, -1.2, 9, 3.6);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#6ee7b7';
+      ctx.fillText('✓', 0, badgeY);
     }
     ctx.restore();
-  }
 
-  // На последнем уровне цель маршрута — сама СОТА вместо переходной двери.
-  function drawSotaDestination(now){
-    const sprite = getSotaSprite();
-    if (!sprite) return;
-    const x = exitCell.x * TILE + TILE / 2;
-    const y = exitCell.y * TILE + TILE / 2;
-    const width = 112;
-    const height = width * sprite.naturalHeight / sprite.naturalWidth;
-    // Вход здания совпадает с прежней клеткой выхода; картинка помещается в карту.
-    const left = Math.min(x - width / 2, VW - width - 5);
+    // 5. ТАБЛИЧКА С НАЗВАНИЕМ СТАНЦИИ ВНИЗУ (В ТОЧНОСТИ КАК НА РЕФЕРЕНСЕ!)
+    const titleText = c.title || ('Станция ' + (stType + 1));
+    ctx.font = 'bold 9.5px "Segoe UI", sans-serif';
+    const textW = ctx.measureText(titleText).width;
+    const plateW = Math.max(140, textW + 36);
+    const plateH = 22;
+    const plateY = 22;
+
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,.4)';
-    ctx.beginPath();ctx.ellipse(left + width / 2, y + 12, width / 2, 10, 0, 0, Math.PI * 2);ctx.fill();
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(sprite, left, y + 10 - height, width, height);
-    ctx.fillStyle = exitOpen ? '#8af2ce' : '#ffd180';
-    ctx.fillRect(x - 12, y + 10, 24, 3);
-    ctx.fillStyle = '#101c2bea';ctx.fillRect(left, y + 19, width, 19);
-    ctx.textAlign = 'center';ctx.textBaseline = 'middle';ctx.font = 'bold 10px monospace';
-    ctx.fillStyle = exitOpen ? '#8af2ce' : '#ffd180';
-    ctx.fillText(exitOpen ? 'ВОЙТИ В СОТУ' : 'СОТА · ' + collected + '/' + needed, left + width / 2, y + 29);
+    // Темная рамка с золотым кантом
+    ctx.fillStyle = '#0a0e17';
+    ctx.beginPath(); ctx.roundRect(-plateW/2, plateY, plateW, plateH, 5); ctx.fill();
+    ctx.strokeStyle = done ? '#10b981' : '#f59e0b';
+    ctx.lineWidth = 1.3; ctx.stroke();
+
+    // Квадратик с иконкой слева
+    const iconBoxSz = 16;
+    const iconBoxX = -plateW/2 + 3;
+    const iconBoxY = plateY + 3;
+    ctx.fillStyle = done ? '#064e3b' : '#261807';
+    ctx.beginPath(); ctx.roundRect(iconBoxX, iconBoxY, iconBoxSz, iconBoxSz, 3); ctx.fill();
+    ctx.strokeStyle = done ? '#34d399' : '#f59e0b';
+    ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = done ? '#6ee7b7' : '#fbbf24';
+    ctx.fillText(c.icon || '⚙', iconBoxX + iconBoxSz/2, iconBoxY + iconBoxSz/2);
+
+    // Текст названия станции
+    ctx.font = 'bold 9px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = done ? '#d1fae5' : '#f8fafc';
+    ctx.fillText(titleText, iconBoxX + iconBoxSz + 5, plateY + plateH/2);
+    ctx.restore();
+
     ctx.restore();
   }
 
   function drawExit(now){
-    if (completedMines === totalMines - 1) {
-      if (getSotaSprite()) return drawSotaDestination(now);
-    }
     if (currentSpec === 'ksk') return drawKskExit(now);
     if (currentSpec === 'p') return drawPExit(now);
-    // Выходная дверь на правой стене (x = 21, y = 7)
+    // Выходная золотая дверь на правой стене (x = 21, y = 6)
     const px = exitCell.x * TILE, py = exitCell.y * TILE;
     ctx.save();
 
-    // Жёлто-чёрная предупреждающая рамка вокруг двери
+    // Портал двери
+    const portW = TILE + 12, portH = TILE + 28;
     ctx.fillStyle = '#0f141d';
-    ctx.fillRect(px - 2, py - 6, TILE + 4, TILE + 12);
-    ctx.strokeStyle = '#f59e0b';
+    ctx.fillRect(px - 4, py - 14, portW, portH);
+    ctx.strokeStyle = exitOpen ? '#facc15' : '#f59e0b';
     ctx.lineWidth = 3;
-    ctx.strokeRect(px - 2, py - 6, TILE + 4, TILE + 12);
+    ctx.strokeRect(px - 4, py - 14, portW, portH);
 
-    // Сама дверь
-    ctx.fillStyle = exitOpen ? '#052e16' : '#1e293b';
-    ctx.fillRect(px + 4, py, TILE - 8, TILE);
+    // Вывеска "К СОТЕ" над дверью
+    ctx.fillStyle = exitOpen ? '#f59e0b' : '#334155';
+    ctx.fillRect(px - 2, py - 24, portW - 4, 10);
+    ctx.fillStyle = exitOpen ? '#0f172a' : '#94a3b8';
+    ctx.font = 'bold 8px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('К СОТЕ', px + portW/2 - 6, py - 19);
 
-    // Табличка ВЫХОД сверху
-    ctx.fillStyle = exitOpen ? '#10b981' : '#f59e0b';
-    ctx.fillRect(px + 2, py - 14, TILE - 4, 8);
-    ctx.fillStyle = '#0f172a';
-    ctx.font = 'bold 7px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('ВЫХОД', px + TILE / 2, py - 10);
-
-    // Большие стрелки >> на створках двери
+    // Внутренний проем
     const pulse = 0.7 + Math.sin(now * 0.008) * 0.3;
-    ctx.font = 'bold 20px "Trebuchet MS", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = exitOpen ? '#4ade80' : '#f59e0b';
-    ctx.fillText('>>', px + TILE / 2, py + TILE / 2);
-
-    // Если открыто — световой луч из двери
     if (exitOpen){
+      // Яркий золотой свет из открытого портала
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(px + 2, py - 8, portW - 12, portH - 8);
+
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      const beam = ctx.createLinearGradient(px, py, px - 50, py);
-      beam.addColorStop(0, 'rgba(74, 222, 128, ' + (0.45 * pulse) + ')');
-      beam.addColorStop(1, 'rgba(74, 222, 128, 0)');
+      const beam = ctx.createLinearGradient(px, py, px - 60, py);
+      beam.addColorStop(0, 'rgba(251, 191, 36, ' + (0.5 * pulse) + ')');
+      beam.addColorStop(1, 'rgba(251, 191, 36, 0)');
       ctx.fillStyle = beam;
-      ctx.fillRect(px - 50, py - 10, 50, TILE + 20);
+      ctx.fillRect(px - 60, py - 16, 60, portH + 4);
       ctx.restore();
+
+      // Светящиеся шевроны >>
+      ctx.font = 'bold 22px "Trebuchet MS", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#78350f';
+      ctx.fillText('>>', px + portW/2 - 6, py + 12);
+    } else {
+      // Закрытая дверь
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(px + 2, py - 8, portW - 12, portH - 8);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2;
+      ctx.strokeRect(px + 2, py - 8, portW - 12, portH - 8);
+      ctx.font = 'bold 18px "Trebuchet MS", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('>>', px + portW/2 - 6, py + 12);
     }
 
     ctx.restore();
   }
 
-  /* ============================================================
-     Специалисты Академии СОТА (персонаж)
-     ============================================================ */
-  const SKINS = [
-    {
-      id: 'tech', name: 'Наладчик СОТА',
-      desc: 'Студент Академии в фирменном спецодежде и защитной каске. Проходит производственную практику в цеху.',
-      lines: {
-        correct: ['Параметр в норме!', 'Станок настроен без сбоев.', 'Точно по ГОСТу!'],
-        wrong: ['Показания расходятся с эталоном.', 'Ошибка калибровки. Проверь схему.', 'Внимание: аварийный порог.'],
-        descend: 'Переходим на следующий технологический участок!'
+  const SKINS_BY_SPEC = {
+    kip: [
+      {
+        id: 'kip_tech', name: 'Наладчик КИПиА',
+        desc: 'Специалист по автоматике и контрольно-измерительным приборам цеха. Настраивает датчики и промышленные контроллеры.',
+        lines: {
+          correct: ['Сигнал 4–20 мА в норме!', 'Станок откалиброван без сбоев.', 'Точно по техрегламенту!'],
+          wrong: ['Погрешность выше допуска!', 'Проверь сопротивление изоляции.', 'Сбой сигнала.'],
+          descend: 'Все приборы цеха проверены! Идём к СОТЕ!'
+        },
+        suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
+        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8'
       },
-      suit: '#1d4ed8', suit2: '#1e3a8a', suitDark: '#172554',
-      helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d',
-      accent: '#f97316'
-    },
-    {
-      id: 'master_kip', name: 'Мастер КИПиА',
-      desc: 'Специалист по контрольно-измерительным приборам и автоматике. Точность измерений и калибровка — его стихия.',
-      lines: {
-        correct: ['Сигнал 4–20 мА стабилен!', 'Калибровка датчика подтверждена.', 'АСУ ТП в штатном режиме.'],
-        wrong: ['Рассинхронизация контура.', 'Погрешность выше допуска!', 'Проверь сопротивление изоляции.'],
-        descend: 'Участок автоматизации сдан. Идём дальше!'
+      {
+        id: 'kip_metrolog', name: 'Метролог-поверитель',
+        desc: 'Инженер лаборатории поверки. Сверяет эталоны измерений и классы точности заводских датчиков.',
+        lines: {
+          correct: ['Класс точности подтверждён!', 'Эталон сверен.', 'Погрешность 0.05% — идеально!'],
+          wrong: ['Выход за пределы шкалы.', 'Требуется нуль-калибровка.', 'Показания расходятся.'],
+          descend: 'Лабораторные испытания завершены!'
+        },
+        suit: '#f1f5f9', suit2: '#cbd5e1', suitDark: '#94a3b8',
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#0284c7'
       },
-      suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
-      helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d',
-      accent: '#38bdf8'
-    },
-    {
-      id: 'master_ts', name: 'Мастер Теплосетей',
-      desc: 'Специалист по котельному оборудованию и гидравлике. Держит температурный график и давление под строгим контролем.',
-      lines: {
-        correct: ['Давление в контуре оптимально!', 'Теплообменник работает на 100%.', 'Циркуляция в норме.'],
-        wrong: ['Опасность гидроудара!', 'Воздушная пробка в системе.', 'Сбрось избыток через клапан.'],
-        descend: 'Тепловой пункт опрессован. Переход!'
+      {
+        id: 'kip_asu', name: 'Инженер АСУ ТП',
+        desc: 'Специалист по промышленным сетям Modbus/Profibus и программируемым логическим контроллерам.',
+        lines: {
+          correct: ['Контроллер в режиме RUN!', 'Пакеты данных без потерь.', 'SCADA регистрирует норму.'],
+          wrong: ['Потеря связи с узлом.', 'Таймаут опроса датчика.', 'Проверь конфигурацию ПЛК.'],
+          descend: 'Сегмент автоматики сдан в эксплуатацию!'
+        },
+        suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#f59e0b'
+      }
+    ],
+    ts: [
+      {
+        id: 'ts_master', name: 'Мастер теплосетей',
+        desc: 'Специалист по тепловым пунктам и трубопроводам. Держит гидравлический режим и давление под контролем.',
+        lines: {
+          correct: ['Давление в контуре оптимально!', 'Циркуляция теплоносителя в норме.', 'Опрессовка пройдена!'],
+          wrong: ['Опасность гидроудара!', 'Воздушная пробка в системе.', 'Сбрось избыток через клапан.'],
+          descend: 'Тепловой узел сдан! Переходим дальше!'
+        },
+        suit: '#c2410c', suit2: '#9a3412', suitDark: '#7c2d12',
+        helmet: '#ea580c', helmetDark: '#c2410c', skin: '#fcd34d', accent: '#fb923c'
       },
-      suit: '#c2410c', suit2: '#9a3412', suitDark: '#7c2d12',
-      helmet: '#ea580c', helmetDark: '#c2410c', skin: '#fcd34d',
-      accent: '#fb923c'
-    }
-  ];
-  const SKIN_IMAGES = {};
+      {
+        id: 'ts_engineer', name: 'Инженер-теплотехник',
+        desc: 'Специалист по пластинчатым теплообменникам и тепловым балансам зданий.',
+        lines: {
+          correct: ['КПД теплообменника 98%!', 'Температурный график 150/70 соблюдён.', 'Теплосъём стабилен.'],
+          wrong: ['Недогрев вторичного контура!', 'Перепад давлений выше нормы.', 'Проверь балансировочный клапан.'],
+          descend: 'Контур сбалансирован. Идём дальше!'
+        },
+        suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
+        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#ea580c'
+      },
+      {
+        id: 'ts_boiler', name: 'Оператор котельной',
+        desc: 'Специалист котельного оборудования, горелочных устройств и систем водоподготовки.',
+        lines: {
+          correct: ['Факел горелки стабилен!', 'Паровой котёл в рабочем режиме.', 'ХВО подготовлена отлично.'],
+          wrong: ['Внимание: тяга снижена!', 'Превышение давления пара.', 'Сработала автоматика безопасности.'],
+          descend: 'Котельный зал проверен!'
+        },
+        suit: '#334155', suit2: '#1e293b', suitDark: '#0f172a',
+        helmet: '#dc2626', helmetDark: '#991b1b', skin: '#fcd34d', accent: '#f59e0b'
+      }
+    ],
+    p: [
+      {
+        id: 'p_front', name: 'Frontend-разработчик',
+        desc: 'Создатель современных интерфейсов и веб-приложений СОТА. Быстрый рендеринг и чистый CSS.',
+        lines: {
+          correct: ['Интерфейс отрисован без задержек!', 'Компоненты синхронизированы.', 'Zero errors в консоли!'],
+          wrong: ['Uncaught TypeError!', 'Layout shift обнаружен.', 'Проверь зависимости.'],
+          descend: 'Спринт завершён! Релизим фичу!'
+        },
+        suit: '#4338ca', suit2: '#3730a3', suitDark: '#312e81',
+        helmet: '#6366f1', helmetDark: '#4f46e5', skin: '#fcd34d', accent: '#a855f7'
+      },
+      {
+        id: 'p_back', name: 'Backend-архитектор',
+        desc: 'Проектировщик баз данных, высоконагруженных API и серверной логики.',
+        lines: {
+          correct: ['Запрос выполнен за 2 мс!', 'Транзакция ACID зафиксирована.', 'Микросервисы онлайн.'],
+          wrong: ['Deadlock в базе данных!', 'HTTP 500 Internal Error.', 'Проверь индексы.'],
+          descend: 'Бэкенд масштабирован! Идём дальше!'
+        },
+        suit: '#0f172a', suit2: '#020617', suitDark: '#000000',
+        helmet: '#10b981', helmetDark: '#059669', skin: '#fcd34d', accent: '#38bdf8'
+      },
+      {
+        id: 'p_devops', name: 'DevOps-инженер',
+        desc: 'Мастер CI/CD пайплайнов, Kubernetes кластеров и облачной инфраструктуры.',
+        lines: {
+          correct: ['Пайплайн зелёный!', 'Кластер развернут штатно.', 'Docker образ собран.'],
+          wrong: ['Build failed: ошибка линтера.', 'Pod CrashLoopBackOff.', 'Проверь переменные окружения.'],
+          descend: 'Деплой в прод успешен!'
+        },
+        suit: '#047857', suit2: '#065f46', suitDark: '#064e3b',
+        helmet: '#f59e0b', helmetDark: '#d97706', skin: '#fcd34d', accent: '#10b981'
+      }
+    ],
+    ksk: [
+      {
+        id: 'ksk_builder', name: 'Сборщик ПК',
+        desc: 'Специалист по архитектуре компьютеров, установке процессоров, видеокарт и охлаждения.',
+        lines: {
+          correct: ['Термопаста нанесена идеально!', 'POST-код 00 — запуск успешен.', 'Кабель-менеджмент на высоте!'],
+          wrong: ['Не до конца защёлкнут слот RAM!', 'Перекос сокета CPU.', 'Короткое замыкание.'],
+          descend: 'Рабочая станция собрана и протестирована!'
+        },
+        suit: '#1d4ed8', suit2: '#1e3a8a', suitDark: '#172554',
+        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#f97316'
+      },
+      {
+        id: 'ksk_sysadmin', name: 'Системный администратор',
+        desc: 'Управляет серверными стойками, доменами и безопасностью корпоративной сети.',
+        lines: {
+          correct: ['RAID-массив синхронизирован!', 'Бэкап создан успешно.', 'Сервер в аптайме 99.99%.'],
+          wrong: ['Отказ накопителя!', 'Перегрузка процессора 100%.', 'Сбой прав доступа.'],
+          descend: 'Серверный сектор защищён!'
+        },
+        suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#fbbf24'
+      },
+      {
+        id: 'ksk_net', name: 'Сетевой инженер',
+        desc: 'Настраивает маршрутизаторы, коммутаторы, VLAN и обжимает витую пару.',
+        lines: {
+          correct: ['Линк 10 Гбит/с поднят!', 'Пинг 1 мс без потерь.', 'Таблица маршрутизации в норме.'],
+          wrong: ['Затухание сигнала в кабеле!', 'Петля коммутации (STP).', 'Неверный шлюз.'],
+          descend: 'Сетевая магистраль проложена!'
+        },
+        suit: '#0369a1', suit2: '#075985', suitDark: '#0c4a6e',
+        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#38bdf8'
+      }
+    ],
+    e: [
+      {
+        id: 'e_electrician', name: 'Электромонтажник',
+        desc: 'Специалист по силовым сетям, трансформаторам и распределительным щитам.',
+        lines: {
+          correct: ['Напряжение 380 В в норме!', 'Шина заземлена надежно.', 'Автомат подобран по току.'],
+          wrong: ['Опасность межфазного замыкания!', 'Перегрев кабельной линии.', 'Проверь УЗО.'],
+          descend: 'Подстанция в строю!'
+        },
+        suit: '#1e3a8a', suit2: '#172554', suitDark: '#0f172a',
+        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#ef4444'
+      },
+      {
+        id: 'e_relay', name: 'Инженер-релейщик',
+        desc: 'Специалист релейной защиты и противоаварийной автоматики подстанций.',
+        lines: {
+          correct: ['Уставка защиты рассчитана верно!', 'МТЗ сработала селективно.', 'Трансформатор тока проверен.'],
+          wrong: ['Ложное срабатывание защиты!', 'Нарушена селективность.', 'Обрыв цепей напряжения.'],
+          descend: 'Схема релейной защиты протестирована!'
+        },
+        suit: '#f8fafc', suit2: '#e2e8f0', suitDark: '#94a3b8',
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#3b82f6'
+      },
+      {
+        id: 'e_chief', name: 'Главный энергетик',
+        desc: 'Руководит энергосистемой предприятия, энергоаудитом и графиками нагрузок.',
+        lines: {
+          correct: ['Коэффициент мощности cos φ = 0.98!', 'Энергопотребление в лимите.', 'График нагрузок оптимален.'],
+          wrong: ['Штраф за реактивную мощность!', 'Пиковая перегрузка ввода.', 'Проверь конденсаторную установку.'],
+          descend: 'Энергохозяйство принято!'
+        },
+        suit: '#0f172a', suit2: '#020617', suitDark: '#000000',
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f59e0b'
+      }
+    ],
+    reu: [
+      {
+        id: 'reu_tech', name: 'Электромонтер РЭУ',
+        desc: 'Мастер ремонта и эксплуатации промышленного электрооборудования цехов.',
+        lines: {
+          correct: ['Изоляция обмоток 500 МОм!', 'Подшипники смазаны, вибрация в норме.', 'Пуск двигателя плавный.'],
+          wrong: ['Пробой изоляции на корпус!', 'Перекос фаз выше нормы.', 'Проверь тепловое реле.'],
+          descend: 'Оборудование цеха допущено к работе!'
+        },
+        suit: '#1d4ed8', suit2: '#1e3a8a', suitDark: '#172554',
+        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#facc15'
+      },
+      {
+        id: 'reu_service', name: 'Техник обслуживания',
+        desc: 'Диагностирует электронные блоки, частотные преобразователи и приводы станков.',
+        lines: {
+          correct: ['Частотник настроен штатно!', 'Тормозной резистор в норме.', 'Плавная регулировка скорости.'],
+          wrong: ['Ошибка перегрузки по току!', 'Перегрев силового модуля IGBT.', 'Проверь экранирование кабеля.'],
+          descend: 'Электронный блок протестирован!'
+        },
+        suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
+        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8'
+      },
+      {
+        id: 'reu_master', name: 'Мастер участка',
+        desc: 'Организует планово-предупредительный ремонт и безопасную эксплуатацию установок.',
+        lines: {
+          correct: ['Наряд-допуск закрыт без замечаний!', 'Акт технической готовности подписан.', 'Безопасность 100%.'],
+          wrong: ['Нарушение техники безопасности!', 'Не установлены защитные заземления.', 'Отсутствует блокировка.'],
+          descend: 'Участок аттестован!'
+        },
+        suit: '#334155', suit2: '#1e293b', suitDark: '#0f172a',
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f59e0b'
+      }
+    ]
+  };
+
+  const currentSkinList = () => SKINS_BY_SPEC[currentSpec] || SKINS_BY_SPEC.kip;
   let skinIndex = 0;
   try {
-    skinIndex = Number(localStorage.getItem('sota_skin')) || 0;
+    skinIndex = Number(localStorage.getItem('sota_skin_' + currentSpec)) || 0;
   } catch (e) { skinIndex = 0; }
-  if (!(skinIndex >= 0 && skinIndex < SKINS.length)) skinIndex = 0;
-  const currentSkin = () => SKINS[skinIndex];
+  const currentSkin = () => {
+    const list = currentSkinList();
+    if (!(skinIndex >= 0 && skinIndex < list.length)) skinIndex = 0;
+    return list[skinIndex];
+  };
 
   function skImageReady(sk){ return null; }
 
-  // Отрисовка 2.5D персонажа-наладчика (в точности по референсу СОТА)
   function drawSkinBody(g, sk, now){
     const bob = Math.sin(now * 0.008) * 1.1;
     g.save();
     g.translate(0, bob);
 
-    // Ноги и тяжёлые рабочие ботинки
     const legW = 6, legTop = 4, legH = 9;
     g.fillStyle = sk.suit2;
     g.fillRect(-legW - 1, legTop, legW, legH);
     g.fillRect(1, legTop, legW, legH);
-    // Ботинки со стальным носком
     g.fillStyle = '#0f172a';
     g.beginPath(); g.roundRect(-legW - 2, legTop + legH - 1, legW + 2, 4.5, 2); g.fill();
     g.beginPath(); g.roundRect(0, legTop + legH - 1, legW + 2, 4.5, 2); g.fill();
 
-    // Тело / рабочий комбинезон
     const bw = 20, bh = 17, bodyTop = -10;
     const bodyG = g.createLinearGradient(0, bodyTop, 0, bodyTop + bh);
     bodyG.addColorStop(0, sk.suit);
     bodyG.addColorStop(1, sk.suit2);
     g.fillStyle = bodyG;
-    g.beginPath();
-    g.roundRect(-bw / 2, bodyTop, bw, bh, 5);
-    g.fill();
+    g.beginPath(); g.roundRect(-bw / 2, bodyTop, bw, bh, 5); g.fill();
 
-    // Светоотражающие полосы на куртке (оранжево-серебристые по ГОСТу)
     g.fillStyle = sk.accent || '#f97316';
     g.fillRect(-bw / 2, bodyTop + 6, bw, 2);
     g.fillStyle = '#f1f5f9';
     g.fillRect(-bw / 2, bodyTop + 8, bw, 1.2);
 
-    // Рукава и руки
     g.fillStyle = sk.suitDark;
     g.beginPath(); g.roundRect(-bw / 2 - 3, bodyTop + 2, 4.5, 11, 2); g.fill();
     g.beginPath(); g.roundRect(bw / 2 - 1.5, bodyTop + 2, 4.5, 11, 2); g.fill();
-    // Перчатки
     g.fillStyle = '#334155';
     g.beginPath(); g.arc(-bw / 2 - 0.7, bodyTop + 13, 2.5, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(bw / 2 + 0.7, bodyTop + 13, 2.5, 0, Math.PI * 2); g.fill();
 
-    // Монтажный пояс с пряжкой и инструментальным карманом
     g.fillStyle = '#1e293b';
     g.fillRect(-bw / 2 + 1, bodyTop + bh - 4.5, bw - 2, 4);
     g.fillStyle = '#fbbf24';
     g.fillRect(-2.5, bodyTop + bh - 5, 5, 5);
 
-    // Шея и голова
     g.fillStyle = sk.skin;
-    g.beginPath();
-    g.arc(0, -15, 7.5, 0, Math.PI * 2);
-    g.fill();
+    g.beginPath(); g.arc(0, -15, 7.5, 0, Math.PI * 2); g.fill();
 
-    // Лицо: глаза и дружелюбная улыбка
     g.fillStyle = '#1e293b';
     g.fillRect(-3.8, -16.5, 2, 2.2);
     g.fillRect(1.8, -16.5, 2, 2.2);
-    // Блики в глазах
     g.fillStyle = '#ffffff';
     g.fillRect(-3.2, -16.5, 0.9, 0.9);
     g.fillRect(2.4, -16.5, 0.9, 0.9);
-    // Нос и румянец
     g.fillStyle = 'rgba(239, 68, 68, 0.25)';
     g.beginPath(); g.arc(-4.5, -13, 2, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(4.5, -13, 2, 0, Math.PI * 2); g.fill();
 
-    // Защитная строительная каска (ярко-жёлтая с козырьком, как на референсе)
     g.fillStyle = sk.helmet;
-    g.beginPath();
-    g.arc(0, -17, 8.8, Math.PI, 0, false);
-    g.fill();
-    // Козырёк каски
+    g.beginPath(); g.arc(0, -17, 8.8, Math.PI, 0, false); g.fill();
     g.fillStyle = sk.helmetDark;
-    g.beginPath();
-    g.roundRect(-9.8, -18.2, 19.6, 3.5, 1.8);
-    g.fill();
-    // Верхнее ребро жёсткости каски
+    g.beginPath(); g.roundRect(-9.8, -18.2, 19.6, 3.5, 1.8); g.fill();
     g.fillStyle = 'rgba(255, 255, 255, 0.55)';
-    g.beginPath();
-    g.roundRect(-1.5, -23.5, 3, 6, 1);
-    g.fill();
+    g.beginPath(); g.roundRect(-1.5, -23.5, 3, 6, 1); g.fill();
 
-    // Цифровой планшет наладчика в руке (вместо кирки!)
     g.save();
     g.translate(bw / 2 + 3, bodyTop + 7);
     g.fillStyle = '#0f172a';
@@ -2126,11 +2935,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ctx.save();
     ctx.translate(player.x, player.y - 2);
 
-    // тень
     ctx.globalAlpha = 0.35;
     ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.ellipse(0, 14, sk.photo ? 15 : 12, 4.8, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 14, 12, 4.8, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
 
@@ -2145,17 +2953,13 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     grd.addColorStop(0, 'rgba(255,255,255,.07)');
     grd.addColorStop(1, 'rgba(255,255,255,.015)');
     g.fillStyle = grd;
-    g.beginPath();
-    g.roundRect(0, 0, 56, 64, 10);
-    g.fill();
+    g.beginPath(); g.roundRect(0, 0, 56, 64, 10); g.fill();
 
     g.save();
     g.translate(28, 48);
     g.scale(1.1, 1.1);
     g.fillStyle = 'rgba(0,0,0,.32)';
-    g.beginPath();
-    g.ellipse(0, 13, 12, 4.5, 0, 0, Math.PI * 2);
-    g.fill();
+    g.beginPath(); g.ellipse(0, 13, 12, 4.5, 0, 0, Math.PI * 2); g.fill();
     drawSkinBody(g, sk, 0);
     g.restore();
   }
@@ -2184,7 +2988,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const row = el('skinRow');
     if (!row) return;
     row.innerHTML = '';
-    SKINS.forEach((sk, i) => {
+    const list = currentSkinList();
+    list.forEach((sk, i) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'skinbtn' + (i === skinIndex ? ' sel' : '');
@@ -2198,17 +3003,18 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       const g = cv.getContext('2d');
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       drawSkinPortrait(g, sk);
-
-      const label = document.createElement('span');
-      label.textContent = sk.name;
-
       b.appendChild(cv);
-      b.appendChild(label);
+
+      const nameLbl = document.createElement('span');
+      nameLbl.className = 'skin-btn-name';
+      nameLbl.textContent = sk.name;
+      b.appendChild(nameLbl);
+
       b.addEventListener('click', () => {
         skinIndex = i;
-        try { localStorage.setItem('mine_skin', String(i)); } catch (e) {}
+        try { localStorage.setItem('sota_skin_' + currentSpec, i); } catch (_) {}
         buildSkins();
-        sfx.pick();
+        renderSkinDesc();
       });
       row.appendChild(b);
     });
@@ -2216,7 +3022,6 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function drawParticles(dt, now){
-    // пылинки в луче
     if (state === 'playing' && Math.random() < 0.5){
       const a = Math.random() * Math.PI * 2;
       const r = Math.random() * 60;
@@ -2306,10 +3111,12 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#f4e7d0';
+    // Реплика мастера в облачке диалога
+    ctx.fillStyle = '#f8fafc';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(speech.text, x + w / 2, y + h / 2 + 0.5, w - pad * 2);
+    ctx.fillText(speech.text, x + w / 2, y + h / 2);
+
     ctx.restore();
   }
 
@@ -2351,11 +3158,14 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     // 2. Жёлто-чёрная разметка зон безопасности вокруг каждого станка
     drawHazardZones();
 
-    // 2.1. Интерьер: растения в кадках, диванчик, маркерная доска
-    drawRoomProps(now);
-
-    // 3. Задняя стена цеха (y = 0..1) с вывеской СОТА, экранами телеметрии, щитовой и лампами
+    // 3. Задняя стена цеха (y = 0..114) с фирменной настенной балкой, вывеской СОТА, вентиляцией и статусом
     drawBackWall(now);
+
+    // 3.1. Специализированный настенный декор КИП и ТС (P&ID схемы, перфопанели, полки регламентов, тепловычислители, манометры)
+    drawWallDecor(now);
+
+    // 3.2. Интерьер: растения в кадках, чертежный стол, солнце из окна, напольные приборы
+    drawRoomProps(now);
 
     // 4. Боковые стены и нижнее ограждение
     for (let y = 0; y < H; y++){
@@ -2366,16 +3176,16 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       drawWall(x, H - 1, 1);
     }
 
-    // 5. Выходная дверь на правой стене
+    // 5. Выходная золотая дверь на правой стене: К СОТЕ >>
     drawExit(now);
 
     // 6. Расходники / бонусы в цеху
     for (const pk of pickups) drawPickup(pk, now);
 
-    // 7. Станки и оборудование со значками «?»
+    // 7. Станки и оборудование с бейджами названий и значками [ ! ] / [ ✓ ]
     for (const c of crystals) drawStation(c, now);
 
-    // 8. Мастер (персонаж)
+    // 8. Мастер (персонаж в спецодежде выбранной специальности)
     drawMiner(now);
 
     // 9. Частицы
@@ -2433,7 +3243,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
     for (const c of crystals){
       if (c.done || !seen[c.y][c.x]) continue;
-      ctx.fillStyle = c.cracked ? '#b08a5e' : (c.hard ? '#c79bff' : '#6ee0f5');
+      ctx.fillStyle = c.cracked ? '#b08a5e' : (c.hard ? '#c79bff' : '#f59e0b');
       ctx.fillRect(x0 + c.x * cell - 0.5, y0 + c.y * cell - 0.5, cell + 1, cell + 1);
     }
     if (seen[exitCell.y][exitCell.x]){
@@ -2448,9 +3258,6 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ctx.restore();
   }
 
-  /* ============================================================
-     Главный цикл
-     ============================================================ */
   function loop(now){
     const dt = Math.min(0.05, (now - lastTime) / 1000);
     lastTime = now;
@@ -2477,8 +3284,11 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     player.y += (ty - player.y) * k;
 
     if (state === 'playing'){
-      fuel = Math.max(0, fuel - dt * 1.05);
-      if (fuel <= 0){ updateHUD(); gameOver('Энергосеть цеха обесточена. Требуется перезапуск питания.'); }
+      fuel = Math.max(0, fuel - dt * 0.75); // Мягкий естественный расход света за смену
+      if (fuel <= 0){
+        updateHUD();
+        gameOver('Энергосеть цеха обесточена. Требуется перезапуск питания.');
+      }
       updateHUD();
     }
 
@@ -2501,13 +3311,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   let moveCooldown = 0;
   window.addEventListener('keydown', e => {
     if (e.repeat) return;
-    if (currentSpec === 'p' && state === 'title') return;
-    if (state === 'minigame' && currentSpec === 'p') return;
     const isArrow = e.code.startsWith('Arrow') || e.code === 'Space';
     if (isArrow) e.preventDefault();
 
     if (state === 'minigame'){
-      if (currentSpec === 'p') return;
       if (e.code === 'Space' || e.code === 'Enter'){
         e.preventDefault();
         const calibBanner = el('calibBanner');
@@ -2524,9 +3331,27 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       return;
     }
 
+    if (e.code === 'KeyE'){
+      if (state === 'playing'){
+        const nearby = crystals.find(cr => !cr.done && Math.abs(cr.x - player.gx) <= 1 && Math.abs(cr.y - player.gy) <= 1);
+        if (nearby){
+          interactStation(nearby);
+          return;
+        }
+        if (player.gx === exitCell.x && player.gy === exitCell.y && exitOpen){
+          descend();
+          return;
+        }
+      }
+    }
+
     const dir = KEYMAP[e.code];
     if (!dir) return;
 
+    if (state === 'title'){
+      if (e.code === 'Space' || e.code === 'Enter') startGame(null);
+      return;
+    }
     if (state !== 'playing') return;
     if (performance.now() - moveCooldown < 90) return;
     moveCooldown = performance.now();
@@ -2536,49 +3361,28 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   document.querySelectorAll('.dpad button').forEach(btn => {
     const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-    let heldMove;
-    function stopHeldMove(){
-      clearInterval(heldMove);
-      heldMove = undefined;
-    }
-    function moveInDirection(){
-      if (state !== 'playing'){
-        stopHeldMove();
-        return;
-      }
-      if (performance.now() - moveCooldown < 90) return;
-      moveCooldown = performance.now();
-      stopAuto();
-      const [dx, dy] = dirs[btn.dataset.dir];
-      tryMove(dx, dy);
-    }
     const handler = e => {
       e.preventDefault();
       if (state !== 'playing') return;
-      moveInDirection();
-      if (currentSpec === 'p' && e.pointerType === 'touch' && state === 'playing'){
-        stopHeldMove();
-        btn.setPointerCapture(e.pointerId);
-        heldMove = setInterval(moveInDirection, 140);
-      }
+      if (performance.now() - moveCooldown < 90) return;
+      moveCooldown = performance.now();
+      stopAuto();
+      const d = dirs[btn.dataset.dir];
+      tryMove(d[0], d[1]);
     };
     btn.addEventListener('pointerdown', handler);
-    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(event => {
-      btn.addEventListener(event, stopHeldMove);
-    });
     btn.addEventListener('contextmenu', e => e.preventDefault());
   });
 
-  const beginPractice = directPractice ? startGame : openCitySelect;
-  el('startBtn').addEventListener('click', beginPractice);
-  el('againBtn').addEventListener('click', beginPractice);
+  el('startBtn')?.addEventListener('click', () => startGame(null));
+  el('againBtn')?.addEventListener('click', () => startGame(null));
   el('backBtn')?.addEventListener('click', () => {
-    el('cityScreen').classList.add('hidden');
+    el('cityScreen')?.classList.add('hidden');
     el('startScreen').classList.remove('hidden');
     state = 'title';
     buildSkins();
   });
-  el('skinsBtn').addEventListener('click', () => {
+  el('skinsBtn')?.addEventListener('click', () => {
     el('endScreen').classList.add('hidden');
     el('startScreen').classList.remove('hidden');
     state = 'title';

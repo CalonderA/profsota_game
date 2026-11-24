@@ -1,4 +1,8 @@
-﻿/* ============================================================
+﻿window.MINI_GAMES = window.MINI_GAMES || {};
+window.registerMinigame = window.registerMinigame || function(id, cfg){ window.MINI_GAMES[id] = cfg; };
+window.STATION_RENDERERS = window.STATION_RENDERERS || {};
+window.registerStationRenderer = window.registerStationRenderer || function(spec, fn){ window.STATION_RENDERERS[spec] = fn; };
+/* ============================================================
    СОТА — Логика специальности ТС (13.02.02 Теплоснабжение)
    Мини-игры: Сборка теплотрассы, Аварийный байпас, Балансировка теплообменника
    2.5D Станки: drawTSStation
@@ -228,9 +232,9 @@
 
     const btn = el('bypassStartBtn');
     btn.textContent = 'Продолжить смену';
-    btn.onclick = closeFloorEvent;
+    btn.onclick = () => closeFloorEvent(won);
     el('bypassBanner').classList.remove('hidden');
-    bypassGame.closeTimer = setTimeout(closeFloorEvent, BYPASS_CFG.CLOSE_DELAY_MS);
+    bypassGame.closeTimer = setTimeout(() => closeFloorEvent(won), BYPASS_CFG.CLOSE_DELAY_MS);
   }
 
 
@@ -415,9 +419,9 @@
 
     const btn = el('exchangerStartBtn');
     btn.textContent = 'Продолжить смену';
-    btn.onclick = closeFloorEvent;
+    btn.onclick = () => closeFloorEvent(won);
     el('exchangerBanner').classList.remove('hidden');
-    exchangerGame.closeTimer = setTimeout(closeFloorEvent, EXCHANGER_CFG.CLOSE_DELAY_MS);
+    exchangerGame.closeTimer = setTimeout(() => closeFloorEvent(won), EXCHANGER_CFG.CLOSE_DELAY_MS);
   }
 
 
@@ -681,9 +685,9 @@
 
     const btn = el('pipeStartBtn');
     btn.textContent = 'Дальше';
-    btn.onclick = closeFloorEvent;
+    btn.onclick = () => closeFloorEvent(won);
     el('pipeBanner').classList.remove('hidden');
-    pipeGame.closeTimer = setTimeout(closeFloorEvent, PIPES_CFG.CLOSE_DELAY_MS);
+    pipeGame.closeTimer = setTimeout(() => closeFloorEvent(won), PIPES_CFG.CLOSE_DELAY_MS);
   }
 
   function crystalSvgMarkup(violet){
@@ -708,165 +712,172 @@
   /* ============================================================
      2.5D Отрисовка оборудования ТС (Теплоснабжение)
      ============================================================ */
+    /* ============================================================
+     2.5D Отрисовка оборудования ТС (в точности по референсу)
+     0: Контрольно-измерительные приборы (КИП)
+     1: Теплогенерирующее и насосное оборудование (насосы)
+     2: Котельные установки и системы теплоснабжения (котел)
+     3: Трубопроводы и арматура (монтаж и наладка)
+     4: Теплообменное оборудование и теплотехника (теплообменник)
+     ============================================================ */
   function drawTSStation(type, done, hard, now, seed){
-    if (type === 2){
-      // 3 ВЫСОКИХ ШКАФА ДИСПЕТЧЕРИЗАЦИИ И СКАДА ТЕПЛОСЕТЕЙ
-      const rackW = 26, rackH = 48;
-      const offsets = [-28, 0, 28];
+    if (type === 0){
+      // 0. КОНТРОЛЬНО-ИЗМЕРИТЕЛЬНЫЕ ПРИБОРЫ (слева вверху)
+      // Настенная доска с графиком тепловой сети
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-38, -36, 76, 22);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(-38, -36, 76, 22);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(-32, -28); ctx.lineTo(-12, -28); ctx.lineTo(6, -22); ctx.lineTo(30, -22); ctx.stroke();
+      ctx.strokeStyle = '#0284c7';
+      ctx.beginPath(); ctx.moveTo(-32, -20); ctx.lineTo(-10, -20); ctx.lineTo(8, -26); ctx.lineTo(30, -26); ctx.stroke();
 
-      ctx.fillStyle = 'rgba(0,0,0,0.65)';
-      ctx.beginPath(); ctx.ellipse(0, 20, 44, 9, 0, 0, Math.PI * 2); ctx.fill();
+      // Стол с манометрами
+      const deskW = 76, dropH = 14;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-deskW/2, 4, deskW, dropH);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-deskW/2, 4, 4, dropH); ctx.fillRect(deskW/2 - 4, 4, 4, dropH);
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(-deskW/2, -8, deskW, 14, 3); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.fillRect(-deskW/2, 4, deskW, 2);
 
-      offsets.forEach((ox, idx) => {
-        ctx.fillStyle = '#1e1b18';
-        ctx.beginPath(); ctx.roundRect(ox - rackW / 2, -rackH / 2, rackW, rackH, 3); ctx.fill();
-        ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#f97316');
-        ctx.lineWidth = 1.4; ctx.stroke();
-
-        ctx.fillStyle = '#33271e';
-        ctx.fillRect(ox - rackW / 2 + 3, -rackH / 2 + 3, rackW - 6, 4);
-
-        for (let row = 0; row < 5; row++){
-          const ry = -rackH / 2 + 10 + row * 7;
-          ctx.fillStyle = '#29211b';
-          ctx.fillRect(ox - rackW / 2 + 3, ry, rackW - 6, 5);
-
-          const ledCols = ['#ef4444', '#f97316', '#22c55e', '#38bdf8'];
-          const col = ledCols[(row + idx) % ledCols.length];
-          const blink = Math.sin(now * 0.007 + seed + row * 1.5 + idx * 2) > -0.2;
-          ctx.fillStyle = blink ? col : '#0d0b09';
-          ctx.fillRect(ox - rackW / 2 + 5, ry + 1.5, 2.5, 2);
-          ctx.fillRect(ox - rackW / 2 + 9, ry + 1.5, 2.5, 2);
-        }
-
-        ctx.fillStyle = 'rgba(255,255,255,0.06)';
-        ctx.fillRect(ox - rackW / 2 + 2, -rackH / 2 + 2, 4, rackH - 4);
-      });
-    } else if (type === 1){
-      // ПЛАСТИНЧАТЫЙ ТЕПЛООБМЕННИК (ИТП)
-      const w = 46, h = 32;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.beginPath(); ctx.ellipse(0, 16, 24, 7, 0, 0, Math.PI * 2); ctx.fill();
-
-      ctx.fillStyle = '#0369a1';
-      ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, 4); ctx.fill();
-      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#38bdf8');
-      ctx.lineWidth = 1.6; ctx.stroke();
-
-      ctx.fillStyle = '#94a3b8';
-      for (let i = -w / 2 + 8; i < w / 2 - 8; i += 4){
-        ctx.fillRect(i, -h / 2 + 6, 2, h - 12);
-      }
-
-      const bolts = [
-        [-w / 2 + 4, -h / 2 + 4], [w / 2 - 6, -h / 2 + 4],
-        [-w / 2 + 4, h / 2 - 6], [w / 2 - 6, h / 2 - 6]
-      ];
-      bolts.forEach(([bx, by]) => {
-        ctx.fillStyle = '#f1f5f9'; ctx.fillRect(bx, by, 3, 3);
+      // Манометры на стойках
+      [-22, -4, 14].forEach((mx, idx) => {
+        ctx.fillStyle = '#64748b'; ctx.fillRect(mx + 3, -16, 2, 8);
+        ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(mx + 4, -20, 6, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(mx + 4, -20); ctx.lineTo(mx + 7, -23); ctx.stroke();
       });
 
-      ctx.fillStyle = '#ef4444'; ctx.fillRect(-w / 2 - 7, -h / 2 + 8, 8, 6);
-      ctx.fillStyle = '#0284c7'; ctx.fillRect(-w / 2 - 7, h / 2 - 14, 8, 6);
-
-      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(-w / 2 - 4, -h / 2 + 3, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1; ctx.stroke();
-    } else if (type === 5){
-      // СЛЕСАРНЫЙ ВЕРСТАК ТЕПЛОТЕХНИКА С ТИСКАМИ И ТРУБНЫМИ КЛЮЧАМИ
-      const w = 54, dropH = 14;
-
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(-w / 2, 4, w, dropH);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(-w / 2, 4, 5, dropH);
-      ctx.fillRect(w / 2 - 5, 4, 5, dropH);
-
-      ctx.fillStyle = '#475569';
-      ctx.beginPath(); ctx.roundRect(-w / 2, -8, w, 14, 3); ctx.fill();
-      ctx.fillStyle = '#64748b'; ctx.fillRect(-w / 2, 4, w, 2);
-
-      // Слесарные тиски
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(-w / 2 + 3, -16, 12, 10);
-      ctx.fillStyle = '#94a3b8'; ctx.fillRect(-w / 2 + 5, -14, 8, 4);
-      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.moveTo(-w / 2 + 9, -20); ctx.lineTo(-w / 2 + 9, -8); ctx.stroke();
-
-      // Трубные ключи
-      ctx.fillStyle = '#dc2626'; ctx.fillRect(-6, -4, 18, 3);
-      ctx.fillStyle = '#334155'; ctx.fillRect(10, -5, 4, 5);
-      ctx.fillStyle = '#ea580c'; ctx.fillRect(-2, 0, 14, 2.5);
-
-      // Рулон чертежа теплосети
-      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.ellipse(18, -3, 6, 2.5, Math.PI * 0.2, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 0.8; ctx.stroke();
-    } else if (type === 3){
-      // СДВОЕННЫЕ ЦЕНТРОБЕЖНЫЕ НАСОСЫ ТЕПЛОСЕТИ (НА РАМЕ)
-      const w = 50, h = 26;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.beginPath(); ctx.ellipse(0, 16, 24, 7, 0, 0, Math.PI * 2); ctx.fill();
-
-      ctx.fillStyle = '#1e2633';
-      ctx.beginPath(); ctx.roundRect(-w / 2, 4, w, 10, 2); ctx.fill();
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.stroke();
-
-      // Насос 1 (зеленый)
-      ctx.fillStyle = '#059669'; ctx.beginPath(); ctx.roundRect(-20, -10, 16, 16, 3); ctx.fill();
-      ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(-12, -2, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#047857'; ctx.fillRect(-22, -10, 3, 16);
-
-      // Насос 2 (синий)
-      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(4, -10, 16, 16, 3); ctx.fill();
-      ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(12, -2, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#0369a1'; ctx.fillRect(2, -10, 3, 16);
+      // Тестер и портативный расходомер
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(24, -18, 10, 14);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(25, -16, 8, 4);
+    }
+    else if (type === 1){
+      // 1. ТЕПЛОГЕНЕРИРУЮЩЕЕ И НАСОСНОЕ ОБОРУДОВАНИЕ (по центру вверху)
+      // Насосная станция: красный и синий циркуляционные насосы на раме с байпасом
+      const w = 82, h = 32;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-w/2, 6, w, 12);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(-w/2, 6, w, 12);
 
       // Трубы подачи и обратки
-      ctx.fillStyle = '#ef4444'; ctx.fillRect(-w / 2 + 2, -16, w - 4, 5);
-      ctx.fillStyle = '#0284c7'; ctx.fillRect(-w / 2 + 2, 0, w - 4, 4);
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(-w/2 + 4, -22, w - 8, 5);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(-w/2 + 4, -2, w - 8, 5);
+      // Вертикальный байпасный коллектор
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(-22, -22, 5, 25);
+      ctx.fillRect(18, -22, 5, 25);
 
-      // Манометры
+      // Насос 1 (красный)
+      ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(-34, -16, 16, 16, 3); ctx.fill();
+      ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.arc(-26, -8, 6, 0, Math.PI*2); ctx.fill();
+      // Насос 2 (синий)
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(6, -16, 16, 16, 3); ctx.fill();
+      ctx.fillStyle = '#0369a1'; ctx.beginPath(); ctx.arc(14, -8, 6, 0, Math.PI*2); ctx.fill();
+
+      // Манометры на нагнетании
       ctx.fillStyle = '#f8fafc';
-      ctx.beginPath(); ctx.arc(-12, -20, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(12, -20, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-26, -26, 4.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(14, -26, 4.5, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 0.8; ctx.stroke();
-    } else {
-      // ПУЛЬТ ОПЕРАТОРА ТЕПЛОСЕТЕЙ С МОНИТОРАМИ
-      const deskW = 56, dropH = 14;
+    }
+    else if (type === 2){
+      // 2. КОТЕЛЬНЫЕ УСТАНОВКИ И СИСТЕМЫ ТЕПЛОСНАБЖЕНИЯ (справа вверху)
+      // Мощный промышленный цилиндрический котёл с факелом
+      const boilW = 86, boilH = 46;
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(-boilW/2, -boilH/2 - 6, boilW, boilH, 6); ctx.fill();
+      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#f97316');
+      ctx.lineWidth = 1.6; ctx.stroke();
 
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath(); ctx.roundRect(-10, -26, 20, 14, 4); ctx.fill();
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.stroke();
-      ctx.fillStyle = '#1e293b';
-      ctx.beginPath(); ctx.ellipse(0, -12, 9, 4, 0, 0, Math.PI * 2); ctx.fill();
+      // Обшивка котла
+      ctx.fillStyle = '#64748b'; ctx.fillRect(-boilW/2 + 4, -boilH/2 - 2, boilW - 8, 4);
+      // Дымовая труба вверх
+      ctx.fillStyle = '#334155'; ctx.fillRect(20, -boilH/2 - 24, 14, 20);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1; ctx.strokeRect(20, -boilH/2 - 24, 14, 20);
 
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(-deskW / 2, 4, deskW, dropH);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(-deskW / 2, 4, 4, dropH);
-      ctx.fillRect(deskW / 2 - 4, 4, 4, dropH);
+      // Смотровое окно топки с языками пламени!
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(-14, -8, 12, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
+      // Анимированное пламя
+      const fPulse = Math.sin(now * 0.01 + seed) * 2;
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath();
+      ctx.moveTo(-20, -2); ctx.quadraticCurveTo(-14, -18 + fPulse, -8, -2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.moveTo(-18, -4); ctx.quadraticCurveTo(-14, -14 + fPulse, -10, -4); ctx.closePath(); ctx.fill();
 
-      ctx.fillStyle = '#334155';
-      ctx.beginPath(); ctx.roundRect(-deskW / 2, -8, deskW, 14, 3); ctx.fill();
-      ctx.fillStyle = '#475569'; ctx.fillRect(-deskW / 2, 4, deskW, 2);
+      // Горелочный блок слева
+      ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(-boilW/2 - 10, -14, 12, 16, 2); ctx.fill();
+      ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1; ctx.stroke();
 
-      // Экран с мнемосхемой теплотрассы
-      ctx.fillStyle = '#0f172a'; ctx.fillRect(-17, -26, 22, 17);
-      ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1; ctx.strokeRect(-17, -26, 22, 17);
-      ctx.fillStyle = '#18120e'; ctx.fillRect(-15, -24, 18, 13);
-      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(-13, -16); ctx.lineTo(-6, -16); ctx.lineTo(-2, -20); ctx.lineTo(1, -20); ctx.stroke();
-      ctx.strokeStyle = '#0284c7';
-      ctx.beginPath(); ctx.moveTo(-13, -19); ctx.lineTo(-9, -19); ctx.lineTo(-5, -23); ctx.stroke();
-      ctx.fillStyle = '#475569'; ctx.fillRect(-8, -9, 4, 4);
+      // Щит управления котлом справа
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(16, -14, 20, 18);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(16, -14, 20, 18);
+      ctx.fillStyle = '#22c55e'; ctx.fillRect(18, -12, 6, 2.5);
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(18, -8, 6, 2.5);
+    }
+    else if (type === 3){
+      // 3. ТРУБОПРОВОДЫ И АРМАТУРА (МОНТАЖ И НАЛАДКА) (слева внизу)
+      // Стенд монтажа трубопроводов с задвижками, фланцами и вентилями
+      const pipeW = 84;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-pipeW/2, 4, pipeW, 14);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-pipeW/2, 4, 4, 14); ctx.fillRect(pipeW/2 - 4, 4, 4, 14);
+      ctx.fillStyle = '#334155'; ctx.fillRect(-pipeW/2, -2, pipeW, 8);
 
-      // Вспомогательный экран
-      ctx.fillStyle = '#0f172a'; ctx.fillRect(8, -24, 16, 15);
-      ctx.fillStyle = '#1e1610'; ctx.fillRect(9, -23, 14, 13);
-      ctx.fillStyle = '#fb923c'; ctx.fillRect(11, -17, 10, 1.5);
-      ctx.fillStyle = '#475569'; ctx.fillRect(14, -9, 4, 3);
+      // Две стальные трубы с фланцами
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(-38, -14, 76, 6);
+      ctx.fillRect(-38, -4, 76, 5);
 
-      // Цветок
-      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.roundRect(22, -5, 5, 6, 1); ctx.fill();
-      ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(24.5, -7, 3.5, 0, Math.PI * 2); ctx.fill();
+      // Красные штурвалы задвижек
+      [-20, 12].forEach(vx => {
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(vx + 3, -22, 3, 10);
+        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.ellipse(vx + 4.5, -24, 8, 3.5, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1; ctx.stroke();
+      });
+
+      // Ящик слесарного инструмента на столе
+      ctx.fillStyle = '#dc2626'; ctx.fillRect(26, -16, 14, 12);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(29, -18, 8, 2);
+      // Трубный ключ
+      ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(-32, 2); ctx.lineTo(-18, 6); ctx.stroke();
+    }
+    else {
+      // 4. ТЕПЛООБМЕННОЕ ОБОРУДОВАНИЕ И ТЕПЛОТЕХНИКА (справа внизу)
+      // Пластинчатый теплообменник (пакет рифленых пластин) + секция радиатора
+      const w = 78, h = 34;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.ellipse(0, 14, 38, 8, 0, 0, Math.PI*2); ctx.fill();
+
+      // Плиты теплообменника (синие торцевые плиты)
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(-36, -h/2, 24, h, 3); ctx.fill();
+      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#38bdf8');
+      ctx.lineWidth = 1.4; ctx.stroke();
+
+      // Рифленые нержавеющие пластины теплообмена
+      ctx.fillStyle = '#94a3b8';
+      for (let i = -30; i < -16; i += 3){
+        ctx.fillRect(i, -h/2 + 4, 1.5, h - 8);
+      }
+      // Стяжные болты
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(-34, -h/2 + 3, 3, 3); ctx.fillRect(-16, -h/2 + 3, 3, 3);
+      ctx.fillRect(-34, h/2 - 6, 3, 3); ctx.fillRect(-16, h/2 - 6, 3, 3);
+
+      // Радиаторная батарея справа
+      ctx.fillStyle = '#f1f5f9';
+      for (let rx = 2; rx <= 26; rx += 6){
+        ctx.beginPath(); ctx.roundRect(rx, -h/2 + 2, 4.5, h - 4, 2); ctx.fill();
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 0.8; ctx.stroke();
+      }
+
+      // Подводящие трубы (красная и синяя)
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(-38, -h/2 + 6, 6, 5);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(-38, h/2 - 11, 6, 5);
+
+      // Цифровой терморегулятор на стойке
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(28, -24, 14, 14);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(28, -24, 14, 14);
+      ctx.fillStyle = '#22c55e'; ctx.fillRect(30, -21, 10, 3);
     }
   }
 
@@ -878,6 +889,6 @@ if (window.registerMinigame) {
   registerMinigame('bypass',    { name: 'аварийный байпас теплосети', start: startBypassEvent, cleanup: cleanupBypass });
   registerMinigame('exchanger', { name: 'балансировка пластинчатого теплообменника', start: startExchangerEvent, cleanup: cleanupExchanger });
 }
-// Модуль загружается до common.js: сохраняем отрисовщик в реестре напрямую.
-window.STATION_RENDERERS = window.STATION_RENDERERS || {};
-window.STATION_RENDERERS.ts = drawTSStation;
+if (window.registerStationRenderer) {
+  registerStationRenderer('ts', drawTSStation);
+}

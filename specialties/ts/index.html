@@ -2,9 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>СОТА — Теплопункт ТС (13.02.02)</title>
-  <link rel="stylesheet" href="../../shared/css/common.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>СОТА — Лаборатория ТС (13.02.02)</title>
+  <link rel="stylesheet" href="../../shared/css/common.css?v=20261124_5">
   <link rel="stylesheet" href="ts.css">
 </head>
 <body>
@@ -33,15 +33,13 @@
   <div class="hud">
     <div class="brand">
       <span id="hudBrand" style="color:var(--amber-2);font-weight:800;letter-spacing:.07em">ПУТЬ К СОТЕ</span>
-      <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· Цех КИПиА</span>
+      <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· Лаборатория ТС</span>
     </div>
     <div class="stat"><span id="floorLabel">&lt;/&gt; Цех</span> <b id="mineVal">1/3</b></div>
-    <div class="stat"><span id="distLabel">📍 До СОТЫ</span> <b id="distVal">0 км</b></div>
     <div class="stat"><span id="unitLabel">💎 Станки</span> <b id="oreVal">0/3</b></div>
     <div class="stat">⭐ Очки <b id="scoreVal">0</b></div>
     <div class="stat">🔥 Серия <b id="comboVal">×0</b></div>
-    <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
-    <div class="stat">⚡ Силы <div class="meter" id="hpMeter"><i id="hpBar"></i></div></div>
+    <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar" style="width: 100%;"></i></div></div>
   </div>
 
 
@@ -52,10 +50,10 @@
       <div class="card">
         <div class="spec-banner" id="specBanner">
           <div class="spec-banner-info">
-            <span class="spec-banner-code" id="specBadge">КИП</span>
+            <span class="spec-banner-code" id="specBadge">ТС</span>
             <div>
-              <b id="specTitle">Цех КИПиА</b>
-              <small id="specSub">Специальность 15.01.31</small>
+              <b id="specTitle">Лаборатория ТС</b>
+              <small id="specSub">Специальность 13.02.02</small>
             </div>
           </div>
           <a href="../../menu.html" class="spec-change-link">Сменить специальность ⮵</a>
@@ -64,9 +62,9 @@
         <p class="sub" id="startMainSub">Смоленская областная технологическая академия. Обслуживайте рабочие станки и приборы в цеху, проводите замеры и решайте задачи наладчика!</p>
         <div class="rules" id="rulesGrid">
           <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
-          <div><b id="ruleUnitTitle">Станок КИП</b>Подойдите к станку — проведите диагностику</div>
+          <div><b id="ruleUnitTitle">Станок ТС</b>Подойдите к станку — проведите диагностику</div>
           <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
-          <div><b>Авария</b>Свет погас или силы мастера на нуле</div>
+          <div><b>Переход к СОТЕ</b>Выполните 5 заданий цеха, чтобы открыть дверь</div>
         </div>
         <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
         <div class="skins" id="skinRow"></div>
@@ -123,7 +121,7 @@
       </div>
     </div>
 
-    <!-- Мини-игра «Калибровка токовой петли 4–20 мА» (КИП) -->
+    <!-- Мини-игра «Калибровка токовой петли 4–20 мА» (ТС) -->
     <div class="screen hidden" id="clickerScreen" style="display:none">
       <div id="clickerCount"></div><div id="clickerTimerBar"></div><div id="clickerTimerText"></div><div id="clickerArena"><div id="clickerBanner"><h2 id="clickerBannerTitle"></h2><p id="clickerBannerText"></p><button id="clickerStartBtn"></button></div></div>
     </div>
@@ -165,7 +163,7 @@
       </div>
     </div>
 
-    <!-- КИП: Мини-игра Монтаж клеммной схемы -->
+    <!-- ТС: Мини-игра Монтаж клеммной схемы -->
     <div class="screen hidden" id="bypassScreen">
       <div class="pipe-shell">
         <div class="pipe-head">
@@ -354,8 +352,7 @@
 </div>
 
   <script>window.CURRENT_SPEC = 'ts';</script>
-  <script src="ts.js"></script>
-  <script src="../../shared/js/workshop-start.js"></script>
-  <script src="../../shared/js/common.js"></script>
+  <script src="../../shared/js/common.js?v=20261124_5"></script>
+  <script src="ts.js?v=20261124_5"></script>
 </body>
 </html>

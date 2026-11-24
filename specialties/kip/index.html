@@ -2,9 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>СОТА — Цех КИПиА (15.01.31)</title>
-  <link rel="stylesheet" href="../../shared/css/common.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>СОТА — Лаборатория КИП (15.01.31)</title>
+  <link rel="stylesheet" href="../../shared/css/common.css?v=20261124_5">
   <link rel="stylesheet" href="kip.css">
 </head>
 <body>
@@ -34,15 +34,13 @@
   <div class="hud">
     <div class="brand">
       <span id="hudBrand" style="color:var(--amber-2);font-weight:800;letter-spacing:.07em">ПУТЬ К СОТЕ</span>
-      <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· Цех КИПиА</span>
+      <span id="hudSub" style="color:var(--muted);font-size:12px;font-weight:400;margin-left:4px">· Лаборатория КИП</span>
     </div>
     <div class="stat"><span id="floorLabel">&lt;/&gt; Цех</span> <b id="mineVal">1/3</b></div>
-    <div class="stat"><span id="distLabel">📍 До СОТЫ</span> <b id="distVal">0 км</b></div>
     <div class="stat"><span id="unitLabel">💎 Станки</span> <b id="oreVal">0/3</b></div>
     <div class="stat">⭐ Очки <b id="scoreVal">0</b></div>
     <div class="stat">🔥 Серия <b id="comboVal">×0</b></div>
-    <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar"></i></div></div>
-    <div class="stat">⚡ Силы <div class="meter" id="hpMeter"><i id="hpBar"></i></div></div>
+    <div class="stat">💡 Свет <div class="meter" id="fuelMeter"><i id="fuelBar" style="width: 100%;"></i></div></div>
   </div>
 
 
@@ -55,7 +53,7 @@
           <div class="spec-banner-info">
             <span class="spec-banner-code" id="specBadge">КИП</span>
             <div>
-              <b id="specTitle">Цех КИПиА</b>
+              <b id="specTitle">Лаборатория КИП</b>
               <small id="specSub">Специальность 15.01.31</small>
             </div>
           </div>
@@ -67,7 +65,7 @@
           <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
           <div><b id="ruleUnitTitle">Станок КИП</b>Подойдите к станку — проведите диагностику</div>
           <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
-          <div><b>Авария</b>Свет погас или силы мастера на нуле</div>
+          <div><b>Переход к СОТЕ</b>Выполните 5 заданий цеха, чтобы открыть дверь</div>
         </div>
         <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
         <div class="skins" id="skinRow"></div>
@@ -436,8 +434,7 @@
 </div>
 
   <script>window.CURRENT_SPEC = 'kip';</script>
-  <script src="kip.js"></script>
-  <script src="../../shared/js/workshop-start.js"></script>
-  <script src="../../shared/js/common.js"></script>
+  <script src="../../shared/js/common.js?v=20261124_5"></script>
+  <script src="kip.js?v=20261124_5"></script>
 </body>
 </html>

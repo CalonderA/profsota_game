@@ -66,6 +66,10 @@
   #hpBar{background:linear-gradient(90deg,#3fa06a,#79e0a1)}
   .meter.low i{background:linear-gradient(90deg,#d6453a,#f4796b)!important;animation:pulseBar .7s infinite alternate}
   @keyframes pulseBar{from{opacity:.55}to{opacity:1}}
+  .hud .stat:has(#hpMeter),
+  .hud .stat:has(#distVal) {
+    display: none !important;
+  }
 
   /* ---------- Stage ---------- */
   #stage{
@@ -764,4 +768,165 @@
   #controls .exit-btn { display: none; }
   .dpad { opacity: .85; }
   .citygrid { max-height: 45dvh; }
+}
+
+
+/* ============================================================
+   Вопросы со слайдером (Вольтаж / Ток / Температура)
+   ============================================================ */
+.sliderq {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px !important;
+  width: 100% !important;
+  margin-top: 14px !important;
+}
+.sliderWrap {
+  width: 100% !important;
+  max-width: 440px !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 16px 22px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
+}
+.sliderVal {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-family: 'JetBrains Mono', monospace, sans-serif !important;
+}
+.sliderVal b {
+  font-size: 34px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.6) !important;
+}
+.sliderVal span {
+  font-size: 20px !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+}
+#sliderInput {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 100% !important;
+  height: 10px !important;
+  border-radius: 5px !important;
+  background: #1e293b !important;
+  outline: none !important;
+  cursor: pointer !important;
+  margin: 10px 0 !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.6) !important;
+}
+#sliderInput::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: #f59e0b !important;
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.9) !important;
+  cursor: pointer !important;
+  transition: transform 0.1s ease !important;
+}
+#sliderInput::-webkit-slider-thumb:hover {
+  transform: scale(1.18) !important;
+}
+.sliderScale {
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  padding: 0 4px !important;
+}
+#sliderSubmit {
+  width: 100% !important;
+  max-width: 440px !important;
+  padding: 13px 20px !important;
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  color: #0f172a !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4) !important;
+  transition: all 0.15s ease !important;
+}
+#sliderSubmit:hover {
+  filter: brightness(1.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ============================================================
+   Стили кнопок скинов с подписями должностей
+   ============================================================ */
+.skinbtn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: auto !important;
+  min-width: 95px !important;
+  padding: 8px 10px !important;
+  height: auto !important;
+}
+.skin-btn-name {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #cbd5e1 !important;
+  text-align: center !important;
+  max-width: 100px !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+}
+.skinbtn.sel .skin-btn-name {
+  color: #fbbf24 !important;
+}
+
+/* ============================================================
+   Маркеры входа и выхода в мини-игре теплотрассы
+   ============================================================ */
+.pipe-inlet-marker,
+.pipe-outlet-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.pipe-inlet-marker {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+.pipe-outlet-marker {
+  background: rgba(56, 189, 248, 0.18);
+  border: 1px solid #38bdf8;
+  color: #bae6fd;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.ptile-inlet {
+  border-left: 3px solid #ef4444 !important;
+  box-shadow: inset 4px 0 10px rgba(239, 68, 68, 0.35) !important;
+}
+.ptile-outlet {
+  border-right: 3px solid #38bdf8 !important;
+  box-shadow: inset -4px 0 10px rgba(56, 189, 248, 0.35) !important;
 }
