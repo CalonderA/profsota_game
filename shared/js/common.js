@@ -487,7 +487,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   function openQuestion(crystal){
     const assemblePC = currentSpec === 'ksk' && crystal?.stationType === 0;
-    if (assemblePC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
+    const servicePC = currentSpec === 'ksk' && crystal?.stationType === 3;
+    if (assemblePC || servicePC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
       if (!crystal || crystal.done || state !== 'playing') return;
       state = 'minigame';
       stopAuto();
@@ -507,6 +508,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         toast(exitOpen ? 'Все задания выполнены! Дверь к СОТЕ открыта.' : 'Оборудование настроено · ' + collected + '/' + needed);
       };
       if (assemblePC) window.openKskAssembly(completeStation, cancelStationMinigame);
+      else if (servicePC) window.openKskService(completeStation, cancelStationMinigame);
       else window.startPStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       return;
     }

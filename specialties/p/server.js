@@ -51,7 +51,7 @@ window.openPServerGame = function(done,cancel){
   <dl class="p-linux-reference-list" tabindex="0" aria-label="Список команд и примеров"></dl>
  </dialog></section>`;
  const q=s=>overlay.querySelector(s),bank=q('.p-server-choices'),check=q('.p-server-check'),next=q('.p-server-next'),reset=q('.p-server-reset'),feedback=q('.p-feedback');
- const game=q('.p-linux-game'),reference=q('.p-linux-reference'),help=q('.p-linux-help'),referenceList=q('.p-linux-reference-list');
+ const game=q('.p-linux-game'),options=q('.p-linux-options'),reference=q('.p-linux-reference'),help=q('.p-linux-help'),referenceList=q('.p-linux-reference-list');
  const filters=[...reference.querySelectorAll('[data-memo]')];
  function renderReference(mode){
   const commands=mode==='step' ? P_LINUX_MEMO_BY_STEP[stage] : P_LINUX_MEMO.map(([command])=>command);
@@ -83,13 +83,17 @@ window.openPServerGame = function(done,cancel){
  function slotAtPoint(x,y){
   return slots.indexOf(document.elementFromPoint(x,y)?.closest('.p-linux-slot'));
  }
+ function overOptions(x,y){
+  return options.contains(document.elementFromPoint(x,y));
+ }
  function updateDrag(){
   if(!drag?.ghost)return;
   const bounds=game.getBoundingClientRect();
   if(drag.y<bounds.top+36)game.scrollTop-=8;
   else if(drag.y>bounds.bottom-36)game.scrollTop+=8;
-  const target=slotAtPoint(drag.x,drag.y);
+  const target=drag.fromSlot ? -1 : slotAtPoint(drag.x,drag.y);
   slots.forEach((slot,index)=>slot.classList.toggle('drag-over',index===target));
+  options.classList.toggle('drag-over',drag.fromSlot&&overOptions(drag.x,drag.y));
   drag.frame=requestAnimationFrame(updateDrag);
  }
  function clearDrag(){
@@ -99,11 +103,71 @@ window.openPServerGame = function(done,cancel){
   drag.button.classList.remove('dragging');
   drag=null;
   slots.forEach(slot=>slot.classList.remove('drag-over'));
+  options.classList.remove('drag-over');
  }
  function focusSlot(index){activeSlot=index;slots.forEach((slot,i)=>slot.classList.toggle('active',i===index&&!solved));}
  function update(){
-  slots.forEach((slot,i)=>{slot.textContent=values[i]||'Выбрать фрагмент';slot.setAttribute('aria-label','Пропуск '+(i+1)+': '+(values[i]||'пусто'));});
+  slots.forEach((slot,i)=>{slot.textContent=values[i]||'Выбрать фрагмент';slot.setAttribute('aria-label','Пропуск '+(i+1)+': '+(values[i]||'пусто'));slot.classList.toggle('filled',!!values[i]);});
   bank.querySelectorAll('button').forEach(button=>button.disabled=solved||values.includes(button.dataset.fragment));check.disabled=solved||values.some(value=>!value);
+ }
+ function clearSlot(index){
+  if(solved||closed)return;
+  values[index]='';
+  slots[index].classList.remove('incorrect');
+  slots[index].removeAttribute('aria-invalid');
+  focusSlot(index);
+  update();
+  feedback.textContent='Выберите фрагмент снизу для пропуска '+(index+1)+'.';
+ }
+ function bindFragmentDrag(button,getWord,onClick,sourceIndex){
+  const fromSlot=sourceIndex!==undefined;
+  let skipClick=false;
+  button.onclick=event=>{
+   if(skipClick&&event.detail!==0){skipClick=false;return;}
+   onClick();
+  };
+  button.addEventListener('pointerdown',event=>{
+   if(solved||closed||drag||!event.isPrimary||event.button!==0)return;
+   skipClick=false;
+   const word=getWord();
+   if(!word)return;
+   button.setPointerCapture(event.pointerId);
+   drag={button,word,fromSlot,pointer:event.pointerId,x:event.clientX,y:event.clientY};
+  });
+  button.addEventListener('pointermove',event=>{
+   if(drag?.pointer!==event.pointerId)return;
+   if(!drag.ghost){
+    if(Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<7)return;
+    drag.ghost=document.createElement('div');
+    drag.ghost.className='p-program-ghost p-linux-ghost';
+    drag.ghost.textContent=drag.word;
+    drag.ghost.setAttribute('aria-hidden','true');
+    overlay.appendChild(drag.ghost);
+    button.classList.add('dragging');
+    drag.frame=requestAnimationFrame(updateDrag);
+   }
+   drag.x=event.clientX;
+   drag.y=event.clientY;
+   drag.ghost.style.left=drag.x+'px';
+   drag.ghost.style.top=drag.y+'px';
+  });
+  button.addEventListener('pointerup',event=>{
+   if(drag?.pointer!==event.pointerId)return;
+   skipClick=!!drag.ghost;
+   const {word}=drag;
+   clearDrag();
+   if(!skipClick)return;
+   const {clientX,clientY}=event;
+   if(fromSlot){
+    if(overOptions(clientX,clientY))clearSlot(sourceIndex);
+   }else{
+    const target=slotAtPoint(clientX,clientY);
+    if(target!==-1)insert(word,target);
+   }
+  });
+  for(const type of ['pointercancel','lostpointercapture']){
+   button.addEventListener(type,event=>{if(drag?.pointer===event.pointerId)clearDrag();});
+  }
  }
  function insert(word,index=activeSlot){
   if(solved||closed)return;const previous=values.indexOf(word);if(previous!==-1)values[previous]='';values[index]=word;
@@ -128,7 +192,7 @@ window.openPServerGame = function(done,cancel){
    const row=document.createElement('div');row.className='p-linux-line';const number=document.createElement('span');number.className='p-linux-number';number.textContent=lineIndex+1;row.appendChild(number);
    if(kind==='slot'){
     const index=slots.length,button=document.createElement('button');button.type='button';button.className='p-linux-slot';values.push('');slots.push(button);
-    button.onclick=()=>{if(solved)return;values[index]='';focusSlot(index);update();feedback.textContent='Выберите фрагмент снизу для пропуска '+(index+1)+'.';};row.appendChild(button);
+    bindFragmentDrag(button,()=>values[index],()=>clearSlot(index),index);row.appendChild(button);
    }else{
     const code=document.createElement('code');code.className=kind==='comment'?'p-linux-comment':'p-linux-code';
     if(kind==='comment')code.textContent=text;else {const split=text.indexOf(' '),command=document.createElement('span');command.className='p-linux-command';command.textContent=split===-1?text:text.slice(0,split);code.appendChild(command);if(split!==-1)code.appendChild(document.createTextNode(text.slice(split)));}row.appendChild(code);
@@ -138,44 +202,8 @@ window.openPServerGame = function(done,cancel){
   const words=[...step.words];for(let i=words.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[words[i],words[j]]=[words[j],words[i]];}
   words.forEach(word=>{
    const button=document.createElement('button');button.type='button';button.className='p-server-choice';button.dataset.fragment=word;
-   const grip=document.createElement('span');grip.className='p-linux-grip';grip.textContent='⠿';grip.setAttribute('aria-hidden','true');button.append(grip,document.createTextNode(word));let skipClick=false;
-   button.onclick=event=>{
-    if(skipClick&&event.detail!==0){skipClick=false;return;}
-    insert(word);
-   };
-   button.addEventListener('pointerdown',event=>{
-    if(solved||closed||drag||!event.isPrimary||event.button!==0)return;
-    skipClick=false;
-    button.setPointerCapture(event.pointerId);
-    drag={button,pointer:event.pointerId,x:event.clientX,y:event.clientY};
-   });
-   button.addEventListener('pointermove',event=>{
-    if(drag?.pointer!==event.pointerId)return;
-    if(!drag.ghost){
-     if(Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<7)return;
-     drag.ghost=document.createElement('div');
-     drag.ghost.className='p-program-ghost p-linux-ghost';
-     drag.ghost.textContent=word;
-     drag.ghost.setAttribute('aria-hidden','true');
-     overlay.appendChild(drag.ghost);
-     button.classList.add('dragging');
-     drag.frame=requestAnimationFrame(updateDrag);
-    }
-    drag.x=event.clientX;
-    drag.y=event.clientY;
-    drag.ghost.style.left=drag.x+'px';
-    drag.ghost.style.top=drag.y+'px';
-   });
-   button.addEventListener('pointerup',event=>{
-    if(drag?.pointer!==event.pointerId)return;
-    skipClick=!!drag.ghost;
-    const target=skipClick ? slotAtPoint(event.clientX,event.clientY) : -1;
-    clearDrag();
-    if(target!==-1)insert(word,target);
-   });
-   for(const type of ['pointercancel','lostpointercapture']){
-    button.addEventListener(type,event=>{if(drag?.pointer===event.pointerId)clearDrag();});
-   }
+   const grip=document.createElement('span');grip.className='p-linux-grip';grip.textContent='⠿';grip.setAttribute('aria-hidden','true');button.append(grip,document.createTextNode(word));
+   bindFragmentDrag(button,()=>word,()=>insert(word));
    bank.appendChild(button);
   });
   check.hidden=false;next.hidden=true;reset.disabled=false;feedback.textContent='';focusSlot(0);update();q('.p-linux-game').scrollTop=0;slots[0].focus({preventScroll:true});
@@ -184,7 +212,7 @@ window.openPServerGame = function(done,cancel){
  check.onclick=()=>{
   if(solved||closed||values.some(value=>!value))return;const step=P_SERVER_STEPS[stage],answers=step.lines.filter(line=>line[0]==='slot').map(line=>line[1]),wrong=values.map((value,i)=>value!==answers[i]);
   slots.forEach((slot,i)=>{slot.classList.toggle('incorrect',wrong[i]);slot.setAttribute('aria-invalid',String(wrong[i]));});
-  if(wrong.some(Boolean)){mistakes++;feedback.textContent='Проверьте выделенные строки. '+step.hint;focusSlot(wrong.indexOf(true));return;}
+  if(wrong.some(Boolean)){mistakes++;feedback.textContent='Перетащите неверный фрагмент обратно к вариантам или нажмите на него. '+step.hint;focusSlot(wrong.indexOf(true));return;}
   solved=true;clearDrag();slots.forEach(slot=>{slot.disabled=true;slot.classList.add('correct');slot.classList.remove('active');});update();reset.disabled=true;check.hidden=true;next.hidden=false;
   q('.p-linux-output').textContent=step.output;const last=stage===P_SERVER_STEPS.length-1;feedback.textContent=last?'Все скрипты готовы! +'+Math.max(50,200-mistakes*25)+' очков.':'Верно! Скрипт выполнен.';next.textContent=last?'Вернуться в лабораторию →':'Следующий этап →';next.focus();
  };
