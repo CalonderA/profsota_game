@@ -496,7 +496,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     if (currentSpec === 'ksk' && typeof KSK_STATIONS !== 'undefined') {
       defs = KSK_STATIONS.map((s, i) => ({
         x: s.x, y: s.y, type: s.type,
-        title: s.title || ('Станция ' + (s.type + 1)),
+        title: s.title || KSK_NAMES[s.type],
         icon: s.icon || '💻',
         actionType: s.actionType || 'question',
         minigameId: s.minigameId || null,
@@ -505,7 +505,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     } else if (currentSpec === 'p' && typeof P_STATIONS !== 'undefined') {
       defs = P_STATIONS.map((s, i) => ({
         x: s.x, y: s.y, type: s.type,
-        title: s.title || ('Узел ' + (s.type + 1)),
+        title: s.title || (typeof P_NAMES !== 'undefined' ? P_NAMES[s.type] : ('Узел ' + (s.type + 1))),
         icon: s.icon || '⚡',
         actionType: s.actionType || 'question',
         minigameId: s.minigameId || null,
@@ -621,7 +621,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function openQuestion(crystal){
     const assemblePC = currentSpec === 'ksk' && crystal?.stationType === 0;
     const servicePC = currentSpec === 'ksk' && crystal?.stationType === 3;
-    if (assemblePC || servicePC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
+    const diagnosePC = currentSpec === 'ksk' && crystal?.stationType === 1;
+    const networkPC = currentSpec === 'ksk' && crystal?.stationType === 4;
+    if (assemblePC || servicePC || diagnosePC || networkPC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
       if (!crystal || crystal.done || state !== 'playing') return;
       state = 'minigame';
       stopAuto();
@@ -638,10 +640,12 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         state = 'playing';
         sfx.good();
         updateHUD();
-        toast(exitOpen ? 'Все задания выполнены! Дверь к СОТЕ открыта.' : 'Оборудование настроено · ' + collected + '/' + needed);
+        toast(exitOpen ? 'Все задания выполнены! СОТА ждёт вас.' : 'Оборудование настроено · ' + collected + '/' + needed);
       };
       if (assemblePC) window.openKskAssembly(completeStation, cancelStationMinigame);
       else if (servicePC) window.openKskService(completeStation, cancelStationMinigame);
+      else if (diagnosePC) window.openKskDiagnosis(completeStation, cancelStationMinigame);
+      else if (networkPC) window.openKskNetwork(completeStation, cancelStationMinigame);
       else window.startPStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       return;
     }
@@ -809,10 +813,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       flash = 0.35; flashColor = hard ? '185,150,255' : '120,220,160';
       fb.className = 'qfeedback ok';
       fb.textContent = (hard ? 'Экспертное задание выполнено! ' : 'Верно! ') + '+' + bonus + ' очков.';
-      nextBtn.textContent = collected >= needed ? 'К двери СОТЫ' : 'Дальше';
+      nextBtn.textContent = collected >= needed ? 'К СОТЕ' : 'Дальше';
       if (collected >= needed && !exitOpen){
         exitOpen = true;
-        setTimeout(() => toast('Все 5 заданий выполнены! Дверь К СОТЕ открыта >>'), 400);
+        setTimeout(() => toast('Все 5 заданий выполнены! Можно войти в СОТУ!'), 400);
       }
     } else {
       btn.classList.add('wrong');
@@ -895,10 +899,10 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       flash = 0.35; flashColor = hard ? '185,150,255' : '120,220,160';
       fb.className = 'qfeedback ok';
       fb.textContent = '✓ Точность ' + accPct + '% · +' + bonus + ' очков. ' + truth;
-      nextBtn.textContent = collected >= needed ? 'К двери СОТЫ' : 'Дальше';
+      nextBtn.textContent = collected >= needed ? 'К СОТЕ' : 'Дальше';
       if (collected >= needed && !exitOpen){
         exitOpen = true;
-        setTimeout(() => toast('Все 5 заданий выполнены! Дверь К СОТЕ открыта >>'), 400);
+        setTimeout(() => toast('Все 5 заданий выполнены! Можно войти в СОТУ!'), 400);
       }
     } else {
       answerStreak = 0;
@@ -1012,9 +1016,27 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   function tapTo(cell){
     if (state !== 'playing') return;
+    stopAuto();
+    if (cell.x < 0 || cell.y < 0 || cell.x >= W || cell.y >= H) return;
+    // A tap on furniture leads to the closest reachable floor beside it.
+    if (map[cell.y][cell.x] !== FLOOR) {
+      const queue = [{x:player.gx, y:player.gy}];
+      const visited = new Set([player.gx + ',' + player.gy]);
+      let closest = queue[0], distance = Infinity;
+      for (const point of queue) {
+        const d = Math.hypot(point.x - cell.x, point.y - cell.y);
+        if (d < distance) { closest = point; distance = d; }
+        for (const [dx, dy] of DIRS) {
+          const x = point.x + dx, y = point.y + dy, key = x + ',' + y;
+          if (map[y]?.[x] !== FLOOR || visited.has(key)) continue;
+          visited.add(key);queue.push({x, y});
+        }
+      }
+      cell = closest;
+    }
     // Если игрок уже рядом со станком и тапает по нему — сразу открываем задачу
     const nearStation = crystals.find(cr => !cr.done && cr.x === cell.x && cr.y === cell.y);
-    if (nearStation && Math.abs(player.gx - cell.x) + Math.abs(player.gy - cell.y) <= 1){
+    if (nearStation && player.gx === cell.x && player.gy === cell.y){
       openQuestion(nearStation);
       return;
     }
@@ -1038,10 +1060,14 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const rect = canvas.getBoundingClientRect();
     const wx = camX + (e.clientX - rect.left) / zoom;
     const wy = camY + (e.clientY - rect.top) / zoom;
+    // The building extends above and beside its entrance tile.
+    const ex = exitCell.x * TILE + TILE / 2, ey = exitCell.y * TILE + TILE / 2;
+    if (Math.abs(wx - ex) <= 62 && wy >= ey - 75 && wy <= ey + 20) return {...exitCell};
     return { x: Math.floor(wx / TILE), y: Math.floor(wy / TILE) };
   }
 
   canvas.addEventListener('pointerdown', e => {
+    if (!e.isPrimary || e.button !== 0) return;
     e.preventDefault();
     if (state !== 'playing') return;
     tapTo(pointerToCell(e));
@@ -1079,13 +1105,13 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     if (pk){ takePickup(pk); return; }
 
     const c = crystals.find(cr => !cr.done && cr.x === player.gx && cr.y === player.gy);
-    if (c){ interactStation(c); return; }
+    if (c && (!tapTarget || (c.x === tapTarget.x && c.y === tapTarget.y))){ interactStation(c); return; }
 
     if (player.gx === exitCell.x && player.gy === exitCell.y){
       if (exitOpen){
         descend();
       } else {
-        toast('Дверь закрыта: нужно выполнить ещё ' + Math.max(0, needed - collected) + ' заданий!');
+        toast('Чтобы войти в СОТУ, нужно выполнить ещё ' + Math.max(0, needed - collected) + ' заданий!');
         sfx.bump();
       }
     }
@@ -1194,17 +1220,17 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     img.onerror = () => {
       if (!img.dataset.fb1) {
         img.dataset.fb1 = '1';
-        img.src = '/assets/sota-building.jpg';
+        img.src = '/assets/sota-building.png';
         return;
       }
       if (!img.dataset.fb2) {
         img.dataset.fb2 = '1';
-        img.src = 'assets/sota-building.jpg';
+        img.src = 'assets/sota-building.png';
         return;
       }
       sotaLoading = false;
     };
-    img.src = window.location.pathname.includes('/specialties/') ? '../../assets/sota-building.jpg' : 'assets/sota-building.jpg';
+    img.src = window.location.pathname.includes('/specialties/') ? '../../assets/sota-building.png' : 'assets/sota-building.png';
     return null;
   }
 
@@ -1312,7 +1338,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         updateHUD();
         if (collected >= needed && !exitOpen){
           exitOpen = true;
-          setTimeout(() => toast('Все 5 заданий выполнены! Дверь К СОТЕ открыта >>'), 300);
+          setTimeout(() => toast('Все 5 заданий выполнены! Можно войти в СОТУ!'), 300);
         }
       } else {
         toast('Задание не выполнено. Попробуйте снова!');
@@ -2538,101 +2564,63 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     }
     ctx.restore();
 
-    // 5. ТАБЛИЧКА С НАЗВАНИЕМ СТАНЦИИ ВНИЗУ (В ТОЧНОСТИ КАК НА РЕФЕРЕНСЕ!)
+    // Shared KSK-style nameplate for every laboratory.
     const titleText = c.title || ('Станция ' + (stType + 1));
-    ctx.font = 'bold 9.5px "Segoe UI", sans-serif';
-    const textW = ctx.measureText(titleText).width;
-    const plateW = Math.max(140, textW + 36);
-    const plateH = 22;
-    const plateY = 22;
-
     ctx.save();
-    // Темная рамка с золотым кантом
-    ctx.fillStyle = '#0a0e17';
-    ctx.beginPath(); ctx.roundRect(-plateW/2, plateY, plateW, plateH, 5); ctx.fill();
-    ctx.strokeStyle = done ? '#10b981' : '#f59e0b';
-    ctx.lineWidth = 1.3; ctx.stroke();
-
-    // Квадратик с иконкой слева
-    const iconBoxSz = 16;
-    const iconBoxX = -plateW/2 + 3;
-    const iconBoxY = plateY + 3;
-    ctx.fillStyle = done ? '#064e3b' : '#261807';
-    ctx.beginPath(); ctx.roundRect(iconBoxX, iconBoxY, iconBoxSz, iconBoxSz, 3); ctx.fill();
-    ctx.strokeStyle = done ? '#34d399' : '#f59e0b';
-    ctx.lineWidth = 1; ctx.stroke();
-
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = done ? '#6ee7b7' : '#fbbf24';
-    ctx.fillText(c.icon || '⚙', iconBoxX + iconBoxSz/2, iconBoxY + iconBoxSz/2);
-
-    // Текст названия станции
-    ctx.font = 'bold 9px "Segoe UI", sans-serif';
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = done ? '#d1fae5' : '#f8fafc';
-    ctx.fillText(titleText, iconBoxX + iconBoxSz + 5, plateY + plateH/2);
+    ctx.font = 'bold 10px monospace';
+    const plateW = Math.max(170, Math.min(250, ctx.measureText(titleText).width + 20));
+    const lines = [];
+    let line = '';
+    for (const word of titleText.split(/\s+/)) {
+      const next = line ? line + ' ' + word : word;
+      if (line && ctx.measureText(next).width > plateW - 16) {
+        lines.push(line);
+        line = word;
+      } else line = next;
+    }
+    if (line) lines.push(line);
+    const plateY = 32, plateH = 21 + Math.max(0, lines.length - 1) * 13;
+    ctx.fillStyle = '#0b1b2be8';
+    ctx.fillRect(-plateW / 2, plateY, plateW, plateH);
+    ctx.fillStyle = done ? '#58c7aa' : '#c2a458';
+    ctx.fillRect(-plateW / 2, plateY, plateW, 1);
+    ctx.fillStyle = done ? '#81e4c7' : '#e3dfcc';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    lines.forEach((text, index) => ctx.fillText(text, 0, plateY + 14 + index * 13, plateW - 16));
     ctx.restore();
 
     ctx.restore();
   }
 
   function drawExit(now){
-    if (currentSpec === 'ksk') return drawKskExit(now);
-    if (currentSpec === 'p') return drawPExit(now);
-    // Выходная золотая дверь на правой стене (x = 21, y = 6)
-    const px = exitCell.x * TILE, py = exitCell.y * TILE;
+    const x = exitCell.x * TILE + TILE / 2;
+    const y = exitCell.y * TILE + TILE / 2;
+    const sprite = getSotaSprite();
+    const width = 124;
+    const height = sprite ? width * sprite.height / sprite.width : 94;
     ctx.save();
-
-    // Портал двери
-    const portW = TILE + 12, portH = TILE + 28;
-    ctx.fillStyle = '#0f141d';
-    ctx.fillRect(px - 4, py - 14, portW, portH);
-    ctx.strokeStyle = exitOpen ? '#facc15' : '#f59e0b';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(px - 4, py - 14, portW, portH);
-
-    // Вывеска "К СОТЕ" над дверью
-    ctx.fillStyle = exitOpen ? '#f59e0b' : '#334155';
-    ctx.fillRect(px - 2, py - 24, portW - 4, 10);
-    ctx.fillStyle = exitOpen ? '#0f172a' : '#94a3b8';
-    ctx.font = 'bold 8px "Segoe UI", sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('К СОТЕ', px + portW/2 - 6, py - 19);
-
-    // Внутренний проем
-    const pulse = 0.7 + Math.sin(now * 0.008) * 0.3;
-    if (exitOpen){
-      // Яркий золотой свет из открытого портала
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(px + 2, py - 8, portW - 12, portH - 8);
-
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      const beam = ctx.createLinearGradient(px, py, px - 60, py);
-      beam.addColorStop(0, 'rgba(251, 191, 36, ' + (0.5 * pulse) + ')');
-      beam.addColorStop(1, 'rgba(251, 191, 36, 0)');
-      ctx.fillStyle = beam;
-      ctx.fillRect(px - 60, py - 16, 60, portH + 4);
-      ctx.restore();
-
-      // Светящиеся шевроны >>
-      ctx.font = 'bold 22px "Trebuchet MS", sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#78350f';
-      ctx.fillText('>>', px + portW/2 - 6, py + 12);
-    } else {
-      // Закрытая дверь
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(px + 2, py - 8, portW - 12, portH - 8);
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2;
-      ctx.strokeRect(px + 2, py - 8, portW - 12, portH - 8);
-      ctx.font = 'bold 18px "Trebuchet MS", sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#64748b';
-      ctx.fillText('>>', px + portW/2 - 6, py + 12);
+    const glow = ctx.createRadialGradient(x, y, 5, x, y, 76);
+    glow.addColorStop(0, exitOpen ? '#70dbad40' : '#e5b95a20');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - 76, y - 76, 152, 152);
+    ctx.fillStyle = '#070b1480';
+    ctx.beginPath();ctx.ellipse(x, y + 19, 63, 12, 0, 0, Math.PI * 2);ctx.fill();
+    if (sprite) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(sprite, x - width / 2, y + 19 - height, width, height);
     }
-
+    ctx.fillStyle = '#0b1b2be8';
+    ctx.fillRect(x - 63, y + 24, 126, 32);
+    ctx.fillStyle = exitOpen ? '#58c7aa' : '#c2a458';
+    ctx.fillRect(x - 63, y + 24, 126, 1);
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = exitOpen ? '#81e4c7' : '#e3dfcc';
+    ctx.fillText('СОТА', x, y + 37);
+    ctx.font = '9px monospace';
+    ctx.fillText(exitOpen ? 'Можно войти' : collected + ' / ' + needed, x, y + 49);
     ctx.restore();
   }
 

@@ -1,8 +1,10 @@
 /* Лаборатория КСК: карта и Canvas-оборудование для общего движка СОТА. */
 'use strict';
 const KSK_STATIONS=[{x:5,y:5,type:0},{x:11,y:5,type:1},{x:18,y:4,type:2},{x:6,y:10,type:3},{x:17,y:10,type:4}];
-const KSK_NAMES=['Сборка ПК','Диагностика','Серверное оборудование','Ремонт и обслуживание','Компьютерные сети'];
+const KSK_NAMES=['Сборка ПК','Диагностика','Серверное оборудование','Ремонт и обслуживание','Прокладка сети'];
 function setupKskMap(m){
+ // The KSK desk is at rows 11–13; clear the shared map's old desk footprint.
+ for(let x=10;x<=12;x++)m[8][x]=0;
  const block=(x,y,w,h)=>{for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)m[j][i]=1;};
  for(const s of KSK_STATIONS)if(s.type!==2)block(s.x-2,s.y-1,4,1);
  block(2,2,6,1);block(2,3,3,1);block(9,2,4,1);block(14,2,6,2);block(14,4,1,1);block(14,5,6,1);
@@ -119,7 +121,7 @@ function drawKskStation(type,done,hard,now){
   kr(-48,23,15,2,'#bdc3bd');kr(-48,22,6,4,'#e0ac5a');kr(-38,12,7,7,'#b3b7ad');kr(-36,14,3,3,'#607681');
   kr(-30,10,2,13,'#bac9cc');kr(-31,9,4,5,'#4aadb4');
  }
- ctx.restore();kr(-85,32,170,21,'#0b1b2be8');kr(-85,32,170,1,done?'#58c7aa':'#c2a458');kt(KSK_NAMES[type],0,46,10,done?'#81e4c7':'#e3dfcc','center');
+ ctx.restore();
 }
 function drawKskExit(now){
  const x=exitCell.x*44+22,y=exitCell.y*44+22,c=exitOpen?'#71f1cf':'#ffd07a';kg(x,y+24,84,exitOpen?'#35baab39':'#e6ab3e36');

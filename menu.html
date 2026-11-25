@@ -79,7 +79,7 @@
           <path class="leader-line" d="M 44,52 L -15,-14 L -147,-14" />
 
           <!-- Узел КИП (на полочке слева-вверху) -->
-          <g class="spec-node blue selected" id="nodeKip" transform="translate(-147, -56)" onclick="handleNodeClick('kip')">
+          <g class="spec-node blue" id="nodeKip" transform="translate(-147, -56)" onclick="event.stopPropagation(); handleNodeClick('kip')">
             <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
             <text class="node-title" x="12" y="27">КИП</text>
             <text class="node-code" x="52" y="17">15.01.31</text>
@@ -91,7 +91,7 @@
           <path class="leader-line" d="M 104,52 L 145,-14 L 277,-14" />
 
           <!-- Узел ТС (на полочке справа-вверху) -->
-          <g class="spec-node blue" id="nodeTs" transform="translate(145, -56)" onclick="handleNodeClick('ts')">
+          <g class="spec-node blue" id="nodeTs" transform="translate(145, -56)" onclick="event.stopPropagation(); handleNodeClick('ts')">
             <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
             <text class="node-title" x="14" y="27">ТС</text>
             <text class="node-code" x="50" y="17">13.02.02</text>
@@ -117,7 +117,7 @@
           <path class="leader-line" d="M 214,132 L 275,95 L 407,95" />
 
           <!-- Узел Э (на полочке справа) -->
-          <g class="spec-node red" id="nodeE" transform="translate(275, 53)" onclick="handleNodeClick('e')">
+          <g class="spec-node red" id="nodeE" transform="translate(275, 53)" onclick="event.stopPropagation(); handleNodeClick('e')">
             <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
             <text class="node-title" x="14" y="27">Э</text>
             <text class="node-code" x="42" y="17">13.02.13</text>
@@ -129,7 +129,7 @@
           <path class="leader-line" d="M 214,184 L 275,225 L 407,225" />
 
           <!-- Узел РЭУ (на полочке справа-внизу) -->
-          <g class="spec-node red" id="nodeReu" transform="translate(275, 183)" onclick="handleNodeClick('reu')">
+          <g class="spec-node red" id="nodeReu" transform="translate(275, 183)" onclick="event.stopPropagation(); handleNodeClick('reu')">
             <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
             <text class="node-title" x="12" y="27">РЭУ</text>
             <text class="node-code" x="52" y="17">11.02.16</text>
@@ -314,7 +314,7 @@
       }
     };
 
-    let currentSelection = 'kip';
+    let currentSelection = null;
 
     function renderPanel(key){
       const data = SPEC_DATA[key];
@@ -325,7 +325,20 @@
       document.getElementById('panelTag').textContent = data.tag;
       document.getElementById('panelSub').textContent = data.sub;
       document.getElementById('panelDesc').textContent = data.desc;
-      document.getElementById('panelActions').innerHTML = data.actionHtml;
+      const entry = {
+        kip: ['Войти в цех КИП', 'Цех КИП · Доступно'],
+        ts: ['Войти в теплопункт ТС', 'Теплопункт ТС · Доступно'],
+        e: ['Войти в лабораторию Э', 'Лаборатория Э · В разработке'],
+        reu: ['Войти в лабораторию РЭУ', 'Лаборатория РЭУ · В разработке'],
+        p: ['Войти в IT-центр', 'IT-центр · Доступно'],
+        ksk: ['Войти в лабораторию КСК', 'Лаборатория КСК · Доступно']
+      }[key];
+      if (entry) {
+        document.getElementById('panelSub').textContent = entry[1];
+        document.getElementById('panelActions').innerHTML = `<a href="specialties/${key}/index.html" class="btn-play">${entry[0]}</a>`;
+      } else {
+        document.getElementById('panelActions').innerHTML = data.actionHtml;
+      }
     }
 
     function activateCluster(colorName){
@@ -361,20 +374,11 @@
       renderPanel(key);
       document.querySelectorAll('.mobile-spec-list button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.spec === key)));
 
-      if (key !== 'kip' && key !== 'ts' && key !== 'p' && key !== 'ksk' && key !== 'blue'){
-        showToast('Эта специальность закреплена за другой группой. Вам доступны КИП и ТС.');
-      }
     }
 
     function handleNodeClick(key){
-      if (key === 'ksk' && currentSelection === 'ksk') { window.location.href = 'index.html?spec=ksk'; return; }
-      if (key === 'p' && currentSelection === 'p') { window.location.href = 'index.html?spec=p'; return; }
-      if (key === 'kip' && currentSelection === 'kip'){
-        launchGame('kip');
-        return;
-      }
-      if (key === 'ts' && currentSelection === 'ts'){
-        launchGame('ts');
+      if (['kip', 'ts', 'e', 'reu', 'p', 'ksk'].includes(key) && currentSelection === key){
+        launchGame(key);
         return;
       }
       selectSpec(key);

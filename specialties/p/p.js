@@ -202,10 +202,7 @@ function drawPStation(type,done,hard,now){
   for(const wx of [-18,14]){pRect(wx,70,5,3,'#0c1220');pRect(wx+1,70,2,1,'#65718b');}
  }
  ctx.restore();
- const label=P_NAMES[type];
- pRect(-82,33,164,19,'#0c1425dc');pRect(-82,33,164,1,done?'#58bca1':'#aa8750');
- pText(label,0,46,10,done?'#77dcb3':'#d9d4cc','center');
- pText(done?'✓ Задания выполнены':'▶ Подойдите: задания',0,63,9,done?'#77dcb3':'#9bd7ff','center');
+
 }
 function drawPExit(now){
  const x=exitCell.x*TILE+22,y=exitCell.y*TILE+22,c=exitOpen?'#7df3ca':'#ffc86d';
