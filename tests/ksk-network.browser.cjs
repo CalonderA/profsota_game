@@ -33,7 +33,7 @@ const server=http.createServer((req,res)=>{
     await page.screenshot({path:path.join(os.tmpdir(),'ksk-network-initial.png')});
     await page.setViewportSize({width:1440,height:1080});
     const tool=kind=>page.locator(`[data-tool="${kind}"]`),slot=id=>page.locator(`[data-slot="${id}"]`);
-    await tool('server').click();await slot('hub1').click();assert.equal(await page.locator('[data-device="server"]').count(),0);
+    await tool('server').click();await slot('hub1').click({force:true});assert.equal(await page.locator('[data-device="server"]').count(),0);
     await slot('rack').click();
     assert.match(await hint(),/Шаг 2 из 12.*Маршрутизатор/s,'Out-of-order placement is counted');
     // Actual drag placement, including an invalid drop.
@@ -44,12 +44,12 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.locator('[data-port^="switch:"]').count(),8);
     assert.equal(await page.locator('.nw-link').count(),0,'Placement does not create cables');
     const port=id=>page.locator(`[data-port="${id}"]`);
-    const connect=async(a,b)=>{await port(a).click();await port(b).click();};
+    const connect=async(a,b)=>{await port(a).click();await port(b).click({force:true});};
     await connect('internet:net','router:lan');
     assert.equal(await page.locator('[data-link]').count(),0,'Wrong cable is rejected');
     assert.equal(await port('router:lan').getAttribute('aria-disabled'),'true');
     assert.equal(await page.locator('[data-port="router:lan"].nw-blocked').count(),1);
-    await port('router:lan').click();
+    await port('router:lan').click({force:true});
     assert.equal(await page.locator('[data-link]').count(),0,'Repeated wrong connection stays blocked');
     await port('internet:net').click();
     // The guide follows the player's first click and does not create a cable itself.

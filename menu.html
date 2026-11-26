@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -82,7 +82,7 @@
           <g class="spec-node blue" id="nodeKip" transform="translate(-147, -56)" onclick="event.stopPropagation(); handleNodeClick('kip')">
             <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
             <text class="node-title" x="12" y="27">КИП</text>
-            <text class="node-code" x="52" y="17">15.01.31</text>
+            <text class="node-code" x="52" y="17">15.01.37</text>
             <text class="node-status ready" x="52" y="32">● ДОСТУПНО</text>
             <text class="node-caption" x="0" y="56"><tspan x="0">Контрольно-измерительные</tspan><tspan x="0" dy="12">приборы и автоматика</tspan><tspan class="node-profession" x="0" dy="15">Наладчик КИП и автоматики</tspan></text>
           </g>
@@ -121,7 +121,7 @@
             <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
             <text class="node-title" x="14" y="27">Э</text>
             <text class="node-code" x="42" y="17">13.02.13</text>
-            <text class="node-status wip" x="42" y="32">СЛОТ КОМАНДЫ</text>
+            <text class="node-status ready" x="42" y="32">● ДОСТУПНО</text>
             <text class="node-caption" x="0" y="56"><tspan x="0">Электрооборудование</tspan><tspan class="node-profession" x="0" dy="15">Техник-электрик</tspan></text>
           </g>
 
@@ -133,7 +133,7 @@
             <rect class="spec-node-bg" x="0" y="0" width="132" height="42" />
             <text class="node-title" x="12" y="27">РЭУ</text>
             <text class="node-code" x="52" y="17">11.02.16</text>
-            <text class="node-status wip" x="52" y="32">СЛОТ КОМАНДЫ</text>
+            <text class="node-status ready" x="52" y="32">● ДОСТУПНО</text>
             <text class="node-caption" x="0" y="56"><tspan x="0">Радиоэлектронные</tspan><tspan x="0" dy="12">устройства</tspan><tspan class="node-profession" x="0" dy="15">Техник по радиоэлектронике</tspan></text>
           </g>
         </g>
@@ -179,12 +179,12 @@
     </div>
 
     <nav class="mobile-spec-list" aria-label="Выбор специальности">
-      <button type="button" data-spec="kip" onclick="selectSpec('kip')"><b>КИП</b><span>15.01.31 · Доступно</span><span class="spec-caption">Контрольно-измерительные приборы и автоматика</span><span class="spec-profession">Наладчик КИП и автоматики</span></button>
-      <button type="button" data-spec="ts" onclick="selectSpec('ts')"><b>ТС</b><span>13.02.02 · Доступно</span><span class="spec-caption">Теплоснабжение и теплотехника</span><span class="spec-profession">Техник-теплотехник</span></button>
-      <button type="button" data-spec="p" onclick="selectSpec('p')"><b>П</b><span>09.02.07 · Доступно</span><span class="spec-caption">Программирование</span><span class="spec-profession">Программист</span></button>
-      <button type="button" data-spec="ksk" onclick="selectSpec('ksk')"><b>КСК</b><span>09.02.01 · Доступно</span><span class="spec-caption">Компьютерные системы и комплексы</span><span class="spec-profession">Техник по компьютерам</span></button>
-      <button type="button" data-spec="e" onclick="selectSpec('e')"><b>Э</b><span>13.02.13 · В разработке</span><span class="spec-caption">Электрооборудование</span><span class="spec-profession">Техник-электрик</span></button>
-      <button type="button" data-spec="reu" onclick="selectSpec('reu')"><b>РЭУ</b><span>11.02.16 · В разработке</span><span class="spec-caption">Радиоэлектронные устройства</span><span class="spec-profession">Техник по радиоэлектронике</span></button>
+      <button type="button" data-spec="kip" onclick="handleNodeClick('kip')" aria-pressed="true"><b>КИП</b><span>15.01.37 · Доступно</span><span class="spec-caption">Контрольно-измерительные приборы и автоматика</span><span class="spec-profession">Наладчик КИП и автоматики</span></button>
+      <button type="button" data-spec="ts" onclick="handleNodeClick('ts')" aria-pressed="false"><b>ТС</b><span>13.02.02 · Доступно</span><span class="spec-caption">Теплоснабжение и теплотехника</span><span class="spec-profession">Техник-теплотехник</span></button>
+      <button type="button" data-spec="p" onclick="handleNodeClick('p')" aria-pressed="false"><b>П</b><span>09.02.07 · Доступно</span><span class="spec-caption">Программирование</span><span class="spec-profession">Программист</span></button>
+      <button type="button" data-spec="ksk" onclick="handleNodeClick('ksk')" aria-pressed="false"><b>КСК</b><span>09.02.01 · Доступно</span><span class="spec-caption">Компьютерные системы и комплексы</span><span class="spec-profession">Техник по компьютерам</span></button>
+      <button type="button" data-spec="e" onclick="handleNodeClick('e')" aria-pressed="false"><b>Э</b><span>13.02.13 · Доступно</span><span class="spec-caption">Электрооборудование</span><span class="spec-profession">Техник-электрик</span></button>
+      <button type="button" data-spec="reu" onclick="handleNodeClick('reu')" aria-pressed="false"><b>РЭУ</b><span>11.02.16 · Доступно</span><span class="spec-caption">Радиоэлектронные устройства</span><span class="spec-profession">Техник по радиоэлектронике</span></button>
     </nav>
 
     <!-- ИНФО-ПАНЕЛЬ И БЫСТРЫЙ СТАРТ -->
@@ -215,12 +215,12 @@
     const SPEC_DATA = {
       kip: {
         cluster: 'blue',
-        tag: '🟦 КИП (15.01.31) · Мастер КИП',
+        tag: '🟦 КИП (15.01.37) · Мастер КИП',
         sub: 'Готово к практике',
         desc: 'Наладка датчиков 4–20 мА, поверка манометров, термопар и шкафов автоматики цеха.',
         actionHtml: `
           <a href="specialties/kip/index.html" class="btn-play">
-            <span>Войти в цех КИП (15.01.31)</span>
+            <span>Войти в цех КИП (15.01.37)</span>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
           <button type="button" class="btn-play ts" onclick="selectSpec('ts')">
@@ -246,7 +246,7 @@
       blue: {
         cluster: 'blue',
         tag: '🟦 Технический кластер · Синий шестиугольник',
-        sub: 'КИП (15.01.31) и ТС (13.02.02) · Доступно',
+        sub: 'КИП (15.01.37) и ТС (13.02.02) · Доступно',
         desc: 'Два направления практики: автоматика, метрология и теплоэнергетика СОТА.',
         actionHtml: `
           <a href="specialties/kip/index.html" class="btn-play">
@@ -262,31 +262,43 @@
       e: {
         cluster: 'red',
         tag: '🟥 Э (13.02.13) · Электрооборудование',
-        sub: 'Слот команды',
+        sub: 'Электроучасток · Доступно',
         desc: 'Электромонтаж, распределительные щиты, трансформаторы 0.4 кВ и силовые электроприводы.',
         actionHtml: `
-          <button type="button" class="btn-disabled" disabled>Разрабатывается другой группой</button>
-          <button type="button" class="btn-play" onclick="selectSpec('kip')">Открыть практику КИП / ТС</button>
+          <a href="specialties/e/index.html" class="btn-play e">
+            <span>Войти на электроучасток Э (13.02.13)</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <button type="button" class="btn-play reu" onclick="selectSpec('reu')">Переключить на РЭУ</button>
         `
       },
       reu: {
         cluster: 'red',
         tag: '🟥 РЭУ (11.02.16) · Электронные устройства',
-        sub: 'Слот команды',
+        sub: 'Лаборатория РЭУ · Доступно',
         desc: 'Проектирование печатных плат, микроконтроллерные модули и диагностика радиоэлектроники.',
         actionHtml: `
-          <button type="button" class="btn-disabled" disabled>Разрабатывается другой группой</button>
-          <button type="button" class="btn-play" onclick="selectSpec('kip')">Открыть практику КИП / ТС</button>
+          <a href="specialties/reu/index.html" class="btn-play reu">
+            <span>Войти в лабораторию РЭУ (11.02.16)</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <button type="button" class="btn-play e" onclick="selectSpec('e')">Переключить на Э</button>
         `
       },
       red: {
         cluster: 'red',
         tag: '🟥 Красный шестиугольник · Электрика и РЭУ',
-        sub: 'Э (13.02.13) и РЭУ (11.02.16)',
+        sub: 'Э (13.02.13) и РЭУ (11.02.16) · Доступно',
         desc: 'Электромонтаж, силовые трансформаторы 0.4 кВ и микроэлектронные устройства СОТА.',
         actionHtml: `
-          <button type="button" class="btn-disabled" disabled>Слот команды Э и РЭУ</button>
-          <button type="button" class="btn-play" onclick="selectSpec('kip')">Перейти к КИП и ТС</button>
+          <a href="specialties/e/index.html" class="btn-play e">
+            <span>Войти на электроучасток Э</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="specialties/reu/index.html" class="btn-play reu">
+            <span>Войти в лабораторию РЭУ</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
         `
       },
       p: {
@@ -328,8 +340,8 @@
       const entry = {
         kip: ['Войти в цех КИП', 'Цех КИП · Доступно'],
         ts: ['Войти в теплопункт ТС', 'Теплопункт ТС · Доступно'],
-        e: ['Войти в лабораторию Э', 'Лаборатория Э · В разработке'],
-        reu: ['Войти в лабораторию РЭУ', 'Лаборатория РЭУ · В разработке'],
+        e: ['Войти на электроучасток Э', 'Электроучасток Э · Доступно'],
+        reu: ['Войти в лабораторию РЭУ', 'Лаборатория РЭУ · Доступно'],
         p: ['Войти в IT-центр', 'IT-центр · Доступно'],
         ksk: ['Войти в лабораторию КСК', 'Лаборатория КСК · Доступно']
       }[key];

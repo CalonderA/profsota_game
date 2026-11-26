@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>СОТА — Лаборатория ТС (13.02.02)</title>
-  <link rel="stylesheet" href="../../shared/css/common.css?v=20261124_5">
-  <link rel="stylesheet" href="ts.css">
+  <link rel="stylesheet" href="../../shared/css/common.css?v=20261126_4">
+  <link rel="stylesheet" href="ts.css?v=20261126_4">
 </head>
 <body>
   <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
@@ -66,7 +66,7 @@
           <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
           <div><b>Переход к СОТЕ</b>Выполните 5 заданий цеха, чтобы войти в СОТУ</div>
         </div>
-        <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
+        <div class="skins-title">Скины</div>
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
         <div class="qsource" id="qSource">вопросы загружаются…</div>
@@ -312,6 +312,67 @@
       </div>
     </div>
 
+    <!-- ТС: Мини-игра Настройка газовой горелки котла -->
+    <div class="screen hidden" id="burnerScreen">
+      <div class="pipe-shell">
+        <div class="pipe-head">
+          <div class="qtag" id="burnerTag">ТС · НАСТРОЙКА ГОРЕЛКИ КОТЛА</div>
+          <div class="pipe-stats">
+            <div class="pipe-pill status" id="burnerStatus">Режим: не настроен</div>
+            <div class="pipe-pill reward">+200 очков</div>
+            <div class="pipe-pill timer" id="burnerTimerText">25.0 с</div>
+          </div>
+        </div>
+        <div class="pipe-timer-track">
+          <div class="pipe-timer-fill" id="burnerTimerBar"></div>
+        </div>
+
+        <div class="exchanger-arena">
+          <div class="exchanger-box">
+            <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,152,0,0.3);background:#07090f">
+              <canvas id="burnerCanvas" width="520" height="150" style="width:100%;height:150px;display:block"></canvas>
+              <div style="position:absolute;top:8px;right:10px;background:rgba(15,23,42,0.88);padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);text-align:right">
+                <div id="burnerAlphaVal" style="font-size:15px;font-weight:900;color:#f59e0b">α = 0.70</div>
+                <div id="burnerFlameNote" style="font-size:10px;color:#94a3b8">Коптящее пламя</div>
+              </div>
+            </div>
+
+            <div class="exchanger-controls" style="margin-top:10px">
+              <div class="exchanger-slider-row">
+                <div style="display:flex;justify-content:space-between">
+                  <span>Подача природного газа (цель: 65–75%):</span>
+                  <b id="burnerGasVal" style="color:#f97316">40%</b>
+                </div>
+                <input type="range" id="burnerGasSlider" min="20" max="100" value="40" style="accent-color:#f97316">
+              </div>
+
+              <div class="exchanger-slider-row">
+                <div style="display:flex;justify-content:space-between">
+                  <span>Подача воздуха / дутьё (цель: α = 1.05–1.20):</span>
+                  <b id="burnerAirVal" style="color:#38bdf8">28%</b>
+                </div>
+                <input type="range" id="burnerAirSlider" min="20" max="100" value="28" style="accent-color:#38bdf8">
+              </div>
+
+              <div style="text-align:center;margin-top:4px">
+                <button type="button" class="btn disabled" id="burnerLockBtn" style="padding:8px 24px;font-size:13px" disabled>Зафиксировать режим котла</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="clicker-banner" id="burnerBanner">
+          <h2 id="burnerBannerTitle">Настройка газовой горелки котла</h2>
+          <p id="burnerBannerText">
+            Котёл работает с перерасходом и копотью. Установите подачу газа в рабочий диапазон (65–75%) и подберите воздух (дутьё) так, чтобы коэффициент α был 1.05–1.20 (ровное сине-золотое пламя)!
+          </p>
+          <div class="btnrow">
+            <button class="btn" id="burnerStartBtn">Запустить розжиг</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen hidden" id="endScreen">
       <div class="card">
         <h1 id="endTitle">Смена окончена</h1>
@@ -352,7 +413,7 @@
 </div>
 
   <script>window.CURRENT_SPEC = 'ts';</script>
-  <script src="../../shared/js/common.js?v=20261124_5"></script>
-  <script src="ts.js?v=20261124_5"></script>
+  <script src="../../shared/js/common.js?v=20261126_4"></script>
+  <script src="ts.js?v=20261126_4"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    СОТА — Общее игровое ядро симулятора «Шахта Знаний»
    ============================================================ */
 'use strict';
@@ -172,7 +172,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   const SPECS = {
     kip: {
       code: 'КИП',
-      codeFull: '15.01.31',
+      codeFull: '15.01.37',
       title: 'Цех КИП',
       specName: 'Мастер контрольно-измерительных приборов и автоматики',
       floorName: 'Цех',
@@ -237,7 +237,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     currentSpec = 'kip';
   }
   window.currentSpec = currentSpec;
-  const directPractice = currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'kip' || currentSpec === 'ts';
+  const directPractice = currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'kip' || currentSpec === 'ts' || currentSpec === 'e' || currentSpec === 'reu';
 
   /* ============================================================
      Состояние игры
@@ -366,8 +366,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         x: 11, y: 4, type: 1,
         title: 'Диагностика и наладка оборудования',
         icon: '〰',
-        actionType: 'question',
-        filterKeyword: 'наладить|сигнал|осциллограф|ошибк|калибров',
+        actionType: 'minigame',
+        minigameId: 'scope',
         hard: false
       },
       {
@@ -416,8 +416,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         x: 18, y: 4, type: 2,
         title: 'Котельные установки и системы теплоснабжения',
         icon: '🔥',
-        actionType: 'question',
-        filterKeyword: 'котел|горелк|пар|тэг|тэц|теплоснабжени',
+        actionType: 'minigame',
+        minigameId: 'burner',
         hard: true
       },
       {
@@ -474,6 +474,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     map = makeWorkshop();
     if (currentSpec === 'p' && typeof setupPMap === 'function') setupPMap(map);
     if (currentSpec === 'ksk' && typeof setupKskMap === 'function') setupKskMap(map);
+    if (currentSpec === 'e' && typeof setupEMap === 'function') setupEMap(map);
+    if (currentSpec === 'reu' && typeof setupReuMap === 'function') setupReuMap(map);
     seen = Array.from({ length: H }, () => new Array(W).fill(1));
     bright = Array.from({ length: H }, () => new Array(W).fill(1));
 
@@ -511,6 +513,24 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         minigameId: s.minigameId || null,
         hard: !!s.hard
       }));
+    } else if (currentSpec === 'e' && typeof E_STATIONS !== 'undefined') {
+      defs = E_STATIONS.map((s, i) => ({
+        x: s.x, y: s.y, type: s.type,
+        title: s.title || (typeof E_NAMES !== 'undefined' ? E_NAMES[s.type] : ('Станок ' + (s.type + 1))),
+        icon: s.icon || '⚡',
+        actionType: s.actionType || 'question',
+        minigameId: s.minigameId || null,
+        hard: !!s.hard
+      }));
+    } else if (currentSpec === 'reu' && typeof REU_STATIONS !== 'undefined') {
+      defs = REU_STATIONS.map((s, i) => ({
+        x: s.x, y: s.y, type: s.type,
+        title: s.title || (typeof REU_NAMES !== 'undefined' ? REU_NAMES[s.type] : ('Модуль ' + (s.type + 1))),
+        icon: s.icon || '🔌',
+        actionType: s.actionType || 'question',
+        minigameId: s.minigameId || null,
+        hard: !!s.hard
+      }));
     }
     crystals = defs.map((s, i) => ({
       id: i,
@@ -526,7 +546,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       seed: (i + 1) * 31.4
     }));
 
-    if (currentSpec === 'p' || currentSpec === 'ksk') needed = crystals.length;
+    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu') needed = crystals.length;
     pickups = [];
     particles = [];
     updateHUD();
@@ -624,7 +644,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const diagnosePC = currentSpec === 'ksk' && crystal?.stationType === 1;
     const networkPC = currentSpec === 'ksk' && crystal?.stationType === 4;
     const serverPC = currentSpec === 'ksk' && crystal?.stationType === 2;
-    if (assemblePC || servicePC || diagnosePC || networkPC || serverPC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
+    const eMinigame = currentSpec === 'e' && typeof window.startEStation === 'function';
+    const reuMinigame = currentSpec === 'reu' && typeof window.startReuStation === 'function';
+    if (assemblePC || servicePC || diagnosePC || networkPC || serverPC || eMinigame || reuMinigame || (currentSpec === 'p' && typeof window.startPStation === 'function')){
       if (!crystal || crystal.done || state !== 'playing') return;
       state = 'minigame';
       stopAuto();
@@ -648,6 +670,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       else if (diagnosePC) window.openKskDiagnosis(completeStation, cancelStationMinigame);
       else if (networkPC) window.openKskNetwork(completeStation, cancelStationMinigame);
       else if (serverPC) window.openKskDisks(completeStation, cancelStationMinigame);
+      else if (eMinigame) window.startEStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
+      else if (reuMinigame) window.startReuStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       else window.startPStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       return;
     }
@@ -1303,9 +1327,49 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   /* ============================================================
      События между уровнями (Модульный диспетчер мини-игр)
      ============================================================ */
+  const MINIGAME_SCREEN_IDS = ['calibScreen', 'clickerScreen', 'pipeScreen', 'wiresScreen', 'pidScreen', 'scopeScreen', 'bypassScreen', 'exchangerScreen', 'burnerScreen'];
+
+  function ensureMinigameCloseButtons(){
+    document.querySelectorAll('.calib-shell, .pipe-shell').forEach(shell => {
+      if (shell.querySelector('.mg-close-btn')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mg-close-btn';
+      btn.textContent = '✕';
+      btn.title = 'Выйти из мини-игры (−15 света)';
+      btn.setAttribute('aria-label', 'Выйти из мини-игры');
+      btn.addEventListener('click', cancelMinigameEvent);
+      shell.appendChild(btn);
+    });
+  }
+
+  function hideAllMinigameScreens(){
+    MINIGAME_SCREEN_IDS.forEach(id => {
+      const elNode = el(id);
+      if (elNode) elNode.classList.add('hidden');
+      const bNode = el(id.replace('Screen', 'Banner'));
+      if (bNode) bNode.classList.add('hidden');
+    });
+  }
+
+  function cancelMinigameEvent(){
+    for (const key in window.MINI_GAMES){
+      if (window.MINI_GAMES[key] && typeof window.MINI_GAMES[key].cleanup === 'function'){
+        try { window.MINI_GAMES[key].cleanup(); } catch(e){ console.error(e); }
+      }
+    }
+    hideAllMinigameScreens();
+    activeCrystal = null;
+    if (state === 'minigame'){
+      sfx.bad();
+      cancelStationMinigame();
+    }
+  }
+
   function startFloorEvent(eventId){
     state = 'minigame';
     stopAuto();
+    ensureMinigameCloseButtons();
     const g = window.MINI_GAMES[eventId];
     const gName = g ? g.name : 'производственное задание';
     toast('Начинается ' + gName + '!');
@@ -1324,13 +1388,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         try { window.MINI_GAMES[key].cleanup(); } catch(e){ console.error(e); }
       }
     }
-    const screenIds = ['calibScreen', 'clickerScreen', 'pipeScreen', 'wiresScreen', 'pidScreen', 'bypassScreen', 'exchangerScreen'];
-    screenIds.forEach(id => {
-      const elNode = el(id);
-      if (elNode) elNode.classList.add('hidden');
-      const bNode = el(id.replace('Screen', 'Banner'));
-      if (bNode) bNode.classList.add('hidden');
-    });
+    hideAllMinigameScreens();
 
     if (activeCrystal && !activeCrystal.done){
       if (isSuccess){
@@ -1410,6 +1468,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawFloor(x, y, b){
     if (currentSpec === 'ksk') return drawKskFloor(x,y);
     if (currentSpec === 'p') return drawPFloor(x,y);
+    if (currentSpec === 'e' && typeof drawEFloor === 'function') return drawEFloor(x,y);
+    if (currentSpec === 'reu' && typeof drawReuFloor === 'function') return drawReuFloor(x,y);
     const px = x * TILE, py = y * TILE;
     const isDark = (x + y) % 2 === 0;
 
@@ -1443,7 +1503,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function drawHazardZones(){
-    if (currentSpec === 'p' || currentSpec === 'ksk') return;
+    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu') return;
     // Разметка зон безопасности: жёлто-чёрная полоса вокруг каждого станка и чертежного стола
     for (const c of crystals){
       const cx = c.x * TILE, cy = c.y * TILE;
@@ -1473,6 +1533,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawWall(x, y, b){
     if (currentSpec === 'ksk') return drawKskWall(x,y);
     if (currentSpec === 'p') return drawPWall(x,y);
+    if (currentSpec === 'e' && typeof drawEWall === 'function') return drawEWall(x,y);
+    if (currentSpec === 'reu' && typeof drawReuWall === 'function') return drawReuWall(x,y);
     const px = x * TILE, py = y * TILE;
     ctx.fillStyle = '#0f131a';
     ctx.fillRect(px, py, TILE, TILE);
@@ -1495,6 +1557,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawBackWall(now){
     if (currentSpec === 'ksk') return drawKskBackWall(now);
     if (currentSpec === 'p') return drawPBackWall(now);
+    if (currentSpec === 'e' && typeof drawEBackWall === 'function') return drawEBackWall(now);
+    if (currentSpec === 'reu' && typeof drawReuBackWall === 'function') return drawReuBackWall(now);
     const wallH = 114;
     // 1. Основа задней кирпично-панельной стены (темный индустриальный антрацит)
     ctx.fillStyle = '#0f141d';
@@ -1599,7 +1663,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     // Подзаголовок квалификации (светящийся бирюзовый/циан как на референсе)
     ctx.font = 'bold 9.5px "Segoe UI", monospace';
     ctx.fillStyle = '#38bdf8';
-    const subTitle = isTS ? '13.02.02  /  ТЕПЛОСНАБЖЕНИЕ И ТЕПЛОТЕХНИКА' : '15.01.31  /  СЛЕСАРЬ-НАЛАДЧИК КИП И АСУ';
+    const subTitle = isTS ? '13.02.02  /  ТЕПЛОСНАБЖЕНИЕ И ТЕПЛОТЕХНИКА' : '15.01.37  /  СЛЕСАРЬ-НАЛАДЧИК КИП И АСУ';
     ctx.fillText(subTitle, signX + signW / 2, signY + 38);
 
     // 3) ЭЛЕКТРОННОЕ ТАБЛО СТАТУСА СПРАВА (SERVER ROOM / ONLINE 24/7)
@@ -1614,7 +1678,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
     ctx.font = '8px monospace';
     ctx.fillStyle = '#64748b';
-    ctx.fillText(isTS ? '13.02.02' : '15.01.31', stX + 76, stY + 14);
+    ctx.fillText(isTS ? '13.02.02' : '15.01.37', stX + 76, stY + 14);
 
     // Мигающий зеленый светодиод и надпись В СЕТИ • 24 / 7
     const ledOn = Math.sin(now * 0.005) > -0.2;
@@ -1632,7 +1696,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function drawWallDecor(now){
-    if (currentSpec === 'p' || currentSpec === 'ksk') return;
+    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu') return;
     ctx.save();
     if (currentSpec === 'kip'){
       // ============================================================
@@ -1923,6 +1987,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawRoomProps(now){
     if (currentSpec === 'ksk') return drawKskProps(now);
     if (currentSpec === 'p') return drawPProps(now);
+    if (currentSpec === 'e' && typeof drawEProps === 'function') return drawEProps(now);
+    if (currentSpec === 'reu' && typeof drawReuProps === 'function') return drawReuProps(now);
     // ============================================================
     // 1. БОЛЬШОЕ ОКНО СЛЕВА И РЕАЛИСТИЧНЫЙ СОЛНЕЧНЫЙ СВЕТ НА ПОЛУ
     // ============================================================
@@ -2080,6 +2146,41 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       ctx.fillStyle = '#f8fafc'; ctx.fillRect(feX + 2, feY + 8, 4, 6);
       ctx.restore();
 
+      // СТЕЛЛАЖ С ПАПКАМИ И КОРОБКАМИ МЕЖДУ ВЕРХНИМИ СТОЛАМИ
+      const shX = 7.1 * TILE, shY = 2.6 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(shX + 2, shY + 50, 34, 6);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(shX, shY, 34, 52);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(shX, shY, 34, 52);
+      [shY + 16, shY + 34].forEach(sy => { ctx.fillStyle = '#334155'; ctx.fillRect(shX + 2, sy, 30, 2.5); });
+      ['#ef4444', '#3b82f6', '#eab308', '#22c55e'].forEach((col, i) => {
+        ctx.fillStyle = col; ctx.fillRect(shX + 4 + i * 6, shY + 4, 4.5, 11);
+      });
+      ctx.fillStyle = '#64748b'; ctx.fillRect(shX + 5, shY + 21, 10, 11);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(shX + 18, shY + 22, 11, 10);
+      ctx.fillStyle = '#475569'; ctx.fillRect(shX + 4, shY + 39, 26, 9);
+      ctx.restore();
+
+      // ДИВАНЧИК В ЛЕВОМ НИЖНЕМ УГЛУ
+      const sfX = 1.6 * TILE, sfY = 12.6 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.roundRect(sfX - 2, sfY + 4, 68, 22, 5); ctx.fill();
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(sfX, sfY - 12, 64, 18, 4); ctx.fill();
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(sfX + 4, sfY, 56, 16, 3); ctx.fill();
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(sfX + 31, sfY + 1, 2, 14);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(sfX - 4, sfY - 4, 8, 20); ctx.fillRect(sfX + 60, sfY - 4, 8, 20);
+      ctx.restore();
+
+      // ПРИБОРНАЯ ТУМБОЧКА СПРАВА ВНИЗУ
+      const cabX = 20.5 * TILE, cabY = 12.2 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(cabX, cabY + 22, 24, 5);
+      ctx.fillStyle = '#334155'; ctx.fillRect(cabX, cabY, 24, 22);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1; ctx.strokeRect(cabX, cabY, 24, 22);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(cabX + 4, cabY - 12, 16, 12);
+      ctx.fillStyle = '#38bdf8'; ctx.fillRect(cabX + 6, cabY - 10, 12, 7);
+      ctx.restore();
+
     } else if (currentSpec === 'ts'){
       // ДЫМОХОД / ГАЗОХОД КОТЛА ВДОЛЬ ПРАВОЙ СТЕНЫ
       ctx.save();
@@ -2130,6 +2231,41 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         }
         ctx.restore();
       });
+
+      // ОРАНЖЕВЫЙ РАДИАТОР ПОД ОКНОМ СЛЕВА
+      ctx.save();
+      const wrX = 1.65 * TILE, wrY = 5.4 * TILE;
+      for (let i = 0; i < 6; i++){
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath(); ctx.roundRect(wrX, wrY + i * 5.5, 11, 4, 1); ctx.fill();
+        ctx.strokeStyle = '#c2410c'; ctx.lineWidth = 0.7; ctx.stroke();
+      }
+      ctx.restore();
+
+      // СТЕЛЛАЖ С ЗАПЧАСТЯМИ МЕЖДУ ВЕРХНИМИ СТОЛАМИ
+      const shX = 7.1 * TILE, shY = 2.6 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(shX + 2, shY + 50, 34, 6);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(shX, shY, 34, 52);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(shX, shY, 34, 52);
+      [shY + 16, shY + 34].forEach(sy => { ctx.fillStyle = '#334155'; ctx.fillRect(shX + 2, sy, 30, 2.5); });
+      ctx.fillStyle = '#64748b'; ctx.fillRect(shX + 5, shY + 5, 10, 10);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(shX + 18, shY + 6, 11, 9);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(shX + 6, shY + 21, 22, 10);
+      ctx.fillStyle = '#dc2626'; ctx.fillRect(shX + 5, shY + 38, 12, 10);
+      ctx.restore();
+
+      // ТОЛСТАЯ МАГИСТРАЛЬ С КРАСНЫМ ВЕНТИЛЕМ В ПРАВОМ НИЖНЕМ УГЛУ
+      ctx.save();
+      const cpX = 19.8 * TILE, cpY = 12.8 * TILE;
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(cpX, cpY + 6, 70, 14);
+      ctx.fillRect(cpX + 52, cpY - 26, 14, 46);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(cpX, cpY + 9, 70, 4);
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.ellipse(cpX + 30, cpY + 2, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.restore();
     }
 // ============================================================
     // 4. ЦЕНТРАЛЬНЫЙ ЧЕРТЕЖНЫЙ СТОЛ С ПЛАНОМ ЦЕХА, КАСКАМИ И ТАБУРЕТАМИ (x = 11, y = 8)
@@ -2637,7 +2773,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Все приборы цеха проверены! Идём к СОТЕ!'
         },
         suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8'
+        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'helmet', outfit: 'workwear', prop: 'multimeter'
       },
       {
         id: 'kip_metrolog', name: 'Метролог-поверитель',
@@ -2648,7 +2785,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Лабораторные испытания завершены!'
         },
         suit: '#f1f5f9', suit2: '#cbd5e1', suitDark: '#94a3b8',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#0284c7'
+        helmet: '#334155', helmetDark: '#1e293b', skin: '#fcd34d', accent: '#0284c7',
+        headgear: 'hair', hairColor: '#475569', glasses: true, outfit: 'labcoat', prop: 'tablet'
       },
       {
         id: 'kip_asu', name: 'Инженер АСУ ТП',
@@ -2659,7 +2797,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Сегмент автоматики сдан в эксплуатацию!'
         },
         suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
-        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#f59e0b'
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#f59e0b',
+        headgear: 'helmet', glasses: true, outfit: 'vest', prop: 'laptop'
       }
     ],
     ts: [
@@ -2672,7 +2811,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Тепловой узел сдан! Переходим дальше!'
         },
         suit: '#c2410c', suit2: '#9a3412', suitDark: '#7c2d12',
-        helmet: '#ea580c', helmetDark: '#c2410c', skin: '#fcd34d', accent: '#fb923c'
+        helmet: '#ea580c', helmetDark: '#c2410c', skin: '#fcd34d', accent: '#fb923c',
+        headgear: 'helmet', outfit: 'workwear', prop: 'tablet'
       },
       {
         id: 'ts_engineer', name: 'Инженер-теплотехник',
@@ -2683,7 +2823,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Контур сбалансирован. Идём дальше!'
         },
         suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#ea580c'
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#ea580c',
+        headgear: 'helmet', outfit: 'workwear', prop: 'tablet'
       },
       {
         id: 'ts_boiler', name: 'Оператор котельной',
@@ -2694,7 +2835,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Котельный зал проверен!'
         },
         suit: '#334155', suit2: '#1e293b', suitDark: '#0f172a',
-        helmet: '#dc2626', helmetDark: '#991b1b', skin: '#fcd34d', accent: '#f59e0b'
+        helmet: '#dc2626', helmetDark: '#991b1b', skin: '#fcd34d', accent: '#f59e0b',
+        headgear: 'helmet', outfit: 'workwear', prop: 'tablet'
       }
     ],
     p: [
@@ -2707,7 +2849,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Спринт завершён! Релизим фичу!'
         },
         suit: '#4338ca', suit2: '#3730a3', suitDark: '#312e81',
-        helmet: '#6366f1', helmetDark: '#4f46e5', skin: '#fcd34d', accent: '#a855f7'
+        helmet: '#a855f7', helmetDark: '#7e22ce', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'headphones', hairColor: '#1e293b', glasses: true, outfit: 'hoodie', prop: 'laptop'
       },
       {
         id: 'p_back', name: 'Backend-архитектор',
@@ -2717,8 +2860,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           wrong: ['Deadlock в базе данных!', 'HTTP 500 Internal Error.', 'Проверь индексы.'],
           descend: 'Бэкенд масштабирован! Идём дальше!'
         },
-        suit: '#0f172a', suit2: '#020617', suitDark: '#000000',
-        helmet: '#10b981', helmetDark: '#059669', skin: '#fcd34d', accent: '#38bdf8'
+        suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
+        helmet: '#10b981', helmetDark: '#059669', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'beanie', hairColor: '#334155', glasses: true, outfit: 'hoodie', prop: 'coffee'
       },
       {
         id: 'p_devops', name: 'DevOps-инженер',
@@ -2729,7 +2873,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Деплой в прод успешен!'
         },
         suit: '#047857', suit2: '#065f46', suitDark: '#064e3b',
-        helmet: '#f59e0b', helmetDark: '#d97706', skin: '#fcd34d', accent: '#10b981'
+        helmet: '#f59e0b', helmetDark: '#d97706', skin: '#fcd34d', accent: '#10b981',
+        headgear: 'cap', hairColor: '#78350f', glasses: false, outfit: 'hoodie', prop: 'laptop'
       }
     ],
     ksk: [
@@ -2742,7 +2887,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Рабочая станция собрана и протестирована!'
         },
         suit: '#1d4ed8', suit2: '#1e3a8a', suitDark: '#172554',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#f97316'
+        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'cap', hairColor: '#1e293b', glasses: true, outfit: 'vest', prop: 'multimeter'
       },
       {
         id: 'ksk_sysadmin', name: 'Системный администратор',
@@ -2753,7 +2899,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Серверный сектор защищён!'
         },
         suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
-        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#fbbf24'
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#fbbf24',
+        headgear: 'hair', hairColor: '#0f172a', glasses: true, outfit: 'vest', prop: 'laptop'
       },
       {
         id: 'ksk_net', name: 'Сетевой инженер',
@@ -2764,77 +2911,78 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Сетевая магистраль проложена!'
         },
         suit: '#0369a1', suit2: '#075985', suitDark: '#0c4a6e',
-        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#38bdf8'
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'hair', hairColor: '#713f12', glasses: false, outfit: 'vest', prop: 'tablet'
       }
     ],
     e: [
       {
-        id: 'e_electrician', name: 'Электромонтажник',
-        desc: 'Специалист по силовым сетям, трансформаторам и распределительным щитам.',
+        id: 'e_electrician', name: 'Электромонтёр',
+        desc: 'Обслуживает и ремонтирует силовое электрооборудование участка: щиты, линии, приводы под напряжением до 1000 В.',
         lines: {
-          correct: ['Напряжение 380 В в норме!', 'Шина заземлена надежно.', 'Автомат подобран по току.'],
-          wrong: ['Опасность межфазного замыкания!', 'Перегрев кабельной линии.', 'Проверь УЗО.'],
-          descend: 'Подстанция в строю!'
+          correct: ['Напряжение 380 В в норме!', 'Шина заземления надёжна.', 'Автомат подобран по току линии.'],
+          wrong: ['Опасность межфазного замыкания!', 'Перегрев кабельной линии.', 'Проверь УЗО и заземление.'],
+          descend: 'Электроучасток в строю!'
         },
-        suit: '#1e3a8a', suit2: '#172554', suitDark: '#0f172a',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#ef4444'
+        suit: '#22334d', suit2: '#162438', suitDark: '#0e1a2b',
+        helmet: '#f5a623', helmetDark: '#c98a3a', skin: '#fcd34d', accent: '#5fd0e0'
       },
       {
-        id: 'e_relay', name: 'Инженер-релейщик',
-        desc: 'Специалист релейной защиты и противоаварийной автоматики подстанций.',
+        id: 'e_relay', name: 'Оператор КРУ',
+        desc: 'Управляет распределительными устройствами подстанции, ведёт оперативные переключения и следит за индикацией фаз.',
         lines: {
-          correct: ['Уставка защиты рассчитана верно!', 'МТЗ сработала селективно.', 'Трансформатор тока проверен.'],
-          wrong: ['Ложное срабатывание защиты!', 'Нарушена селективность.', 'Обрыв цепей напряжения.'],
-          descend: 'Схема релейной защиты протестирована!'
+          correct: ['КРУ переключено без дуги!', 'Селективность защиты соблюдена.', 'Индикация трёх фаз в норме.'],
+          wrong: ['Ложное срабатывание защиты!', 'Дуговая вспышка — СТОП!', 'Проверь блокировку разъединителя.'],
+          descend: 'Подстанция принята под нагрузку!'
         },
-        suit: '#f8fafc', suit2: '#e2e8f0', suitDark: '#94a3b8',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#3b82f6'
+        suit: '#3a4453', suit2: '#2a3340', suitDark: '#1a212c',
+        helmet: '#e0483a', helmetDark: '#a8342a', skin: '#fcd34d', accent: '#f2c94c'
       },
       {
-        id: 'e_chief', name: 'Главный энергетик',
-        desc: 'Руководит энергосистемой предприятия, энергоаудитом и графиками нагрузок.',
+        id: 'e_chief', name: 'Инженер-электрик',
+        desc: 'Руководит электрохозяйством предприятия: энергоаудит, графики нагрузок, компенсация реактивной мощности.',
         lines: {
-          correct: ['Коэффициент мощности cos φ = 0.98!', 'Энергопотребление в лимите.', 'График нагрузок оптимален.'],
+          correct: ['cos φ = 0.98, отлично!', 'График нагрузок оптимален.', 'Потери в сети минимальны.'],
           wrong: ['Штраф за реактивную мощность!', 'Пиковая перегрузка ввода.', 'Проверь конденсаторную установку.'],
-          descend: 'Энергохозяйство принято!'
+          descend: 'Энергохозяйство сдано!'
         },
         suit: '#0f172a', suit2: '#020617', suitDark: '#000000',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f59e0b'
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f5a623'
       }
     ],
     reu: [
       {
-        id: 'reu_tech', name: 'Электромонтер РЭУ',
-        desc: 'Мастер ремонта и эксплуатации промышленного электрооборудования цехов.',
+        id: 'reu_mounter', name: 'Монтажник РЭУ',
+        desc: 'Собирает и паяет печатные модули: устанавливает компоненты по схеме, следит за качеством пайки и отсутствием перемычек.',
         lines: {
-          correct: ['Изоляция обмоток 500 МОм!', 'Подшипники смазаны, вибрация в норме.', 'Пуск двигателя плавный.'],
-          wrong: ['Пробой изоляции на корпус!', 'Перекос фаз выше нормы.', 'Проверь тепловое реле.'],
-          descend: 'Оборудование цеха допущено к работе!'
+          correct: ['Пайка блестящая, без соплей!', 'Компоненты по схеме, полярность верна.', 'Флюс отмыт, плата чистая.'],
+          wrong: ['Перемычка между дорожками!', 'Перегрев — отвал контактной площадки.', 'Перевёрнут конденсатор по полярности!'],
+          descend: 'Печатный модуль собран и проверен!'
         },
-        suit: '#1d4ed8', suit2: '#1e3a8a', suitDark: '#172554',
-        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#facc15'
+        suit: '#4c3f8f', suit2: '#362c68', suitDark: '#241d4a',
+        helmet: '#5eead4', helmetDark: '#2dd4bf', skin: '#fcd34d', accent: '#a78bfa'
       },
       {
-        id: 'reu_service', name: 'Техник обслуживания',
-        desc: 'Диагностирует электронные блоки, частотные преобразователи и приводы станков.',
+        id: 'reu_tuner', name: 'Наладчик приборов',
+        desc: 'Настраивает и поверяет электронные приборы: снимает осциллограммы, измеряет параметры сигналов, ловит искажения формы.',
         lines: {
-          correct: ['Частотник настроен штатно!', 'Тормозной резистор в норме.', 'Плавная регулировка скорости.'],
-          wrong: ['Ошибка перегрузки по току!', 'Перегрев силового модуля IGBT.', 'Проверь экранирование кабеля.'],
-          descend: 'Электронный блок протестирован!'
+          correct: ['Форма сигнала чистая!', 'Амплитуда 2 В совпадает с эталоном.', 'Частота 1.000 кГц — точно в цель.'],
+          wrong: ['Появились шумы и наводки!', 'Клиппинг — сигнал ограничен сверху.', 'Проверь щуп и делитель осциллографа.'],
+          descend: 'Прибор настроен и поверен!'
         },
-        suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8'
+        suit: '#115e59', suit2: '#0d4f4a', suitDark: '#08312e',
+        helmet: '#a78bfa', helmetDark: '#7c5cf0', skin: '#fcd34d', accent: '#5eead4'
       },
       {
-        id: 'reu_master', name: 'Мастер участка',
-        desc: 'Организует планово-предупредительный ремонт и безопасную эксплуатацию установок.',
+        id: 'reu_engineer', name: 'Инженер-схемотехник',
+        desc: 'Проектирует принципиальные схемы и разводит печатные платы: трассировка, расчёт номиналов, подавление помех.',
         lines: {
-          correct: ['Наряд-допуск закрыт без замечаний!', 'Акт технической готовности подписан.', 'Безопасность 100%.'],
-          wrong: ['Нарушение техники безопасности!', 'Не установлены защитные заземления.', 'Отсутствует блокировка.'],
-          descend: 'Участок аттестован!'
+          correct: ['Разводка платы без перекрёстных помех!', 'Номиналы R/C рассчитаны верно.', 'Земля развязана, наводки подавлены.'],
+          wrong: ['Длинная дорожка ловит наводку!', 'Неверный делитель напряжения.', 'Заземление аналога и цифры слитно!'],
+          descend: 'Схема и плата сданы в производство!'
         },
-        suit: '#334155', suit2: '#1e293b', suitDark: '#0f172a',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f59e0b'
+        suit: '#1f1b3a', suit2: '#151230', suitDark: '#0c0a1f',
+        helmet: '#e2e8f0', helmetDark: '#94a3b8', skin: '#fcd34d', accent: '#a78bfa'
       }
     ]
   };
@@ -2854,17 +3002,23 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   function drawSkinBody(g, sk, now){
     const bob = Math.sin(now * 0.008) * 1.1;
+    const outfit = sk.outfit || 'workwear';
+    const headgear = sk.headgear || 'helmet';
+    const prop = sk.prop || 'tablet';
+
     g.save();
     g.translate(0, bob);
 
+    // Ноги (джинсы/брюки для IT, спецовка для цеха)
     const legW = 6, legTop = 4, legH = 9;
-    g.fillStyle = sk.suit2;
+    g.fillStyle = outfit === 'hoodie' ? '#1e293b' : (outfit === 'labcoat' ? '#334155' : sk.suit2);
     g.fillRect(-legW - 1, legTop, legW, legH);
     g.fillRect(1, legTop, legW, legH);
-    g.fillStyle = '#0f172a';
+    g.fillStyle = outfit === 'hoodie' ? '#e2e8f0' : '#0f172a'; // кроссовки для худи, ботинки для цеха
     g.beginPath(); g.roundRect(-legW - 2, legTop + legH - 1, legW + 2, 4.5, 2); g.fill();
     g.beginPath(); g.roundRect(0, legTop + legH - 1, legW + 2, 4.5, 2); g.fill();
 
+    // Торс
     const bw = 20, bh = 17, bodyTop = -10;
     const bodyG = g.createLinearGradient(0, bodyTop, 0, bodyTop + bh);
     bodyG.addColorStop(0, sk.suit);
@@ -2872,26 +3026,57 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     g.fillStyle = bodyG;
     g.beginPath(); g.roundRect(-bw / 2, bodyTop, bw, bh, 5); g.fill();
 
-    g.fillStyle = sk.accent || '#f97316';
-    g.fillRect(-bw / 2, bodyTop + 6, bw, 2);
-    g.fillStyle = '#f1f5f9';
-    g.fillRect(-bw / 2, bodyTop + 8, bw, 1.2);
+    if (outfit === 'workwear'){
+      // Светоотражающие полосы + ремень с пряжкой
+      g.fillStyle = sk.accent || '#f97316';
+      g.fillRect(-bw / 2, bodyTop + 6, bw, 2);
+      g.fillStyle = '#f1f5f9';
+      g.fillRect(-bw / 2, bodyTop + 8, bw, 1.2);
+      g.fillStyle = '#1e293b';
+      g.fillRect(-bw / 2 + 1, bodyTop + bh - 4.5, bw - 2, 4);
+      g.fillStyle = '#fbbf24';
+      g.fillRect(-2.5, bodyTop + bh - 5, 5, 5);
+    } else if (outfit === 'hoodie'){
+      // Капюшон / завязки худи и карман-кенгуру
+      g.fillStyle = sk.suitDark;
+      g.beginPath(); g.roundRect(-6, bodyTop + 9, 12, 6, 2); g.fill();
+      g.fillStyle = '#e2e8f0';
+      g.fillRect(-2.8, bodyTop + 1, 1.2, 6);
+      g.fillRect(1.6, bodyTop + 1, 1.2, 6);
+      g.fillStyle = sk.accent || '#38bdf8';
+      g.fillRect(-4, bodyTop + 5, 8, 2);
+    } else if (outfit === 'labcoat'){
+      // Белый халат с лацканами и синим бейджиком
+      g.fillStyle = '#0284c7';
+      g.fillRect(-2.5, bodyTop + 1, 5, 4);
+      g.fillStyle = '#cbd5e1';
+      g.fillRect(-0.5, bodyTop + 5, 1, bh - 6);
+      g.fillStyle = '#38bdf8';
+      g.fillRect(3, bodyTop + 4, 4, 3);
+    } else if (outfit === 'vest'){
+      // Жилетка с карманами поверх футболки
+      g.fillStyle = '#f8fafc';
+      g.fillRect(-3.5, bodyTop + 1, 7, 5);
+      g.fillStyle = sk.suitDark;
+      g.fillRect(-bw / 2 + 2, bodyTop + 8, 5, 5);
+      g.fillRect(bw / 2 - 7, bodyTop + 8, 5, 5);
+      g.fillStyle = sk.accent || '#38bdf8';
+      g.fillRect(-bw / 2, bodyTop + bh - 2, bw, 1.5);
+    }
 
+    // Руки
     g.fillStyle = sk.suitDark;
     g.beginPath(); g.roundRect(-bw / 2 - 3, bodyTop + 2, 4.5, 11, 2); g.fill();
     g.beginPath(); g.roundRect(bw / 2 - 1.5, bodyTop + 2, 4.5, 11, 2); g.fill();
-    g.fillStyle = '#334155';
+    g.fillStyle = (outfit === 'hoodie' || outfit === 'labcoat') ? sk.skin : '#334155';
     g.beginPath(); g.arc(-bw / 2 - 0.7, bodyTop + 13, 2.5, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(bw / 2 + 0.7, bodyTop + 13, 2.5, 0, Math.PI * 2); g.fill();
 
-    g.fillStyle = '#1e293b';
-    g.fillRect(-bw / 2 + 1, bodyTop + bh - 4.5, bw - 2, 4);
-    g.fillStyle = '#fbbf24';
-    g.fillRect(-2.5, bodyTop + bh - 5, 5, 5);
-
+    // Голова и лицо
     g.fillStyle = sk.skin;
     g.beginPath(); g.arc(0, -15, 7.5, 0, Math.PI * 2); g.fill();
 
+    // Глаза
     g.fillStyle = '#1e293b';
     g.fillRect(-3.8, -16.5, 2, 2.2);
     g.fillRect(1.8, -16.5, 2, 2.2);
@@ -2902,19 +3087,92 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     g.beginPath(); g.arc(-4.5, -13, 2, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(4.5, -13, 2, 0, Math.PI * 2); g.fill();
 
-    g.fillStyle = sk.helmet;
-    g.beginPath(); g.arc(0, -17, 8.8, Math.PI, 0, false); g.fill();
-    g.fillStyle = sk.helmetDark;
-    g.beginPath(); g.roundRect(-9.8, -18.2, 19.6, 3.5, 1.8); g.fill();
-    g.fillStyle = 'rgba(255, 255, 255, 0.55)';
-    g.beginPath(); g.roundRect(-1.5, -23.5, 3, 6, 1); g.fill();
+    // Очки (для разработчиков, сисадминов, метрологов)
+    if (sk.glasses){
+      g.strokeStyle = '#0f172a';
+      g.lineWidth = 1.2;
+      g.strokeRect(-5.4, -17.8, 4.6, 3.8);
+      g.strokeRect(0.8, -17.8, 4.6, 3.8);
+      g.beginPath(); g.moveTo(-0.8, -16.2); g.lineTo(0.8, -16.2); g.stroke();
+    }
 
+    // Головной убор / причёска
+    const hairCol = sk.hairColor || '#334155';
+    if (headgear === 'helmet'){
+      g.fillStyle = sk.helmet;
+      g.beginPath(); g.arc(0, -17, 8.8, Math.PI, 0, false); g.fill();
+      g.fillStyle = sk.helmetDark;
+      g.beginPath(); g.roundRect(-9.8, -18.2, 19.6, 3.5, 1.8); g.fill();
+      g.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      g.beginPath(); g.roundRect(-1.5, -23.5, 3, 6, 1); g.fill();
+    } else if (headgear === 'hair'){
+      // Аккуратная причёска без каски
+      g.fillStyle = hairCol;
+      g.beginPath(); g.arc(0, -17.5, 8.2, Math.PI * 0.95, Math.PI * 0.05, false); g.fill();
+      g.beginPath(); g.roundRect(-7.5, -23.5, 15, 5.5, 3); g.fill();
+    } else if (headgear === 'headphones'){
+      // Волосы + большие накладные наушники
+      g.fillStyle = hairCol;
+      g.beginPath(); g.arc(0, -17.5, 8, Math.PI * 0.95, Math.PI * 0.05, false); g.fill();
+      g.strokeStyle = sk.helmet || '#a855f7';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.arc(0, -17, 9.2, Math.PI * 1.05, -0.05, false); g.stroke();
+      g.fillStyle = '#0f172a';
+      g.beginPath(); g.roundRect(-10.5, -18.5, 3.5, 7, 1.5); g.fill();
+      g.beginPath(); g.roundRect(7, -18.5, 3.5, 7, 1.5); g.fill();
+      g.fillStyle = sk.helmet || '#a855f7';
+      g.fillRect(-10, -17, 1.5, 4);
+      g.fillRect(8.5, -17, 1.5, 4);
+    } else if (headgear === 'cap'){
+      // Стильная бейсболка с козырьком
+      g.fillStyle = hairCol;
+      g.fillRect(-7.5, -18.5, 15, 2.5);
+      g.fillStyle = sk.helmet || '#f97316';
+      g.beginPath(); g.arc(0, -17.5, 8.4, Math.PI, 0, false); g.fill();
+      g.fillStyle = sk.helmetDark || '#ea580c';
+      g.beginPath(); g.roundRect(-2, -18.5, 13, 3, 1.5); g.fill();
+    } else if (headgear === 'beanie'){
+      // Вязаная шапка-бини
+      g.fillStyle = sk.helmet || '#10b981';
+      g.beginPath(); g.arc(0, -17.5, 8.6, Math.PI, 0, false); g.fill();
+      g.fillStyle = sk.helmetDark || '#059669';
+      g.beginPath(); g.roundRect(-8.8, -19.2, 17.6, 3.6, 1.8); g.fill();
+    }
+
+    // Предмет в правой руке
     g.save();
     g.translate(bw / 2 + 3, bodyTop + 7);
-    g.fillStyle = '#0f172a';
-    g.beginPath(); g.roundRect(0, 0, 7, 10, 1.5); g.fill();
-    g.fillStyle = '#38bdf8';
-    g.fillRect(1, 1, 5, 7);
+    if (prop === 'laptop'){
+      // Ноутбук с синим светящимся экраном
+      g.fillStyle = '#0f172a';
+      g.beginPath(); g.roundRect(-1, -1, 10, 8, 1.2); g.fill();
+      g.fillStyle = '#38bdf8';
+      g.fillRect(0.5, 0.5, 7, 4.5);
+      g.fillStyle = '#64748b';
+      g.fillRect(-1.5, 6.5, 11, 2);
+    } else if (prop === 'coffee'){
+      // Белая кружка с горячим кофе
+      g.fillStyle = '#f8fafc';
+      g.beginPath(); g.roundRect(0, 1, 6, 7, 1); g.fill();
+      g.strokeStyle = '#cbd5e1'; g.lineWidth = 1;
+      g.strokeRect(5.5, 2.5, 2, 3.5);
+      g.fillStyle = '#78350f';
+      g.fillRect(1, 1, 4, 1.5);
+    } else if (prop === 'multimeter'){
+      // Жёлтый мультиметр
+      g.fillStyle = '#f59e0b';
+      g.beginPath(); g.roundRect(0, 0, 6.5, 9.5, 1.5); g.fill();
+      g.fillStyle = '#0f172a';
+      g.fillRect(1, 1.2, 4.5, 3);
+      g.fillStyle = '#1e293b';
+      g.beginPath(); g.arc(3.2, 6.5, 1.6, 0, Math.PI * 2); g.fill();
+    } else {
+      // Рабочий планшет
+      g.fillStyle = '#0f172a';
+      g.beginPath(); g.roundRect(0, 0, 7, 10, 1.5); g.fill();
+      g.fillStyle = '#38bdf8';
+      g.fillRect(1, 1, 5, 7);
+    }
     g.restore();
 
     g.restore();
@@ -2983,7 +3241,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'skinbtn' + (i === skinIndex ? ' sel' : '');
-      b.title = sk.name + ' — бесплатно';
+      b.title = sk.name;
 
       const cv = document.createElement('canvas');
       cv.width = Math.round(56 * dpr);
@@ -3304,7 +3562,25 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const isArrow = e.code.startsWith('Arrow') || e.code === 'Space';
     if (isArrow) e.preventDefault();
 
+    if (state === 'question' && e.code === 'Escape' && !answerLock){
+      e.preventDefault();
+      if (el('qExitConfirm') && !el('qExitConfirm').classList.contains('hidden')){
+        el('qExitConfirm').classList.add('hidden');
+      } else if (el('qExitConfirm')){
+        el('qExitConfirm').classList.remove('hidden');
+      }
+      return;
+    }
+
     if (state === 'minigame'){
+      if (e.code === 'Escape'){
+        const hasOpenScreen = MINIGAME_SCREEN_IDS.some(id => el(id) && !el(id).classList.contains('hidden'));
+        if (hasOpenScreen){
+          e.preventDefault();
+          cancelMinigameEvent();
+          return;
+        }
+      }
       if (e.code === 'Space' || e.code === 'Enter'){
         e.preventDefault();
         const calibBanner = el('calibBanner');

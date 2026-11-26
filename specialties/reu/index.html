@@ -1,10 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>СОТА — Лаборатория РЭУ (11.02.16)</title>
   <link rel="stylesheet" href="../../shared/css/common.css">
+  <link rel="stylesheet" href="../../shared/css/lab-kit.css">
   <link rel="stylesheet" href="reu.css">
 </head>
 <body>
@@ -53,23 +54,23 @@
       <div class="card">
         <div class="spec-banner" id="specBanner">
           <div class="spec-banner-info">
-            <span class="spec-banner-code" id="specBadge">КИП</span>
+            <span class="spec-banner-code" id="specBadge">РЭУ</span>
             <div>
-              <b id="specTitle">Цех КИПиА</b>
-              <small id="specSub">Специальность 15.01.31</small>
+              <b id="specTitle">Лаборатория РЭУ</b>
+              <small id="specSub">Специальность 11.02.16</small>
             </div>
           </div>
           <a href="../../menu.html" class="spec-change-link">Сменить специальность ⮵</a>
         </div>
         <h1 id="startMainTitle">Шахта Знаний: СОТА</h1>
-        <p class="sub" id="startMainSub">Смоленская областная технологическая академия. Обслуживайте рабочие станки и приборы в цеху, проводите замеры и решайте задачи наладчика!</p>
+        <p class="sub" id="startMainSub">Смоленская областная технологическая академия. Проектируйте печатные платы, собирайте электронные модули и диагностируйте радиоэлектронные устройства.</p>
         <div class="rules" id="rulesGrid">
           <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
           <div><b id="ruleUnitTitle">Станок КИП</b>Подойдите к станку — проведите диагностику</div>
           <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
           <div><b>Авария</b>Свет погас или силы мастера на нуле</div>
         </div>
-        <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
+        <div class="skins-title">Скины радиоэлектроника <span>· бесплатно</span></div>
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
         <div class="qsource" id="qSource">вопросы загружаются…</div>
@@ -169,6 +170,7 @@
 </div>
 
   <script>window.CURRENT_SPEC = 'reu';</script>
+  <script src="../../shared/js/lab-kit.js"></script>
   <script src="reu.js"></script>
   <script src="../../shared/js/common.js"></script>
 </body>
