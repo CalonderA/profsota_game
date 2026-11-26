@@ -40,7 +40,7 @@ window.openKskDiagnosis = function(done, cancel) {
   const dialog=document.createElement('dialog');
   dialog.className='ksk-diagnosis';dialog.setAttribute('aria-labelledby',`${prefix}-title`);
   const logo=document.querySelector('.brand-header-logo .brand-hex-icon')?.outerHTML || '';
-  dialog.innerHTML=`<header class="dg-header"><div class="dg-brand">${logo}<b>СОТА</b><span>КСК</span></div><div class="dg-heading"><h2 id="${prefix}-title">Тепловая диагностика</h2><p>Просканируй компьютер тепловизором и отметь неисправности</p></div><button type="button" class="dg-exit" data-action="exit" aria-label="Выйти из игры" title="Выйти из игры"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>
+  dialog.innerHTML=`<header class="dg-header"><div class="dg-brand">${logo}<b>СОТА</b><span>КСК</span></div><div class="dg-heading"><h2 id="${prefix}-title">Тепловая диагностика</h2><p>Просканируй компьютер тепловизором и отметь неисправности</p></div><button type="button" class="dg-exit ksk-minigame-exit" data-action="exit" aria-label="Выйти из игры" title="Выйти из игры"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>
     <div class="dg-layout"><aside class="dg-hint"><svg class="dg-hint-demo" viewBox="0 0 260 116" role="img" aria-label="Пример: найди перегрев и нажми на деталь">
       <defs><radialGradient id="${prefix}-demo-heat"><stop stop-color="#fff4a1"/><stop offset=".45" stop-color="#ff993e"/><stop offset="1" stop-color="#c22e59"/></radialGradient><clipPath id="${prefix}-demo-clip"><circle class="dg-demo-scan" cx="53" cy="54" r="34"/></clipPath></defs>
       <rect x="8" y="8" width="244" height="100" rx="12" fill="#151821" stroke="#4d465a"/>
@@ -88,8 +88,10 @@ window.openKskDiagnosis = function(done, cancel) {
     const p=svg.createSVGPoint();p.x=event.clientX;p.y=event.clientY;
     return p.matrixTransform(svg.getScreenCTM().inverse());
   }
-  function close(success) {
-    if(closed)return;closed=true;
+  function close(success,confirmed=false) {
+    if(closed)return;
+    if(!success&&!confirmed){window.confirmKskMinigameExit(dialog,()=>close(false,true));return;}
+    closed=true;
     for(const timer of timers.values())clearTimeout(timer);
     dialog.close();dialog.remove();
     if(success)done(Math.max(350,600-mistakes*25));else cancel();

@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="service.css">
   <link rel="stylesheet" href="diagnosis.css">
   <link rel="stylesheet" href="network.css">
+  <link rel="stylesheet" href="server-disks.css">
 </head>
 <body>
   <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
@@ -89,7 +90,7 @@
           <div class="qtag"><i></i><span id="qTag">ВОПРОС</span></div>
           <div class="qright">
             <div class="qprog" id="qProg"></div>
-            <button class="qclose" id="qCloseBtn" type="button" title="Выйти из вопроса (−75 очков)" aria-label="Выйти из вопроса">✕</button>
+            <button class="qclose ksk-minigame-exit" id="qCloseBtn" type="button" title="Выйти из вопроса (−75 очков)" aria-label="Выйти из вопроса"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
           </div>
         </div>
         <p id="qText">…</p>
@@ -158,12 +159,15 @@
   <script>window.CURRENT_SPEC = 'ksk';</script>
   <script src="questions.js"></script>
   <script src="ksk.js"></script>
+  <script src="exit-confirm.js"></script>
   <script src="assembly.js"></script>
   <script src="service-art.js"></script>
   <script src="service.js"></script>
   <script src="diagnosis.js"></script>
   <script src="network-model.js"></script>
   <script src="network.js"></script>
+  <script src="server-disks-art.js"></script>
+  <script src="server-disks.js"></script>
   <script src="../../shared/js/common.js"></script>
 </body>
 </html>

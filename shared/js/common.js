@@ -623,7 +623,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const servicePC = currentSpec === 'ksk' && crystal?.stationType === 3;
     const diagnosePC = currentSpec === 'ksk' && crystal?.stationType === 1;
     const networkPC = currentSpec === 'ksk' && crystal?.stationType === 4;
-    if (assemblePC || servicePC || diagnosePC || networkPC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
+    const serverPC = currentSpec === 'ksk' && crystal?.stationType === 2;
+    if (assemblePC || servicePC || diagnosePC || networkPC || serverPC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
       if (!crystal || crystal.done || state !== 'playing') return;
       state = 'minigame';
       stopAuto();
@@ -646,6 +647,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       else if (servicePC) window.openKskService(completeStation, cancelStationMinigame);
       else if (diagnosePC) window.openKskDiagnosis(completeStation, cancelStationMinigame);
       else if (networkPC) window.openKskNetwork(completeStation, cancelStationMinigame);
+      else if (serverPC) window.openKskDisks(completeStation, cancelStationMinigame);
       else window.startPStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       return;
     }

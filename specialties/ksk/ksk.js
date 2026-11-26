@@ -8,7 +8,8 @@ function setupKskMap(m){
  const block=(x,y,w,h)=>{for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)m[j][i]=1;};
  for(const s of KSK_STATIONS)if(s.type!==2)block(s.x-2,s.y-1,4,1);
  block(2,2,6,1);block(2,3,3,1);block(9,2,4,1);block(14,2,6,2);block(14,4,1,1);block(14,5,6,1);
- block(1,8,2,5);block(20,8,2,5);block(10,11,3,3);block(13,12,1,1);
+ // Only the desktop blocks movement; the seats and the approach stay accessible.
+ block(1,8,2,5);block(20,8,2,5);block(10,11,3,1);block(13,12,1,1);
 }
 const kskDecks=new Map();
 function nextKskQuestion(station){
@@ -97,7 +98,7 @@ function drawKskProps(now){
  for(let i=0;i<4;i++){kr(898+i*11,391,3,18,'#c0bd9d');kr(897+i*11,390,5,7,i%2?'#ddaf5c':'#49bfc7');}
  for(let j=0;j<3;j++){kr(893,444+j*12,51,9,'#4c6376');kr(912,446+j*12,13,2,'#a3b5bf');}
  for(let i=0;i<3;i++){ctx.strokeStyle=['#d5a65c','#439baa','#6f8ca1'][i];ctx.lineWidth=3;ctx.beginPath();ctx.arc(899+i*18,427,6,0,Math.PI*2);ctx.stroke();}
- // Small shared service desk in its own blocked footprint, outside the main aisle.
+ // Shared service desk; players can approach from below and between the seats.
  kr(441,486,130,88,'#132736');kb(447,501,119,29,13,'#7d919e','#334c5f');
  kScreen(456,463,'wave',now);kKeyboard(459,508,37);kr(525,511,10,10,'#d4d5cc');kr(527,511,6,3,'#5c6261');kPlant(550,509);
  for(let xx of [462,524]){kb(xx,550,24,10,10,'#697f8f','#2c4356');kr(xx+3,568,3,8,'#192e40');kr(xx+18,568,3,8,'#192e40');}

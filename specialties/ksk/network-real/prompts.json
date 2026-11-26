@@ -1,0 +1,49 @@
+{
+  "generator": "Built-in image_gen",
+  "assets": [
+    {
+      "file": "room-dev.webp",
+      "prompt": "Create one photorealistic architectural game environment background, landscape 2:1 aspect ratio. A small modern software development office as a front-facing cutaway dollhouse room viewed from above at 35 degrees, NO isometric rotation: the back wall is horizontal, vertical walls upright. Realistic physical materials, warm oak floor, dark blue-gray plaster walls with visible thickness, soft cyan accent lighting, warm ceiling lamps. Furnished ONLY with a bookcase against far right wall, small leafy plants at back corners, a whiteboard on back wall. The central 75% of floor is EMPTY to allow separate interactive workstation sprites to be overlaid later. No computers, no desks, no chairs, no cables, no people, no text, no symbols or interface. High-end realistic architectural visualization, natural material textures and ambient occlusion, NOT pixel art or illustration. Entire room contained in frame, near wall cut away, dark navy #10212c surrounding background. Composition stretches to edges."
+    },
+    {
+      "file": "room-design.webp",
+      "prompt": "Create one photorealistic architectural game environment background, landscape 2:1 aspect ratio. A small modern graphic design office as a front-facing cutaway dollhouse room viewed from above at 35 degrees, NO isometric rotation: the back wall is horizontal, vertical walls upright. Realistic physical materials, warm oak floor, dark blue-gray plaster walls with visible thickness, subtle violet-blue accent lighting, warm ceiling lamps. Furnished ONLY with a bookcase against far right wall, small leafy plants at back corners, a pinboard with unlabeled color swatches and graphic prints on back wall. The central 75% of floor is EMPTY to allow separate interactive workstation sprites to be overlaid later. No computers, no desks, no chairs, no cables, no people, no text, no symbols or interface. High-end realistic architectural visualization, natural material textures and ambient occlusion, NOT pixel art or illustration. Entire room contained in frame, near wall cut away, dark navy #10212c surrounding background. Composition stretches to edges."
+    },
+    {
+      "file": "room-print.webp",
+      "prompt": "Create one photorealistic architectural game environment background, landscape 2:1 aspect ratio. A small modern office print and supplies room as a front-facing cutaway dollhouse room viewed from above at 35 degrees, NO isometric rotation: the back wall is horizontal, vertical walls upright. Realistic physical materials, warm oak floor, dark blue-gray plaster walls with visible thickness, soft cyan accent lighting, warm ceiling lamps. Furnished ONLY with storage cabinets at both far side walls, neatly stacked paper reams and cardboard boxes at right edge, bulletin board on back wall. The central 75% of floor is EMPTY to allow separate interactive workstation sprites to be overlaid later. No printers, no computers, no desks, no chairs, no cables, no people, no text, no symbols or interface. High-end realistic architectural visualization, natural material textures and ambient occlusion, NOT pixel art or illustration. Entire room contained in frame, near wall cut away, dark navy #10212c surrounding background. Composition stretches to edges."
+    },
+    {
+      "file": "room-server.webp",
+      "prompt": "Create one photorealistic architectural game environment background, landscape 2:1 aspect ratio. A small modern modern enterprise server room as a front-facing cutaway dollhouse room viewed from above at 35 degrees, NO isometric rotation: the back wall is horizontal, vertical walls upright. Realistic physical materials, gray raised access floor, dark blue-gray plaster walls with visible thickness, soft cyan accent lighting, warm ceiling lamps. Furnished ONLY with two realistic black server cabinets against the FAR RIGHT wall only, HVAC grille on back wall, tiny maintenance desk and monitor at FAR LEFT wall. The central 75% of floor is EMPTY to allow separate interactive workstation sprites to be overlaid later. No equipment in the middle of the room, no cables, no people, no text, no symbols or interface. High-end realistic architectural visualization, natural material textures and ambient occlusion, NOT pixel art or illustration. Entire room contained in frame, near wall cut away, dark navy #10212c surrounding background. Composition stretches to edges."
+    },
+    {
+      "file": "pc.webp",
+      "prompt": "Photorealistic game object cutout, transparent background with real alpha, no floor or room. Front view from slightly above at 30 degrees, horizontal front edge, small right side visible, no isometric rotation. Real materials, high detail, soft studio lighting with subtle cyan reflections, realistic dark graphite metal, no brand, no text labels. Entire object fits frame with minimal transparent margin. Not pixel art, not cartoon, not icon. One complete office workstation: oak desk with slim monitor displaying tiny colored lines of code, keyboard, mouse, black PC tower on the RIGHT of desktop with clearly visible front-facing Ethernet socket at lower center of tower, upholstered swivel chair in front under desk. Portrait-ish composition."
+    },
+    {
+      "file": "design.webp",
+      "prompt": "Photorealistic game object cutout, transparent background with real alpha, no floor or room. Front view from slightly above at 30 degrees, horizontal front edge, small right side visible, no isometric rotation. Real materials, high detail, soft studio lighting with subtle cyan reflections, realistic dark graphite metal, no brand, no text labels. Entire object fits frame with minimal transparent margin. Not pixel art, not cartoon, not icon. One complete graphic designer workstation: oak desk with slim monitor displaying a colorful graphic design editor, keyboard, pen tablet, mouse, black PC tower on the RIGHT of desktop with clearly visible front-facing Ethernet socket at lower center of tower, upholstered swivel chair in front under desk."
+    },
+    {
+      "file": "router.webp",
+      "prompt": "Photorealistic game object cutout, transparent background with real alpha, no floor or room. Front view from slightly above at 30 degrees, horizontal front edge, small right side visible, no isometric rotation. Real materials, high detail, soft studio lighting with subtle cyan reflections, realistic dark graphite metal, no brand, no text labels. Entire object fits frame with minimal transparent margin. Not pixel art, not cartoon, not icon. One professional compact black router, TWO upright antennas behind it, two large clearly visible front-facing Ethernet ports, spaced horizontally. Front panel occupies bottom third. Landscape wide composition."
+    },
+    {
+      "file": "switch.webp",
+      "prompt": "Photorealistic game object cutout, transparent background with real alpha, no floor or room. Front view from slightly above at 30 degrees, horizontal front edge, small right side visible, no isometric rotation. Real materials, high detail, soft studio lighting with subtle cyan reflections, realistic dark graphite metal, no brand, no text labels. Entire object fits frame with minimal transparent margin. Not pixel art, not cartoon, not icon. One professional 8-port ethernet network switch, brushed gunmetal case with EXACTLY EIGHT front-facing RJ45 sockets in one horizontal evenly spaced row, small green LEDs, ventilation slots on top. Wide landscape composition."
+    },
+    {
+      "file": "server.webp",
+      "prompt": "Photorealistic game object cutout, transparent background with real alpha, no floor or room. Front view from slightly above at 30 degrees, horizontal front edge, small right side visible, no isometric rotation. Real materials, high detail, soft studio lighting with subtle cyan reflections, realistic dark graphite metal, no brand, no text labels. Entire object fits frame with minimal transparent margin. Not pixel art, not cartoon, not icon. One upright compact enterprise server cabinet with five stacked server units, perforated metal, visible right side, tiny green lights, front-facing Ethernet socket on bottom server unit. Tall portrait composition."
+    },
+    {
+      "file": "printer.webp",
+      "prompt": "Photorealistic game object cutout, transparent background with real alpha, no floor or room. Front view from slightly above at 30 degrees, horizontal front edge, small right side visible, no isometric rotation. Real materials, high detail, soft studio lighting with subtle cyan reflections, realistic dark graphite metal, no brand, no text labels. Entire object fits frame with minimal transparent margin. Not pixel art, not cartoon, not icon. One realistic white and charcoal office laser printer on a low oak cabinet, with paper feeding above, printed sheet output in front, small cyan control display on right, clearly visible Ethernet socket at right front corner. Portrait composition."
+    },
+    {
+      "file": "cable.webp",
+      "prompt": "Photorealistic game object cutout, transparent background with real alpha, no floor or room. Front view from slightly above at 30 degrees, horizontal front edge, small right side visible, no isometric rotation. Real materials, high detail, soft studio lighting with subtle cyan reflections, realistic dark graphite metal, no brand, no text labels. Entire object fits frame with minimal transparent margin. Not pixel art, not cartoon, not icon. One coiled black Ethernet cable with two transparent RJ45 connectors with gold pins, both connectors visible at front, elegant natural coil. Wide landscape composition."
+    }
+  ]
+}

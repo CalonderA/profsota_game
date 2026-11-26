@@ -1,3 +1,22 @@
 ﻿/* Локальные адаптации лаборатории; общий интерфейс остаётся прежним. */
 #toast { max-width: calc(100% - 24px); white-space: normal; text-align: center; box-sizing: border-box; }
 @media (max-width: 600px) { .hud .brand { padding-top: 30px; } }
+.ksk-exit-confirm{box-sizing:border-box;width:min(500px,calc(100vw - 32px));max-width:none;padding:0;border:0;border-radius:14px;background:transparent;color:var(--text);font:inherit}
+.ksk-exit-confirm::backdrop{background:rgba(13,11,10,.92);backdrop-filter:blur(6px)}
+.ksk-exit-confirm .qconfirm-box{box-sizing:border-box;max-width:none}
+.ksk-exit-confirm .qconfirm-title{font-size:22px}
+.ksk-exit-confirm .btnrow{justify-content:center;flex-wrap:wrap}
+.ksk-exit-confirm .btn{min-height:44px;font-size:16px;font-weight:600;padding:12px 24px}
+.ksk-exit-confirm .danger{background:linear-gradient(#f16d60,#aa2d24);border-color:#ff948855;color:#fff}
+.ksk-exit-confirm .ghost{background:#ffffff0a;border-color:#ffffff19;color:var(--text)}
+/* One exit control for every KSK station, matching thermal diagnosis. */
+body :is(.ksk-assembly,.pc-service,.ksk-network,.ksk-diagnosis,.sd-game) button.ksk-minigame-exit,
+body #qCloseBtn.ksk-minigame-exit{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;min-width:44px;max-width:44px;height:44px;min-height:44px;max-height:44px;padding:0;border:1px solid #665575;border-radius:9px;background:#292231;color:#ded3e9;line-height:1;cursor:pointer}
+body :is(.ksk-assembly,.pc-service,.ksk-network,.ksk-diagnosis,.sd-game) button.ksk-minigame-exit:hover,
+body #qCloseBtn.ksk-minigame-exit:hover{background:#40324c;border-color:#665575;color:#ded3e9;transform:none}
+.ksk-minigame-exit>svg{display:block;width:20px;height:20px;flex:none;pointer-events:none}
+@media(max-width:760px){
+ .ksk-exit-confirm{max-height:calc(100dvh - 24px);overflow:auto}.ksk-exit-confirm .btnrow{display:grid;grid-template-columns:1fr;gap:8px}.ksk-exit-confirm .btn{width:100%;min-height:48px}
+ #qScreen .card{box-sizing:border-box;width:100%;max-height:calc(100dvh - 24px);overflow:auto;padding:16px 12px;overscroll-behavior:contain}
+ #qScreen #qText{font-size:18px;line-height:1.45}#qAnswers button,#hintBtn,#qNextBtn{min-height:48px;touch-action:manipulation}
+}

@@ -153,3 +153,11 @@
  background-size: 50% 100%;
 }
 .assembly-board [data-hardware="ssd"] { width: 97%; height: 70%; }
+.assembly-bank button[aria-pressed=true]{border:2px solid #91e4cf;background:#31595c}
+@media(max-width:760px){
+ .ksk-assembly{width:100vw;max-height:100dvh;border-radius:0;padding:12px 10px max(12px,env(safe-area-inset-bottom));scroll-padding:75px 0 130px}
+ .ksk-assembly header{position:sticky;top:-12px;z-index:4;background:#101e2af5;padding:10px 0}.ksk-assembly h2{font-size:24px}
+ .assembly-case{width:100%;margin:10px auto}.assembly-board button span{font-size:11px;white-space:nowrap}.assembly-bank{position:sticky;bottom:-12px;z-index:3;background:#101e2af5;padding:8px 0;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .assembly-bank button{min-height:78px;font-size:11px;padding:6px 3px;gap:6px;touch-action:pan-y}.assembly-bank .assembly-piece{max-width:42px}.ksk-assembly footer{margin-top:4px}.ksk-assembly footer p{font-size:13px}
+ .assembly-board [data-slot="ssd"],.assembly-board [data-slot="gpu"]{min-height:32px}
+}

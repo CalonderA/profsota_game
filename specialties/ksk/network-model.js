@@ -13,17 +13,25 @@ class KskNetwork {
     return device === 'router' ? ['wan', 'lan'] : device === 'switch' ? Array.from({length:8}, (_, i) => String(i+1)) : ['net'];
   }
   place(device, slot) {
+    if (!this.canPlace(device, slot)) return false;
+    this.placed[device] = slot;
+    return true;
+  }
+  canPlace(device, slot) {
     if (this.placed[device] || Object.values(this.placed).includes(slot)) return false;
     if (!((['router', 'switch'].includes(device) && ['hub1', 'hub2'].includes(slot)) || (device === 'server' && slot === 'rack'))) return false;
-    this.placed[device] = slot;
     return true;
   }
   occupied(port) { return this.links.find(l => l.a === port || l.b === port); }
   connect(a, b) {
-    const [ad, ap] = a.split(':'), [bd, bp] = b.split(':');
-    if (ad === bd || !this.ports(ad).includes(ap) || !this.ports(bd).includes(bp) || this.occupied(a) || this.occupied(b)) return false;
+    if (!this.canConnect(a, b)) return false;
     this.links.push({id:++this.serial, a, b});
     return true;
+  }
+  canConnect(a, b) {
+    const [ad, ap] = a.split(':'), [bd, bp] = b.split(':');
+    if (ad === bd || !this.ports(ad).includes(ap) || !this.ports(bd).includes(bp) || this.occupied(a) || this.occupied(b)) return false;
+    return this.valid({a, b});
   }
   remove(id) { this.links = this.links.filter(l => l.id !== id); }
   valid(link) {

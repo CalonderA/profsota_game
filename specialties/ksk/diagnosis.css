@@ -54,3 +54,9 @@
 
 .ksk-diagnosis .dg-exit{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0}.ksk-diagnosis .dg-exit svg{flex-shrink:0}
 @media(max-width:760px){.ksk-diagnosis .dg-brand{padding-right:54px}.ksk-diagnosis .dg-exit{padding:0}}
+@media(max-width:760px){
+ .ksk-diagnosis{width:100vw;max-height:100dvh;margin:0;border-radius:0;padding:12px 10px max(12px,env(safe-area-inset-bottom));overscroll-behavior:contain}
+ .ksk-diagnosis .dg-header{gap:10px;padding:0 0 12px}.ksk-diagnosis .dg-brand{min-height:44px}.ksk-diagnosis h2{font-size:23px}.ksk-diagnosis .dg-exit{right:0}
+ .ksk-diagnosis .dg-hint{flex-wrap:wrap;padding:12px;gap:10px}.ksk-diagnosis .dg-hint-copy{flex:1 1 160px}.ksk-diagnosis .dg-hint-demo{width:140px;flex-basis:140px}.ksk-diagnosis .dg-hint p{font-size:13px}
+ .ksk-diagnosis .dg-result button{min-height:44px;width:100%}
+}

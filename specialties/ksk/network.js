@@ -3,77 +3,163 @@
 window.openKskNetwork = function(done, cancel) {
   const model = new window.KskNetwork();
   const names = {internet:'Интернет',router:'Маршрутизатор',switch:'Коммутатор',server:'Сервер',dev1:'Разработка · ПК 1',dev2:'Разработка · ПК 2',design1:'Дизайн · ПК 1',design2:'Дизайн · ПК 2',printer:'Принтер'};
-  const locations = {internet:[500,102],dev1:[180,250],dev2:[300,250],design1:[710,250],design2:[830,250],printer:[215,510]};
-  const slots = {hub1:[500,305],hub2:[500,435],rack:[750,545]};
+  const locations = {internet:[600,92],dev1:[176,230],dev2:[326,230],design1:[896,230],design2:[1046,230],printer:[244,494]};
+  const slots = {hub1:[600,260],hub2:[600,410],rack:[920,520]};
   let selected = null, startPort = null, closed = false, won = false, dragging = null;
   const dialog = document.createElement('dialog');
   dialog.className = 'ksk-network';
   dialog.setAttribute('aria-label', 'Прокладка сети');
   const logo = document.querySelector('.brand-header-logo .brand-hex-icon')?.outerHTML || '';
-  const box = (x,y,w,h,depth=10,color='#5b566d') => `<path d="M${x} ${y}l${w} 0 12 -7 -${w} 0Z" fill="#8a819b"/><path d="M${x+w} ${y}l12 -7v${h}l-12 7Z" fill="#302d40"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${color}"/><path d="M${x} ${y+h}v${depth}h${w}v-${depth}" fill="#242334"/>`;
+  // Realistic raster layers; socket coordinates match the visible equipment fronts.
+  const spriteSizes = {pc:[132,140,-66,-90],design:[144,132,-72,-82],router:[176,88,-88,-72],switch:[176,88,-88,-72],server:[80,128,-40,-112],printer:[128,128,-64,-96],internet:[128,80,-64,-72],cable:[128,80,-64,-60]};
   function art(kind) {
-    if (kind === 'internet') return '<g class="nw-internet-cloud"><path d="M-53 0a23 23 0 0 1 5-45 33 33 0 0 1 64-12 27 27 0 0 1 34 52H-53Z" fill="#152c48" stroke="#55d3ff" stroke-width="3"/><g transform="translate(0 -34)" fill="none" stroke="#65dcff" stroke-width="1.5"><circle r="13"/><ellipse rx="6" ry="13"/><path d="M-13 0h26M-11-6h22M-11 6h22"/></g><text x="0" y="-8" text-anchor="middle" fill="#e7f5ff" font-size="15" font-weight="600">Интернет</text></g>';
-    if (kind === 'cable') return '<path d="M-35-18c-20 45 50 45 38 6S36-49 38-18" fill="none" stroke="#b6a0cb" stroke-width="5"/><rect x="-40" y="-29" width="11" height="17" rx="2" fill="#8e879c"/><rect x="32" y="-25" width="11" height="17" rx="2" fill="#8e879c"/>';
-    if (kind === 'router' || kind === 'switch') return `${kind==='router'?'<path d="M-37-19v-29m70 29v-29" stroke="#a49aaf" stroke-width="5" stroke-linecap="round"/>':''}${box(-43,-23,84,21,3)}${Array.from({length:kind==='switch'?8:2},(_,i)=>`<rect x="${-35+i*(kind==='switch'?9:51)}" y="-17" width="6" height="5" fill="#131a25"/>`).join('')}<path d="M-30-27h42" stroke="#b7aaca" opacity=".5"/><circle class="nw-led" cx="33" cy="-7" r="2"/>`;
-    if (kind === 'server') return `${box(-28,-91,54,83,8,'#454456')}${Array.from({length:5},(_,i)=>`<rect x="-22" y="${-84+i*14}" width="42" height="11" rx="1" fill="#242536"/><path d="M-18 ${-79+i*14}h20" stroke="#6c6b80" stroke-dasharray="2 2"/><circle class="nw-led" cx="13" cy="${-79+i*14}" r="2"/>`).join('')}`;
-    if (kind === 'printer') return `${box(-45,-8,88,12,18,'#666170')}${box(-27,-45,52,32,3,'#aba6b5')}<path d="M-20-49v-21h36v21" fill="#ddd9e4"/><path d="M-15-63h24m-24 6h19" stroke="#938b9e"/><rect x="-18" y="-28" width="34" height="6" fill="#202433"/><path d="M-16-23h30v19h-30Z" fill="#e7e1eb"/><circle class="nw-led" cx="19" cy="-39" r="2"/>`;
-    return `${box(-48,-4,94,10,22,'#756b7d')}<path d="M-41 26v14m78-14v14" stroke="#514b60" stroke-width="5"/>${box(-30,-65,60,39,2,'#8a8398')}<rect x="-26" y="-61" width="52" height="31" fill="${kind==='design'?'#39304e':'#1e3440'}"/><path d="M-20-52h21m-21 7h31m-31 7h16" stroke="${kind==='design'?'#ae8cbd':'#6c9d9c'}" stroke-width="2"/><path d="M-3-24v15m-12 0h25" stroke="#aca0b5" stroke-width="4"/><path d="M-27-1h46l-6 7h-46Z" fill="#272333"/><path d="M-20 1h27" stroke="#83798c" stroke-dasharray="2 2"/><g class="nw-monitor-online"><path d="M8-48h12v9H8Zm6 9v4m-6 0h12" fill="none" stroke="#a1e1bb" stroke-width="2"/></g><ellipse cx="3" cy="52" rx="22" ry="10" fill="#171520"/><path d="M-16 37q20-14 39 0v13q-20 13-39 0Z" fill="#514b63"/><path d="M-16 37v-14q20-12 39 0v14" fill="#635a76"/>`;
+    const [w,h,x,y]=spriteSizes[kind];
+    if(kind==='internet')return `<g class="nw-internet"><circle cy="-36" r="25"/><ellipse cy="-36" rx="11" ry="25"/><path d="M-25-36h50M-21-49h42M-21-23h42"/><text y="-73" text-anchor="middle">${names.internet}</text></g>`;
+    const led=kind==='server'?Array.from({length:5},(_,i)=>`<circle class="nw-led" cx="16" cy="${-81+i*16}" r="1.3" style="animation-delay:${i*.21}s"/>`).join(''):'';
+    return `<image class="nw-sprite" href="network-real/${kind}.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>${led}`;
   }
   function room(id,x,y,title) {
-    const plant=(px,py)=>`<g transform="translate(${px} ${py})"><path d="M-10 0h20l-3 20h-14Z" fill="#aca0b9"/><path d="M0 4v-38M0-8q-30-10-19-25Q0-28 0-8M0-18q7-30 21-23Q24-24 0-18M0-2q26-19 28-7Q18 4 0-2" fill="#60895f" stroke="#344f43" stroke-width="2"/></g>`;
-    const shelf=(px,py)=>`<g transform="translate(${px} ${py})">${box(0,0,48,65,4,'#5d465c')}${[9,28,47].map((v,i)=>`<rect x="5" y="${v}" width="38" height="14" fill="#242235"/>${[0,1,2,3,4].map((n)=>`<rect x="${7+n*7}" y="${v+3}" width="4" height="11" fill="${['#9c7c97','#7e93a3','#ae976b'][(n+i)%3]}"/>`).join('')}`).join('')}</g>`;
-    return `<g data-room="${id}" class="nw-room" transform="translate(${x} ${y})"><path d="M0 24L25 0H325L350 24V232L325 255H25L0 232Z" fill="#211d31" stroke="#171322" stroke-width="12"/><path class="nw-room-floor" d="M13 45H337V222L317 241H33L13 222Z"/><path d="M13 45H337V222L317 241H33L13 222Z" fill="url(#nw-floor)"/><path d="M0 184V24L25 0H325L350 24V184M0 218v14l25 23h300l25-23v-14" fill="none" stroke="#786489" stroke-width="16"/><path d="M3 182V27L29 5H321L347 27V182M7 233l22 17H321l22-17" fill="none" stroke="#b298c3" stroke-opacity=".4" stroke-width="3"/><path d="M26 21H324V86H26Z" fill="#3c314d"/><path d="M38 29H310M38 51H310M38 73H310" stroke="#554262"/><rect class="nw-room-sign" x="65" y="29" width="225" height="37" rx="8"/><text x="177" y="53" text-anchor="middle" class="nw-room-title">${title}</text><path d="M144 12h66" stroke="#ffe1a3" stroke-width="5" class="nw-lamp"/>
-    ${id==='dev'||id==='design'?`${plant(40,115)}${shelf(270,85)}${id==='dev'?'<path d="M18 70l28-15v69l-28 15Z" fill="#9d73bb" stroke="#c6a2de" stroke-width="3"/><path d="M32 64v67m-14-28 28-15" stroke="#483558" stroke-width="4"/>':'<rect x="85" y="78" width="60" height="28" fill="#9a76ae" stroke="#cdb4d6"/><path d="M90 83h13v8H90m17-8h13v8h-13m17-8h13v8h-13M90 95h13v7H90m17-7h13v7h-13" fill="#758fa4"/>'}`:id==='print'?`${plant(42,160)}${box(48,157,44,56,5,'#705768')}${box(268,138,43,65,6,'#554b69')}<rect x="36" y="88" width="38" height="45" fill="#846b70" stroke="#b39388"/><path d="M43 95h22v26H43Z" fill="#c6bad0"/>`:`${shelf(285,165)}<g transform="translate(260 208)">${art('server')}</g><path d="M32 89h30v45H32Z" fill="#292538" stroke="#756183"/><path d="M37 95h20m-20 7h20m-20 7h20m-20 7h20" stroke="#81708e"/>`}</g>`;
+    return `<g data-room="${id}" class="nw-room" transform="translate(${x} ${y})"><image class="nw-sprite" href="network-real/room-${id}.webp" width="440" height="240" preserveAspectRatio="none"/><rect class="nw-room-plaque" x="105" y="-18" width="230" height="25" rx="7"/><text x="220" y="0" text-anchor="middle" class="nw-room-title">${title}</text><circle class="nw-room-indicator" cx="322" cy="-6" r="3"/></g>`;
   }
-  dialog.innerHTML = `<header class="nw-header"><div class="nw-brand">${logo}<b>СОТА</b><span>КСК</span></div><div><h2>Прокладка сети</h2><p>Подключи оборудование и обеспечь связь между отделами</p></div><button class="nw-close" type="button" aria-label="Закрыть мини-игру">×</button></header>
-    <div class="nw-layout"><div class="nw-viewport"><svg class="nw-office" viewBox="0 0 1000 660" aria-label="Офис с четырьмя помещениями">
-    <defs><pattern id="nw-floor" width="32" height="24" patternUnits="userSpaceOnUse"><path d="M0 0H32V24H0Z M16 0V24" fill="none" stroke="#120e21" stroke-opacity=".5"/><path d="M1 1H31" stroke="#a089b4" stroke-opacity=".12"/></pattern></defs>
-    <rect x="8" y="8" width="984" height="638" rx="18" fill="#211c30" stroke="#50405f" stroke-width="4"/>
-    <rect x="8" y="8" width="984" height="638" rx="18" fill="url(#nw-floor)"/>
-    <path d="M395 155V620H605V155" fill="#30283d" stroke="#695470" stroke-width="3"/>
-    <path d="M405 190V609H595V190" fill="none" stroke="#ad9060" stroke-width="8" stroke-dasharray="8 9" opacity=".6"/>
-    ${room('dev',35,85,'Отдел разработки')}
-    ${room('design',615,85,'Отдел дизайна')}
-    ${room('print',35,365,'Зона печати')}
-    ${room('server',615,365,'Серверная')}
-    <rect x="424" y="559" width="152" height="31" rx="5" fill="#43344e" stroke="#9978ac"/>
-    <text x="500" y="580" text-anchor="middle" class="nw-zone-label">Техническая зона</text>
-    <g class="nw-slots">${Object.entries(slots).map(([id,[x,y]])=>`<g data-slot="${id}" role="button" tabindex="0" aria-label="${id==='rack'?'Место в серверной':'Место в технической зоне'}"><path d="M${x-49} ${y}l49-25 49 25-49 25Z"/><text x="${x}" y="${y+5}" text-anchor="middle">+</text></g>`).join('')}</g>
-    <g class="nw-cables"></g><g class="nw-devices"></g><g class="nw-ports"></g><path class="nw-draft" fill="none" pointer-events="none"/>
-    </svg></div><aside class="nw-hint"><span class="nw-hint-mark" aria-hidden="true">i</span><h3>Подсказка</h3><p>Маршрутизатор обеспечивает выход в интернет, а коммутатор объединяет устройства локальной сети.</p></aside></div>
-    <footer class="nw-footer"><div class="nw-tools">${['router','switch','server','cable'].map(kind=>`<button type="button" data-tool="${kind}" aria-pressed="false"><svg viewBox="-60 -105 120 145" aria-hidden="true">${art(kind)}</svg><span>${kind==='cable'?'Сетевой кабель':names[kind]}</span></button>`).join('')}</div><div class="nw-actions"><p class="nw-status" role="status" aria-live="polite">Перетащи оборудование в офис или выбери его и нажми на свободное место.</p><button class="nw-check" type="button">Проверить сеть</button></div></footer>`;
+  dialog.innerHTML = `<header class="nw-header"><div class="nw-brand">${logo}<b>СОТА</b><span>КСК</span></div><div><h2>Прокладка сети</h2><p>Подключи оборудование и обеспечь связь между отделами</p></div><button class="nw-close ksk-minigame-exit" type="button" aria-label="Закрыть мини-игру"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>
+    <div class="nw-layout"><div class="nw-viewport"><svg class="nw-office" viewBox="0 0 1200 600" aria-label="Офис с четырьмя помещениями">
+
+    ${room('dev',20,60,'Отдел разработки')}
+    ${room('design',740,60,'Отдел дизайна')}
+    ${room('print',20,330,'Зона печати')}
+    ${room('server',740,330,'Серверная')}
+    <text x="600" y="554" text-anchor="middle" class="nw-zone-label">Техническая зона</text>
+    <g class="nw-slots">${Object.entries(slots).map(([id,[x,y]])=>`<g data-slot="${id}" role="button" tabindex="0" aria-label="${id==='rack'?'Место в серверной':'Место в технической зоне'}"><path d="M${x-80} ${y-70}h160v84h-160Z"/><text x="${x}" y="${y-16}" text-anchor="middle">+</text></g>`).join('')}</g>
+    <g class="nw-cables"></g><g class="nw-devices"></g><g class="nw-ports"></g><path class="nw-draft" fill="none" pointer-events="none"/><g class="nw-guide-markers" aria-hidden="true" pointer-events="none"></g>
+    </svg></div><aside class="nw-hint" aria-live="polite" aria-atomic="true"><h3></h3><p></p></aside></div>
+    <footer class="nw-footer"><div class="nw-tools">${['router','switch','server','cable'].map(kind=>`<button type="button" data-tool="${kind}" aria-pressed="false"><svg viewBox="${kind==='server'?'-48 -118 96 138':kind==='cable'?'-70 -64 140 88':'-90 -76 180 96'}" aria-hidden="true">${art(kind)}</svg><span>${kind==='cable'?'Сетевой кабель':names[kind]}</span></button>`).join('')}</div><div class="nw-actions"><p class="nw-status" role="status" aria-live="polite">Перетащи оборудование в офис или выбери его и нажми на свободное место.</p><button class="nw-check" type="button">Проверить сеть</button></div></footer>`;
   document.body.append(dialog);
   const q = s => dialog.querySelector(s), svg=q('.nw-office');
+  const mapNav=document.createElement('nav');
+  mapNav.className='nw-map-nav';mapNav.setAttribute('aria-label','Помещения на карте');
+  mapNav.innerHTML=[['hub','Сеть'],['dev','Разработка'],['design','Дизайн'],['print','Печать'],['server','Серверная']].map(([id,label])=>`<button type="button" data-map-room="${id}">${label}</button>`).join('');
+  q('.nw-layout').append(mapNav);
+  mapNav.addEventListener('click',event=>{
+    const button=event.target.closest('[data-map-room]');if(!button)return;
+    const id=button.dataset.mapRoom,viewport=q('.nw-viewport'),bounds=viewport.getBoundingClientRect();
+    const point=svg.createSVGPoint();
+    const centers={hub:[600,300],dev:[240,180],design:[960,180],print:[240,450],server:[960,450]};
+    [point.x,point.y]=centers[id];const center=point.matrixTransform(svg.getScreenCTM());
+    viewport.scrollTo({left:viewport.scrollLeft+center.x-bounds.left-viewport.clientWidth/2,top:viewport.scrollTop+center.y-bounds.top-viewport.clientHeight/2,behavior:'instant'});
+    mapNav.querySelectorAll('button').forEach(node=>node.setAttribute('aria-pressed',String(node===button)));
+  });
   const tell = text => q('.nw-status').textContent=text;
   const pos = d => locations[d] || slots[model.placed[d]];
   function portPos(port) {
     const [device,p]=port.split(':'), [x,y]=pos(device);
-    if(device==='switch') return [x-63+(Number(p)-1)*18,y+25];
-    if(device==='router') return [x+(p==='wan'?-26:26),y+24];
-    return [x,y+(device==='internet'?9:device==='server'?14:20)];
+    if(device==='switch') return [x-67+(Number(p)-1)*19.6,y-17];
+    if(device==='router') return [x+(p==='wan'?-29:29),y+1];
+    if(device==='internet')return [x,y-15];
+    if(device==='server')return [x+17,y-9];
+    if(device==='printer')return [x+51,y-8];
+    return device.startsWith('design')?[x+56,y-35]:[x+51,y-43];
   }
   function route(a,b) {
     const [x,y]=portPos(a),[u,v]=portPos(b);
     const index=model.links.findIndex(l=>l.a===a&&l.b===b);
+    const lane=570+index*9;
     const branch=(port,px,py)=>{
       const device=port.split(':')[0];
-      if(['router','switch','internet'].includes(device))return [[px,py],[px,py+15],[500,py+15]];
-      const left=px<500,wall=left?398-index*3:602+index*3;
-      const rail=py<350?330:605;
-      return [[px,py],[px,rail],[wall,rail],[wall,460+index*4],[500,460+index*4]];
+      if(['router','switch','internet'].includes(device))return [[px,py],[px,py+15],[lane,py+15]];
+      const left=px<600,wall=left?490-index*3:710+index*3;
+      const rail=py<310?282+index*2:554+index*3;
+      return [[px,py],[px,rail],[wall,rail],[wall,460+index*4],[lane,460+index*4]];
     };
     const points=[...branch(a,x,y),...branch(b,u,v).reverse()];
     return points.map(([px,py],i)=>`${i?'L':'M'}${px} ${py}`).join(' ');
   }
+  // Read-only coaching: derives the next action from the actual topology, so
+  // alternative switch ports, out-of-order actions and disconnections still work.
+  function renderGuide(status) {
+    dialog.querySelectorAll('.nw-guide-target').forEach(node=>node.classList.remove('nw-guide-target'));
+    q('.nw-guide-markers').innerHTML='';
+    const highlight=selector=>q(selector)?.classList.add('nw-guide-target');
+    const portName=id=>{const [device,port]=id.split(':');return `${names[device]} — ${port==='net'?'LAN':port.toUpperCase()}`;};
+    const markPoint=(x,y,number)=>{
+      q('.nw-guide-markers').insertAdjacentHTML('beforeend',`<g class="nw-guide-${number===1?'first':number===2?'second':'error'}"><circle class="nw-guide-ring" cx="${x}" cy="${y}" r="13"/><path class="nw-guide-arrow" d="M${x} ${y-26}V${y-15}m-5-6 5 6 5-6"/><circle class="nw-guide-badge" cx="${x}" cy="${y-40}" r="14"/><text x="${x}" y="${y-34}" text-anchor="middle">${number}</text></g>`);
+    };
+    const mark=(id,number)=>{
+      highlight(`[data-port="${id}"]`);
+      markPoint(...portPos(id),number);
+    };
+    const valid=model.links.filter(link=>model.valid(link));
+    const step=Math.min(12,Object.keys(model.placed).length+valid.length+1);
+    let heading=`Шаг ${step} из 12`,instruction='';
+    if(won){heading='Готово!';instruction='Все устройства подключены. Нажми «Выйти в лабораторию».';highlight('.nw-check');}
+    else if(status.invalid.length){
+      const link=status.invalid[0];
+      heading='Исправь соединение';
+      instruction=`Кабель «${portName(link.a)} ↔ ${portName(link.b)}» подключён неверно. Нажми на выделенный порт, чтобы убрать его.`;
+      mark(link.a,'×');
+    } else {
+      const device=['router','switch','server'].find(id=>!model.placed[id]);
+      if(device){
+        const slot=device==='server'?'rack':['hub1','hub2'].find(id=>!Object.values(model.placed).includes(id));
+        const where=slot==='rack'?'в серверной':slot==='hub1'?'на верхней площадке между отделами':'на нижней площадке между отделами';
+        highlight(`[data-tool="${device}"]`);highlight(`[data-slot="${slot}"]`);
+        const [slotX,slotY]=slots[slot];
+        markPoint(slotX,slotY-22,2);
+        instruction=selected===device?`Нажми на выделенный «+» ${where}, чтобы установить ${names[device].toLowerCase()}.`:`Нажми «${names[device]}» внизу, затем на выделенный «+» ${where}. Можно перетащить оборудование.`;
+      } else if(status.ok){
+        instruction='Все 8 кабелей подключены правильно. Нажми «Проверить сеть», чтобы завершить задание.';highlight('.nw-check');
+      } else {
+        const sources=['internet:net','router:lan','dev1:net','dev2:net','design1:net','design2:net','printer:net','server:net'];
+        const source=sources.find(id=>!valid.some(link=>link.a===id||link.b===id));
+        const freeSwitch=model.ports('switch').map(p=>`switch:${p}`).filter(id=>!model.occupied(id));
+        const target=source==='internet:net'?'router:wan':freeSwitch.includes(startPort)?startPort:freeSwitch[0];
+        const endpoints=sources.slice(2).filter(id=>!model.occupied(id));
+        if(endpoints.includes(source)&&(!startPort||freeSwitch.includes(startPort)||endpoints.includes(startPort))){
+          // Switch = 1; all free computers, the printer and the server = 2.
+          mark(target,1);
+          if(endpoints.includes(startPort)){
+            mark(startPort,2);
+            instruction=`Выбрано: «${portName(startPort)}». Теперь нажми порт 1: «${portName(target)}», чтобы подключить устройство.`;
+          } else {
+            endpoints.forEach(id=>mark(id,2));
+            instruction=startPort
+              ?'Теперь нажми порт 2 на любом выделенном устройстве: компьютере, принтере или сервере. Для каждого нужен отдельный кабель.'
+              :`Нажми порт 1: «${portName(target)}», затем порт 2 на любом выделенном устройстве. Подключи все компьютеры, принтер и сервер.`;
+          }
+        } else if(startPort&&startPort!==source&&startPort!==target){
+          instruction=`Сначала отмени выбор: нажми ещё раз на выделенный порт «${portName(startPort)}». Затем покажу нужную пару.`;
+          mark(startPort,'×');
+        } else if(startPort){
+          const next=startPort===source?target:source;
+          instruction=`Теперь нажми порт 2: «${portName(next)}». Кабель появится после нажатия.`;
+          mark(next,2);
+        } else {
+          instruction=`Нажми порт 1: «${portName(source)}», затем порт 2: «${portName(target)}».`;
+          mark(source,1);mark(target,2);
+        }
+      }
+    }
+    // Avoid repeated screen-reader announcements when only selection paint changes.
+    if(q('.nw-hint h3').textContent!==heading)q('.nw-hint h3').textContent=heading;
+    if(q('.nw-hint p').textContent!==instruction)q('.nw-hint p').textContent=instruction;
+    let legend=q('.nw-guide-legend');
+    if(!legend){legend=document.createElement('div');legend.className='nw-guide-legend';q('.nw-hint').append(legend);}
+    const connecting=!won&&!status.invalid.length&&Object.keys(model.placed).length===3&&!status.ok;
+    const legendText=connecting
+      ?startPort?'Порт уже выбран → нажми на выделенный второй конец кабеля.':'① СНАЧАЛА нажми порт с цифрой 1 → ② ЗАТЕМ нажми порт с цифрой 2.'
+      :won?'Задание выполнено.':status.invalid.length?'× Нажми выделенный порт, чтобы снять ошибочный кабель.':status.ok?'Последнее действие: нажми подсвеченную кнопку внизу.':'СНАЧАЛА выбери подсвеченную карточку внизу → ЗАТЕМ нажми подсвеченный «+» на карте.';
+    if(legend.textContent!==legendText)legend.textContent=legendText;
+    dialog.dataset.guideState=connecting?'connect':status.invalid.length?'error':'place';
+  }
   function render() {
+    if(!startPort)q('.nw-draft').classList.remove('nw-blocked');
     const status=model.status();
     q('.nw-devices').innerHTML=[...model.fixed,...Object.keys(model.placed)].map(d=>{
       const [x,y]=pos(d), kind=d.startsWith('dev')?'pc':d.startsWith('design')?'design':d;
-      return `<g data-device="${d}" class="${status.active.has(d)?'nw-online':''}" transform="translate(${x} ${y})">${art(kind)}<text class="nw-device-label" text-anchor="middle" y="${d==='internet'?-50:d==='server'?-112:d==='router'||d==='switch'?-60:-85}">${names[d]}</text></g>`;
+      return `<g data-device="${d}" class="${status.active.has(d)?'nw-online':''}" transform="translate(${x} ${y})">${art(kind)}<text class="nw-device-label" text-anchor="middle" y="${d==='internet'?-50:d==='server'?-112:d==='router'||d==='switch'?-84:-108}">${names[d]}</text></g>`;
     }).join('');
     q('.nw-ports').innerHTML=[...model.fixed,...Object.keys(model.placed)].flatMap(d=>model.ports(d).map(p=>{
       const id=`${d}:${p}`, [x,y]=portPos(id), link=model.occupied(id);
-      return `<g data-port="${id}" role="button" tabindex="0" aria-label="${names[d]}, порт ${p==='net'?'LAN':p.toUpperCase()}${link?', занят, нажми для отключения':''}" class="nw-port ${link?'nw-occupied':''} ${startPort===id?'nw-selected':''} ${link&&model.valid(link)&&status.active.has(d)?'nw-active':''}"><circle class="nw-port-hit" cx="${x}" cy="${y}" r="12"/><rect x="${x-5}" y="${y-4}" width="10" height="8" rx="1"/><text x="${x}" y="${y+22}" text-anchor="middle">${p==='net'?'LAN':p.toUpperCase()}</text></g>`;
+      return `<g data-port="${id}" role="button" tabindex="0" aria-label="${names[d]}, порт ${p==='net'?'LAN':p.toUpperCase()}${link?', занят, нажми для отключения':''}" class="nw-port ${link?'nw-occupied':''} ${startPort===id?'nw-selected':''} ${link&&model.valid(link)&&status.active.has(d)?'nw-active':''}"><circle class="nw-port-hit" cx="${x}" cy="${y}" r="12"/><rect x="${x-5}" y="${y-4}" width="10" height="8"/><text x="${x}" y="${y+19}" text-anchor="middle">${p==='net'?'LAN':p.toUpperCase()}</text></g>`;
     })).join('');
     q('.nw-cables').innerHTML=model.links.map(l=>{
       const d=route(l.a,l.b),active=model.valid(l)&&status.active.has(l.a.split(':')[0]);
@@ -83,6 +169,17 @@ window.openKskNetwork = function(done, cancel) {
     for(const button of dialog.querySelectorAll('[data-tool]')){button.disabled=!!model.placed[button.dataset.tool]||won;button.setAttribute('aria-pressed',String(button.dataset.tool===selected));}
     const rooms={dev:['dev1','dev2'],design:['design1','design2'],print:['printer'],server:['server']};
     for(const [id,devices] of Object.entries(rooms))q(`[data-room="${id}"]`).classList.toggle('nw-room-online',devices.every(d=>status.active.has(d)));
+    renderGuide(status);
+    for(const node of dialog.querySelectorAll('[data-slot]')){
+      const blocked=!!selected&&selected!=='cable'&&!model.canPlace(selected,node.dataset.slot);
+      node.classList.toggle('nw-blocked',blocked);
+      node.setAttribute('aria-disabled',String(blocked));
+    }
+    for(const node of dialog.querySelectorAll('[data-port]')){
+      const blocked=!!startPort&&node.dataset.port!==startPort&&!model.canConnect(startPort,node.dataset.port);
+      node.classList.toggle('nw-blocked',blocked);
+      node.setAttribute('aria-disabled',String(blocked));
+    }
   }
   function choose(tool) {
     if(won||model.placed[tool])return;
@@ -97,22 +194,22 @@ window.openKskNetwork = function(done, cancel) {
   function usePort(id) {
     if(won)return;
     const occupied=model.occupied(id);
-    if(occupied){model.remove(occupied.id);startPort=null;tell('Кабель отсоединён.');}
+    if(occupied&&!startPort){model.remove(occupied.id);startPort=null;tell('Кабель отсоединён.');}
     else if(startPort===id){startPort=null;tell('Прокладка кабеля отменена.');}
     else if(startPort){
       if(model.connect(startPort,id)){startPort=null;tell('Кабель подключён.');}
-      else tell('Выбери свободный порт другого устройства.');
+      else tell('Сюда нельзя подключить кабель. Выбери совместимый свободный порт без красной подсветки.');
     } else {selected='cable';startPort=id;tell('Выбери порт второго устройства.');}
     q('.nw-draft').setAttribute('d','');render();
   }
   function coordinates(e) {const point=svg.createSVGPoint();point.x=e.clientX;point.y=e.clientY;return point.matrixTransform(svg.getScreenCTM().inverse());}
-  function preview(e) {if(!startPort)return;const [x,y]=portPos(startPort),p=coordinates(e);q('.nw-draft').setAttribute('d',`M${x} ${y}L${x} ${y+15}L${p.x} ${p.y}`);}
+  function preview(e) {if(!startPort)return;const [x,y]=portPos(startPort),p=coordinates(e);q('.nw-draft').setAttribute('d',`M${x} ${y}L${x} ${y+15}L${p.x} ${p.y}`);const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-port]');q('.nw-draft').classList.toggle('nw-blocked',!!target&&target.dataset.port!==startPort&&!model.canConnect(startPort,target.dataset.port));}
   let portGesture=null;
   svg.addEventListener('pointerdown',e=>{
     const port=e.target.closest('[data-port]');
     if(!port||won||e.button!==0)return;
     e.preventDefault();portGesture={id:port.dataset.port,x:e.clientX,y:e.clientY,pointer:e.pointerId,moved:false};
-    if(!startPort&&!model.occupied(port.dataset.port)){startPort=port.dataset.port;portGesture.started=true;preview(e);}
+    if(!startPort&&!model.occupied(port.dataset.port)){startPort=port.dataset.port;portGesture.started=true;render();preview(e);}
   });
   dialog.addEventListener('pointermove',e=>{
     preview(e);
@@ -156,7 +253,15 @@ window.openKskNetwork = function(done, cancel) {
     const port=e.target.closest('[data-port]'),slot=e.target.closest('[data-slot]'),wire=e.target.closest('[data-link]');
     if(port||slot||wire){e.preventDefault();const selector=port?`[data-port="${port.dataset.port}"]`:null;if(port)usePort(port.dataset.port);else if(slot)place(slot.dataset.slot);else if(!won){model.remove(Number(wire.dataset.link));render();}if(selector)q(selector)?.focus();}
   });
-  function close(){if(closed)return;closed=true;dialog.remove();if(won)done(600);else cancel();}
+  function close(confirmed=false){
+    if(closed)return;
+    if(!won&&confirmed!==true){
+      resetGesture();
+      window.confirmKskMinigameExit(dialog,()=>close(true));
+      return;
+    }
+    closed=true;dialog.close();dialog.remove();if(won)done(600);else cancel();
+  }
   q('.nw-close').onclick=close;
   dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
   q('.nw-check').onclick=()=>{
@@ -167,4 +272,5 @@ window.openKskNetwork = function(done, cancel) {
     else {render();tell(`Без связи: ${result.missing.map(d=>names[d]).join(', ') || 'проверь лишние соединения'}.${result.invalid.length?' Есть несовместимые соединения.':''}`);}
   };
   render();dialog.showModal();
+  if(window.matchMedia('(max-width:760px)').matches)mapNav.querySelector('[data-map-room="hub"]').click();
 };

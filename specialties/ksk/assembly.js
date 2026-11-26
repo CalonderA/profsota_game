@@ -34,7 +34,7 @@ window.openKskAssembly = function(done, cancel){
  dialog.setAttribute('aria-labelledby', 'assembly-title');
  dialog.innerHTML = `
   <header><h2 id="assembly-title">Собери ПК</h2>
-   <button type="button" class="assembly-exit" aria-label="Выйти из задания">✕</button></header>
+   <button type="button" class="assembly-exit ksk-minigame-exit" aria-label="Выйти из задания"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>
   <div class="assembly-objective" aria-live="polite" aria-atomic="true">
    <p class="assembly-task"></p><p class="assembly-guide"></p>
   </div>
@@ -155,6 +155,7 @@ window.openKskAssembly = function(done, cancel){
   };
   card.onpointerup = event=>{
    if(dragged?.id !== event.pointerId)return;
+   card.suppressSelection=!!dragged.preview;
    const slot = dragged.preview && target(event.clientX,event.clientY);
    endDrag();
    place(card,slot);
@@ -163,20 +164,25 @@ window.openKskAssembly = function(done, cancel){
    if(dragged?.id === event.pointerId)endDrag();
   };
   card.onclick = event=>{
-   if(event.detail !== 0)return;
+   if(card.suppressSelection){card.suppressSelection=false;return;}
+   if(card.disabled)return;
    clearHint();
+   cards.forEach(item=>item.setAttribute('aria-pressed',String(item===card)));
    keyboardPart = card;
-   status.textContent = 'Выберите разъём клавишей Tab и нажмите Enter.';
-   slots.find(slot=>!slot.disabled)?.focus();
+   status.textContent = 'Выбрано: '+parts[card.dataset.part].name+'. Нажми на подходящий разъём в корпусе.';
+   const expected=slots.find(slot=>slot.dataset.slot===card.dataset.part);
+   if(event.detail===0)expected?.focus();
+   else if(window.matchMedia('(max-width:760px)').matches)qCaseScroll();
   };
  });
+ function qCaseScroll(){dialog.querySelector('.assembly-case').scrollIntoView({block:'center',behavior:'smooth'});}
  slots.forEach(slot=>slot.onclick=event=>{
-  if(event.detail === 0 && keyboardPart){place(keyboardPart,slot); keyboardPart=null;}
+  if(keyboardPart){place(keyboardPart,slot); keyboardPart=null;cards.forEach(card=>card.setAttribute('aria-pressed','false'));}
  });
- function leave(){
+ function leave(confirmed=false){
   if(closed)return;
   endDrag();
-  if(installed !== 4 && !window.confirm('Выйти из сборки ПК? Прогресс сборки сбросится, вы потеряете 15 света.'))return;
+  if(installed !== 4 && confirmed!==true){window.confirmKskMinigameExit(dialog,()=>leave(true));return;}
   closed = true;
   dialog.close();
   dialog.remove();

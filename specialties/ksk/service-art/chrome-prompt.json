@@ -1,0 +1,4 @@
+{
+  "mode": "built-in image_gen edit",
+  "prompt": "Precise tiny localized edit to supplied workshop background. On the monitor at the far left, replace ONLY the TOP desktop shortcut: its blue globe icon labeled Browser must become the recognizable Google Chrome icon (round red green yellow segments around a blue center) with the caption 'Chrome'. Keep its size, location and monitor perspective. Also change the small pinned blue globe browser icon on the monitor's bottom taskbar to the Chrome icon for consistency. Preserve ALL other content exactly, especially the wallpaper photograph with two people and a plush penguin, other shortcuts, monitoring window, plant leaves, monitor bezel, workshop, lamp, tools, lighting, empty workbench center, framing and dimensions. Do not change anything else or create an enlarged inset."
+}
