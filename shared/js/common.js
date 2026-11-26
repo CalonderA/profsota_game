@@ -172,7 +172,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   const SPECS = {
     kip: {
       code: 'КИП',
-      codeFull: '15.01.31',
+      codeFull: '15.01.37',
       title: 'Цех КИП',
       specName: 'Мастер контрольно-измерительных приборов и автоматики',
       floorName: 'Цех',
@@ -1597,7 +1597,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     // Подзаголовок квалификации (светящийся бирюзовый/циан как на референсе)
     ctx.font = 'bold 9.5px "Segoe UI", monospace';
     ctx.fillStyle = '#38bdf8';
-    const subTitle = isTS ? '13.02.02  /  ТЕПЛОСНАБЖЕНИЕ И ТЕПЛОТЕХНИКА' : '15.01.31  /  СЛЕСАРЬ-НАЛАДЧИК КИП И АСУ';
+    const subTitle = isTS ? '13.02.02  /  ТЕПЛОСНАБЖЕНИЕ И ТЕПЛОТЕХНИКА' : '15.01.37  /  СЛЕСАРЬ-НАЛАДЧИК КИП И АСУ';
     ctx.fillText(subTitle, signX + signW / 2, signY + 38);
 
     // 3) ЭЛЕКТРОННОЕ ТАБЛО СТАТУСА СПРАВА (SERVER ROOM / ONLINE 24/7)
@@ -1612,7 +1612,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
     ctx.font = '8px monospace';
     ctx.fillStyle = '#64748b';
-    ctx.fillText(isTS ? '13.02.02' : '15.01.31', stX + 76, stY + 14);
+    ctx.fillText(isTS ? '13.02.02' : '15.01.37', stX + 76, stY + 14);
 
     // Мигающий зеленый светодиод и надпись В СЕТИ • 24 / 7
     const ledOn = Math.sin(now * 0.005) > -0.2;
@@ -2078,6 +2078,41 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       ctx.fillStyle = '#f8fafc'; ctx.fillRect(feX + 2, feY + 8, 4, 6);
       ctx.restore();
 
+      // СТЕЛЛАЖ С ПАПКАМИ И КОРОБКАМИ МЕЖДУ ВЕРХНИМИ СТОЛАМИ
+      const shX = 7.1 * TILE, shY = 2.6 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(shX + 2, shY + 50, 34, 6);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(shX, shY, 34, 52);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(shX, shY, 34, 52);
+      [shY + 16, shY + 34].forEach(sy => { ctx.fillStyle = '#334155'; ctx.fillRect(shX + 2, sy, 30, 2.5); });
+      ['#ef4444', '#3b82f6', '#eab308', '#22c55e'].forEach((col, i) => {
+        ctx.fillStyle = col; ctx.fillRect(shX + 4 + i * 6, shY + 4, 4.5, 11);
+      });
+      ctx.fillStyle = '#64748b'; ctx.fillRect(shX + 5, shY + 21, 10, 11);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(shX + 18, shY + 22, 11, 10);
+      ctx.fillStyle = '#475569'; ctx.fillRect(shX + 4, shY + 39, 26, 9);
+      ctx.restore();
+
+      // ДИВАНЧИК В ЛЕВОМ НИЖНЕМ УГЛУ
+      const sfX = 1.6 * TILE, sfY = 12.6 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.roundRect(sfX - 2, sfY + 4, 68, 22, 5); ctx.fill();
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(sfX, sfY - 12, 64, 18, 4); ctx.fill();
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(sfX + 4, sfY, 56, 16, 3); ctx.fill();
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(sfX + 31, sfY + 1, 2, 14);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(sfX - 4, sfY - 4, 8, 20); ctx.fillRect(sfX + 60, sfY - 4, 8, 20);
+      ctx.restore();
+
+      // ПРИБОРНАЯ ТУМБОЧКА СПРАВА ВНИЗУ
+      const cabX = 20.5 * TILE, cabY = 12.2 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(cabX, cabY + 22, 24, 5);
+      ctx.fillStyle = '#334155'; ctx.fillRect(cabX, cabY, 24, 22);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1; ctx.strokeRect(cabX, cabY, 24, 22);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(cabX + 4, cabY - 12, 16, 12);
+      ctx.fillStyle = '#38bdf8'; ctx.fillRect(cabX + 6, cabY - 10, 12, 7);
+      ctx.restore();
+
     } else if (currentSpec === 'ts'){
       // ДЫМОХОД / ГАЗОХОД КОТЛА ВДОЛЬ ПРАВОЙ СТЕНЫ
       ctx.save();
@@ -2128,6 +2163,41 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         }
         ctx.restore();
       });
+
+      // ОРАНЖЕВЫЙ РАДИАТОР ПОД ОКНОМ СЛЕВА
+      ctx.save();
+      const wrX = 1.65 * TILE, wrY = 5.4 * TILE;
+      for (let i = 0; i < 6; i++){
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath(); ctx.roundRect(wrX, wrY + i * 5.5, 11, 4, 1); ctx.fill();
+        ctx.strokeStyle = '#c2410c'; ctx.lineWidth = 0.7; ctx.stroke();
+      }
+      ctx.restore();
+
+      // СТЕЛЛАЖ С ЗАПЧАСТЯМИ МЕЖДУ ВЕРХНИМИ СТОЛАМИ
+      const shX = 7.1 * TILE, shY = 2.6 * TILE;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(shX + 2, shY + 50, 34, 6);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(shX, shY, 34, 52);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.strokeRect(shX, shY, 34, 52);
+      [shY + 16, shY + 34].forEach(sy => { ctx.fillStyle = '#334155'; ctx.fillRect(shX + 2, sy, 30, 2.5); });
+      ctx.fillStyle = '#64748b'; ctx.fillRect(shX + 5, shY + 5, 10, 10);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(shX + 18, shY + 6, 11, 9);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(shX + 6, shY + 21, 22, 10);
+      ctx.fillStyle = '#dc2626'; ctx.fillRect(shX + 5, shY + 38, 12, 10);
+      ctx.restore();
+
+      // ТОЛСТАЯ МАГИСТРАЛЬ С КРАСНЫМ ВЕНТИЛЕМ В ПРАВОМ НИЖНЕМ УГЛУ
+      ctx.save();
+      const cpX = 19.8 * TILE, cpY = 12.8 * TILE;
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(cpX, cpY + 6, 70, 14);
+      ctx.fillRect(cpX + 52, cpY - 26, 14, 46);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(cpX, cpY + 9, 70, 4);
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.ellipse(cpX + 30, cpY + 2, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.restore();
     }
 // ============================================================
     // 4. ЦЕНТРАЛЬНЫЙ ЧЕРТЕЖНЫЙ СТОЛ С ПЛАНОМ ЦЕХА, КАСКАМИ И ТАБУРЕТАМИ (x = 11, y = 8)
@@ -2635,7 +2705,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Все приборы цеха проверены! Идём к СОТЕ!'
         },
         suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8'
+        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'helmet', outfit: 'workwear', prop: 'multimeter'
       },
       {
         id: 'kip_metrolog', name: 'Метролог-поверитель',
@@ -2646,7 +2717,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Лабораторные испытания завершены!'
         },
         suit: '#f1f5f9', suit2: '#cbd5e1', suitDark: '#94a3b8',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#0284c7'
+        helmet: '#334155', helmetDark: '#1e293b', skin: '#fcd34d', accent: '#0284c7',
+        headgear: 'hair', hairColor: '#475569', glasses: true, outfit: 'labcoat', prop: 'tablet'
       },
       {
         id: 'kip_asu', name: 'Инженер АСУ ТП',
@@ -2657,7 +2729,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Сегмент автоматики сдан в эксплуатацию!'
         },
         suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
-        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#f59e0b'
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#f59e0b',
+        headgear: 'helmet', glasses: true, outfit: 'vest', prop: 'laptop'
       }
     ],
     ts: [
@@ -2670,7 +2743,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Тепловой узел сдан! Переходим дальше!'
         },
         suit: '#c2410c', suit2: '#9a3412', suitDark: '#7c2d12',
-        helmet: '#ea580c', helmetDark: '#c2410c', skin: '#fcd34d', accent: '#fb923c'
+        helmet: '#ea580c', helmetDark: '#c2410c', skin: '#fcd34d', accent: '#fb923c',
+        headgear: 'helmet', outfit: 'workwear', prop: 'tablet'
       },
       {
         id: 'ts_engineer', name: 'Инженер-теплотехник',
@@ -2681,7 +2755,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Контур сбалансирован. Идём дальше!'
         },
         suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#ea580c'
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#ea580c',
+        headgear: 'helmet', outfit: 'workwear', prop: 'tablet'
       },
       {
         id: 'ts_boiler', name: 'Оператор котельной',
@@ -2692,7 +2767,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Котельный зал проверен!'
         },
         suit: '#334155', suit2: '#1e293b', suitDark: '#0f172a',
-        helmet: '#dc2626', helmetDark: '#991b1b', skin: '#fcd34d', accent: '#f59e0b'
+        helmet: '#dc2626', helmetDark: '#991b1b', skin: '#fcd34d', accent: '#f59e0b',
+        headgear: 'helmet', outfit: 'workwear', prop: 'tablet'
       }
     ],
     p: [
@@ -2705,7 +2781,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Спринт завершён! Релизим фичу!'
         },
         suit: '#4338ca', suit2: '#3730a3', suitDark: '#312e81',
-        helmet: '#6366f1', helmetDark: '#4f46e5', skin: '#fcd34d', accent: '#a855f7'
+        helmet: '#a855f7', helmetDark: '#7e22ce', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'headphones', hairColor: '#1e293b', glasses: true, outfit: 'hoodie', prop: 'laptop'
       },
       {
         id: 'p_back', name: 'Backend-архитектор',
@@ -2715,8 +2792,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           wrong: ['Deadlock в базе данных!', 'HTTP 500 Internal Error.', 'Проверь индексы.'],
           descend: 'Бэкенд масштабирован! Идём дальше!'
         },
-        suit: '#0f172a', suit2: '#020617', suitDark: '#000000',
-        helmet: '#10b981', helmetDark: '#059669', skin: '#fcd34d', accent: '#38bdf8'
+        suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
+        helmet: '#10b981', helmetDark: '#059669', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'beanie', hairColor: '#334155', glasses: true, outfit: 'hoodie', prop: 'coffee'
       },
       {
         id: 'p_devops', name: 'DevOps-инженер',
@@ -2727,7 +2805,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Деплой в прод успешен!'
         },
         suit: '#047857', suit2: '#065f46', suitDark: '#064e3b',
-        helmet: '#f59e0b', helmetDark: '#d97706', skin: '#fcd34d', accent: '#10b981'
+        helmet: '#f59e0b', helmetDark: '#d97706', skin: '#fcd34d', accent: '#10b981',
+        headgear: 'cap', hairColor: '#78350f', glasses: false, outfit: 'hoodie', prop: 'laptop'
       }
     ],
     ksk: [
@@ -2740,7 +2819,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Рабочая станция собрана и протестирована!'
         },
         suit: '#1d4ed8', suit2: '#1e3a8a', suitDark: '#172554',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#f97316'
+        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'cap', hairColor: '#1e293b', glasses: true, outfit: 'vest', prop: 'multimeter'
       },
       {
         id: 'ksk_sysadmin', name: 'Системный администратор',
@@ -2751,7 +2831,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Серверный сектор защищён!'
         },
         suit: '#1e293b', suit2: '#0f172a', suitDark: '#020617',
-        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#fbbf24'
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#fbbf24',
+        headgear: 'hair', hairColor: '#0f172a', glasses: true, outfit: 'vest', prop: 'laptop'
       },
       {
         id: 'ksk_net', name: 'Сетевой инженер',
@@ -2762,7 +2843,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
           descend: 'Сетевая магистраль проложена!'
         },
         suit: '#0369a1', suit2: '#075985', suitDark: '#0c4a6e',
-        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#38bdf8'
+        helmet: '#38bdf8', helmetDark: '#0284c7', skin: '#fcd34d', accent: '#38bdf8',
+        headgear: 'hair', hairColor: '#713f12', glasses: false, outfit: 'vest', prop: 'tablet'
       }
     ],
     e: [
@@ -2852,17 +2934,23 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
 
   function drawSkinBody(g, sk, now){
     const bob = Math.sin(now * 0.008) * 1.1;
+    const outfit = sk.outfit || 'workwear';
+    const headgear = sk.headgear || 'helmet';
+    const prop = sk.prop || 'tablet';
+
     g.save();
     g.translate(0, bob);
 
+    // Ноги (джинсы/брюки для IT, спецовка для цеха)
     const legW = 6, legTop = 4, legH = 9;
-    g.fillStyle = sk.suit2;
+    g.fillStyle = outfit === 'hoodie' ? '#1e293b' : (outfit === 'labcoat' ? '#334155' : sk.suit2);
     g.fillRect(-legW - 1, legTop, legW, legH);
     g.fillRect(1, legTop, legW, legH);
-    g.fillStyle = '#0f172a';
+    g.fillStyle = outfit === 'hoodie' ? '#e2e8f0' : '#0f172a'; // кроссовки для худи, ботинки для цеха
     g.beginPath(); g.roundRect(-legW - 2, legTop + legH - 1, legW + 2, 4.5, 2); g.fill();
     g.beginPath(); g.roundRect(0, legTop + legH - 1, legW + 2, 4.5, 2); g.fill();
 
+    // Торс
     const bw = 20, bh = 17, bodyTop = -10;
     const bodyG = g.createLinearGradient(0, bodyTop, 0, bodyTop + bh);
     bodyG.addColorStop(0, sk.suit);
@@ -2870,26 +2958,57 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     g.fillStyle = bodyG;
     g.beginPath(); g.roundRect(-bw / 2, bodyTop, bw, bh, 5); g.fill();
 
-    g.fillStyle = sk.accent || '#f97316';
-    g.fillRect(-bw / 2, bodyTop + 6, bw, 2);
-    g.fillStyle = '#f1f5f9';
-    g.fillRect(-bw / 2, bodyTop + 8, bw, 1.2);
+    if (outfit === 'workwear'){
+      // Светоотражающие полосы + ремень с пряжкой
+      g.fillStyle = sk.accent || '#f97316';
+      g.fillRect(-bw / 2, bodyTop + 6, bw, 2);
+      g.fillStyle = '#f1f5f9';
+      g.fillRect(-bw / 2, bodyTop + 8, bw, 1.2);
+      g.fillStyle = '#1e293b';
+      g.fillRect(-bw / 2 + 1, bodyTop + bh - 4.5, bw - 2, 4);
+      g.fillStyle = '#fbbf24';
+      g.fillRect(-2.5, bodyTop + bh - 5, 5, 5);
+    } else if (outfit === 'hoodie'){
+      // Капюшон / завязки худи и карман-кенгуру
+      g.fillStyle = sk.suitDark;
+      g.beginPath(); g.roundRect(-6, bodyTop + 9, 12, 6, 2); g.fill();
+      g.fillStyle = '#e2e8f0';
+      g.fillRect(-2.8, bodyTop + 1, 1.2, 6);
+      g.fillRect(1.6, bodyTop + 1, 1.2, 6);
+      g.fillStyle = sk.accent || '#38bdf8';
+      g.fillRect(-4, bodyTop + 5, 8, 2);
+    } else if (outfit === 'labcoat'){
+      // Белый халат с лацканами и синим бейджиком
+      g.fillStyle = '#0284c7';
+      g.fillRect(-2.5, bodyTop + 1, 5, 4);
+      g.fillStyle = '#cbd5e1';
+      g.fillRect(-0.5, bodyTop + 5, 1, bh - 6);
+      g.fillStyle = '#38bdf8';
+      g.fillRect(3, bodyTop + 4, 4, 3);
+    } else if (outfit === 'vest'){
+      // Жилетка с карманами поверх футболки
+      g.fillStyle = '#f8fafc';
+      g.fillRect(-3.5, bodyTop + 1, 7, 5);
+      g.fillStyle = sk.suitDark;
+      g.fillRect(-bw / 2 + 2, bodyTop + 8, 5, 5);
+      g.fillRect(bw / 2 - 7, bodyTop + 8, 5, 5);
+      g.fillStyle = sk.accent || '#38bdf8';
+      g.fillRect(-bw / 2, bodyTop + bh - 2, bw, 1.5);
+    }
 
+    // Руки
     g.fillStyle = sk.suitDark;
     g.beginPath(); g.roundRect(-bw / 2 - 3, bodyTop + 2, 4.5, 11, 2); g.fill();
     g.beginPath(); g.roundRect(bw / 2 - 1.5, bodyTop + 2, 4.5, 11, 2); g.fill();
-    g.fillStyle = '#334155';
+    g.fillStyle = (outfit === 'hoodie' || outfit === 'labcoat') ? sk.skin : '#334155';
     g.beginPath(); g.arc(-bw / 2 - 0.7, bodyTop + 13, 2.5, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(bw / 2 + 0.7, bodyTop + 13, 2.5, 0, Math.PI * 2); g.fill();
 
-    g.fillStyle = '#1e293b';
-    g.fillRect(-bw / 2 + 1, bodyTop + bh - 4.5, bw - 2, 4);
-    g.fillStyle = '#fbbf24';
-    g.fillRect(-2.5, bodyTop + bh - 5, 5, 5);
-
+    // Голова и лицо
     g.fillStyle = sk.skin;
     g.beginPath(); g.arc(0, -15, 7.5, 0, Math.PI * 2); g.fill();
 
+    // Глаза
     g.fillStyle = '#1e293b';
     g.fillRect(-3.8, -16.5, 2, 2.2);
     g.fillRect(1.8, -16.5, 2, 2.2);
@@ -2900,19 +3019,92 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     g.beginPath(); g.arc(-4.5, -13, 2, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(4.5, -13, 2, 0, Math.PI * 2); g.fill();
 
-    g.fillStyle = sk.helmet;
-    g.beginPath(); g.arc(0, -17, 8.8, Math.PI, 0, false); g.fill();
-    g.fillStyle = sk.helmetDark;
-    g.beginPath(); g.roundRect(-9.8, -18.2, 19.6, 3.5, 1.8); g.fill();
-    g.fillStyle = 'rgba(255, 255, 255, 0.55)';
-    g.beginPath(); g.roundRect(-1.5, -23.5, 3, 6, 1); g.fill();
+    // Очки (для разработчиков, сисадминов, метрологов)
+    if (sk.glasses){
+      g.strokeStyle = '#0f172a';
+      g.lineWidth = 1.2;
+      g.strokeRect(-5.4, -17.8, 4.6, 3.8);
+      g.strokeRect(0.8, -17.8, 4.6, 3.8);
+      g.beginPath(); g.moveTo(-0.8, -16.2); g.lineTo(0.8, -16.2); g.stroke();
+    }
 
+    // Головной убор / причёска
+    const hairCol = sk.hairColor || '#334155';
+    if (headgear === 'helmet'){
+      g.fillStyle = sk.helmet;
+      g.beginPath(); g.arc(0, -17, 8.8, Math.PI, 0, false); g.fill();
+      g.fillStyle = sk.helmetDark;
+      g.beginPath(); g.roundRect(-9.8, -18.2, 19.6, 3.5, 1.8); g.fill();
+      g.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      g.beginPath(); g.roundRect(-1.5, -23.5, 3, 6, 1); g.fill();
+    } else if (headgear === 'hair'){
+      // Аккуратная причёска без каски
+      g.fillStyle = hairCol;
+      g.beginPath(); g.arc(0, -17.5, 8.2, Math.PI * 0.95, Math.PI * 0.05, false); g.fill();
+      g.beginPath(); g.roundRect(-7.5, -23.5, 15, 5.5, 3); g.fill();
+    } else if (headgear === 'headphones'){
+      // Волосы + большие накладные наушники
+      g.fillStyle = hairCol;
+      g.beginPath(); g.arc(0, -17.5, 8, Math.PI * 0.95, Math.PI * 0.05, false); g.fill();
+      g.strokeStyle = sk.helmet || '#a855f7';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.arc(0, -17, 9.2, Math.PI * 1.05, -0.05, false); g.stroke();
+      g.fillStyle = '#0f172a';
+      g.beginPath(); g.roundRect(-10.5, -18.5, 3.5, 7, 1.5); g.fill();
+      g.beginPath(); g.roundRect(7, -18.5, 3.5, 7, 1.5); g.fill();
+      g.fillStyle = sk.helmet || '#a855f7';
+      g.fillRect(-10, -17, 1.5, 4);
+      g.fillRect(8.5, -17, 1.5, 4);
+    } else if (headgear === 'cap'){
+      // Стильная бейсболка с козырьком
+      g.fillStyle = hairCol;
+      g.fillRect(-7.5, -18.5, 15, 2.5);
+      g.fillStyle = sk.helmet || '#f97316';
+      g.beginPath(); g.arc(0, -17.5, 8.4, Math.PI, 0, false); g.fill();
+      g.fillStyle = sk.helmetDark || '#ea580c';
+      g.beginPath(); g.roundRect(-2, -18.5, 13, 3, 1.5); g.fill();
+    } else if (headgear === 'beanie'){
+      // Вязаная шапка-бини
+      g.fillStyle = sk.helmet || '#10b981';
+      g.beginPath(); g.arc(0, -17.5, 8.6, Math.PI, 0, false); g.fill();
+      g.fillStyle = sk.helmetDark || '#059669';
+      g.beginPath(); g.roundRect(-8.8, -19.2, 17.6, 3.6, 1.8); g.fill();
+    }
+
+    // Предмет в правой руке
     g.save();
     g.translate(bw / 2 + 3, bodyTop + 7);
-    g.fillStyle = '#0f172a';
-    g.beginPath(); g.roundRect(0, 0, 7, 10, 1.5); g.fill();
-    g.fillStyle = '#38bdf8';
-    g.fillRect(1, 1, 5, 7);
+    if (prop === 'laptop'){
+      // Ноутбук с синим светящимся экраном
+      g.fillStyle = '#0f172a';
+      g.beginPath(); g.roundRect(-1, -1, 10, 8, 1.2); g.fill();
+      g.fillStyle = '#38bdf8';
+      g.fillRect(0.5, 0.5, 7, 4.5);
+      g.fillStyle = '#64748b';
+      g.fillRect(-1.5, 6.5, 11, 2);
+    } else if (prop === 'coffee'){
+      // Белая кружка с горячим кофе
+      g.fillStyle = '#f8fafc';
+      g.beginPath(); g.roundRect(0, 1, 6, 7, 1); g.fill();
+      g.strokeStyle = '#cbd5e1'; g.lineWidth = 1;
+      g.strokeRect(5.5, 2.5, 2, 3.5);
+      g.fillStyle = '#78350f';
+      g.fillRect(1, 1, 4, 1.5);
+    } else if (prop === 'multimeter'){
+      // Жёлтый мультиметр
+      g.fillStyle = '#f59e0b';
+      g.beginPath(); g.roundRect(0, 0, 6.5, 9.5, 1.5); g.fill();
+      g.fillStyle = '#0f172a';
+      g.fillRect(1, 1.2, 4.5, 3);
+      g.fillStyle = '#1e293b';
+      g.beginPath(); g.arc(3.2, 6.5, 1.6, 0, Math.PI * 2); g.fill();
+    } else {
+      // Рабочий планшет
+      g.fillStyle = '#0f172a';
+      g.beginPath(); g.roundRect(0, 0, 7, 10, 1.5); g.fill();
+      g.fillStyle = '#38bdf8';
+      g.fillRect(1, 1, 5, 7);
+    }
     g.restore();
 
     g.restore();
@@ -2981,7 +3173,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'skinbtn' + (i === skinIndex ? ' sel' : '');
-      b.title = sk.name + ' — бесплатно';
+      b.title = sk.name;
 
       const cv = document.createElement('canvas');
       cv.width = Math.round(56 * dpr);

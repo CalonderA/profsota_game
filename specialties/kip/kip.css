@@ -1,5 +1,5 @@
 ﻿/* ============================================================
-   СОТА — Стили специальности КИПиА (15.01.31)
+   СОТА — Стили специальности КИПиА (15.01.37)
    Мини-игры: Калибровка 4-20 мА, Монтаж клеммной цепи, ПИД-регулятор
    ============================================================ */
   .calib-shell{
@@ -129,8 +129,9 @@
   }
   .wires-board {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
+    gap: 56px;
     background: rgba(15, 23, 42, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
@@ -141,20 +142,38 @@
   .wires-col {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     z-index: 2;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 240px;
+  }
+  .wires-col-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .wire-terminal {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
-    background: rgba(30, 41, 59, 0.85);
+    background: rgba(30, 41, 59, 0.88);
     border: 1.5px solid rgba(255, 255, 255, 0.15);
-    padding: 8px 12px;
+    padding: 9px 12px;
     border-radius: 10px;
     cursor: pointer;
     user-select: none;
     transition: all 0.2s ease;
+    min-height: 54px;
+  }
+  .wire-terminal[data-side="right"] .term-info {
+    text-align: right;
   }
   .wire-terminal:hover, .wire-terminal.selected {
     border-color: #38bdf8;
@@ -167,6 +186,7 @@
     cursor: default;
   }
   .term-pin {
+    flex: 0 0 auto;
     width: 14px;
     height: 14px;
     border-radius: 50%;
@@ -176,8 +196,9 @@
   .term-pin.red { background: #ef4444; color: #ef4444; }
   .term-pin.yellow { background: #eab308; color: #eab308; }
   .term-pin.blue { background: #38bdf8; color: #38bdf8; }
-  .term-info b { display: block; font-size: 13px; color: #f8fafc; }
-  .term-info small { font-size: 10.5px; color: #94a3b8; }
+  .term-info { min-width: 0; flex: 1; }
+  .term-info b { display: block; font-size: 13px; color: #f8fafc; line-height: 1.2; }
+  .term-info small { display: block; font-size: 10.5px; color: #94a3b8; line-height: 1.25; margin-top: 2px; }
   .wires-svg-wrap {
     position: absolute;
     inset: 0;
@@ -187,6 +208,18 @@
   .wires-svg-wrap svg {
     width: 100%;
     height: 100%;
+    display: block;
+  }
+  @media (max-width: 600px) {
+    .wires-workspace { padding: 8px 4px; gap: 8px; }
+    .wires-instruct { font-size: 11.5px; }
+    .wires-board { gap: 36px; padding: 10px 8px; min-height: 190px; }
+    .wires-col { gap: 8px; }
+    .wires-col-title { font-size: 9.5px; }
+    .wire-terminal { padding: 7px 8px; gap: 6px; min-height: 48px; border-radius: 8px; }
+    .term-pin { width: 11px; height: 11px; border-width: 1.5px; }
+    .term-info b { font-size: 11px; }
+    .term-info small { font-size: 9px; }
   }
 
 

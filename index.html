@@ -49,7 +49,7 @@
       const params = new URLSearchParams(window.location.search);
       const spec = (params.get('spec') || '').toLowerCase();
       let target = 'menu.html';
-      if (['kip', 'ts', 'e', 'reu', 'p', 'ksk'].includes(spec)) {
+      if (['kip', 'ts', 'p', 'ksk'].includes(spec)) {
         target = 'specialties/' + spec + '/index.html';
       }
       window.location.replace(target);

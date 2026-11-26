@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>СОТА — Лаборатория КИП (15.01.31)</title>
-  <link rel="stylesheet" href="../../shared/css/common.css?v=20261124_5">
-  <link rel="stylesheet" href="kip.css">
+  <title>СОТА — Лаборатория КИП (15.01.37)</title>
+  <link rel="stylesheet" href="../../shared/css/common.css?v=20261126_1">
+  <link rel="stylesheet" href="kip.css?v=20261126_1">
 </head>
 <body>
   <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
@@ -23,7 +23,7 @@
       </div>
     </a>
     <div class="brand-header-divider"></div>
-    <span class="brand-header-tag">КИП · 15.01.31</span>
+    <span class="brand-header-tag">КИП · 15.01.37</span>
     <a href="../../menu.html" class="brand-header-back" title="Вернуться к выбору специальности">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       <span>В меню</span>
@@ -54,7 +54,7 @@
             <span class="spec-banner-code" id="specBadge">КИП</span>
             <div>
               <b id="specTitle">Лаборатория КИП</b>
-              <small id="specSub">Специальность 15.01.31</small>
+              <small id="specSub">Специальность 15.01.37</small>
             </div>
           </div>
           <a href="../../menu.html" class="spec-change-link">Сменить специальность ⮵</a>
@@ -67,7 +67,7 @@
           <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
           <div><b>Переход к СОТЕ</b>Выполните 5 заданий цеха, чтобы войти в СОТУ</div>
         </div>
-        <div class="skins-title">Скины наладчика <span>· бесплатно</span></div>
+        <div class="skins-title">Скины</div>
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
         <div class="qsource" id="qSource">вопросы загружаются…</div>
@@ -221,56 +221,56 @@
           </div>
           <div class="wires-board" id="wiresBoard">
             <div class="wires-col left-col">
-              <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;text-align:center">ДАТЧИК ДАВЛЕНИЯ</div>
+              <div class="wires-col-title">ДАТЧИК ДАВЛЕНИЯ</div>
               <div class="wire-terminal" data-wire="vcc" data-side="left">
-                <span class="term-pin red"></span>
                 <div class="term-info">
                   <b>+24V</b>
                   <small>Питание датчика (+)</small>
                 </div>
+                <span class="term-pin red"></span>
               </div>
               <div class="wire-terminal" data-wire="sig" data-side="left">
-                <span class="term-pin yellow"></span>
                 <div class="term-info">
                   <b>SIG (4–20 mA)</b>
                   <small>Сигнальный выход</small>
                 </div>
+                <span class="term-pin yellow"></span>
               </div>
               <div class="wire-terminal" data-wire="pe" data-side="left">
-                <span class="term-pin blue"></span>
                 <div class="term-info">
                   <b>PE (Экран)</b>
                   <small>Заземление оплётки</small>
                 </div>
+                <span class="term-pin blue"></span>
               </div>
             </div>
 
             <div class="wires-svg-wrap">
-              <svg id="wiresSvg" viewBox="0 0 500 240"></svg>
+              <svg id="wiresSvg" viewBox="0 0 500 240" preserveAspectRatio="none"></svg>
             </div>
 
             <div class="wires-col right-col">
-              <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;text-align:center">ШКАФ УПРАВЛЕНИЯ (ПЛК)</div>
+              <div class="wires-col-title">ШКАФ УПРАВЛЕНИЯ (ПЛК)</div>
               <div class="wire-terminal" data-wire="sig" data-side="right">
-                <div class="term-info" style="text-align:right">
+                <span class="term-pin yellow"></span>
+                <div class="term-info">
                   <b>Клемма 2 (AI-1)</b>
                   <small>Аналоговый вход ПЛК</small>
                 </div>
-                <span class="term-pin yellow"></span>
               </div>
               <div class="wire-terminal" data-wire="vcc" data-side="right">
-                <div class="term-info" style="text-align:right">
+                <span class="term-pin red"></span>
+                <div class="term-info">
                   <b>Клемма 1 (+Vcc)</b>
                   <small>Блок питания 24 В</small>
                 </div>
-                <span class="term-pin red"></span>
               </div>
               <div class="wire-terminal" data-wire="pe" data-side="right">
-                <div class="term-info" style="text-align:right">
+                <span class="term-pin blue"></span>
+                <div class="term-info">
                   <b>Клемма 3 (GND/PE)</b>
                   <small>Шина заземления</small>
                 </div>
-                <span class="term-pin blue"></span>
               </div>
             </div>
           </div>
@@ -434,7 +434,7 @@
 </div>
 
   <script>window.CURRENT_SPEC = 'kip';</script>
-  <script src="../../shared/js/common.js?v=20261124_5"></script>
-  <script src="kip.js?v=20261124_5"></script>
+  <script src="../../shared/js/common.js?v=20261126_2"></script>
+  <script src="kip.js?v=20261126_2"></script>
 </body>
 </html>
