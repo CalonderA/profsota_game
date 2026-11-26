@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    СОТА — Общее игровое ядро симулятора «Шахта Знаний»
    ============================================================ */
 'use strict';
@@ -237,7 +237,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     currentSpec = 'kip';
   }
   window.currentSpec = currentSpec;
-  const directPractice = currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'kip' || currentSpec === 'ts';
+  const directPractice = currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'kip' || currentSpec === 'ts' || currentSpec === 'e' || currentSpec === 'reu';
 
   /* ============================================================
      Состояние игры
@@ -474,6 +474,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     map = makeWorkshop();
     if (currentSpec === 'p' && typeof setupPMap === 'function') setupPMap(map);
     if (currentSpec === 'ksk' && typeof setupKskMap === 'function') setupKskMap(map);
+    if (currentSpec === 'e' && typeof setupEMap === 'function') setupEMap(map);
+    if (currentSpec === 'reu' && typeof setupReuMap === 'function') setupReuMap(map);
     seen = Array.from({ length: H }, () => new Array(W).fill(1));
     bright = Array.from({ length: H }, () => new Array(W).fill(1));
 
@@ -511,6 +513,24 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         minigameId: s.minigameId || null,
         hard: !!s.hard
       }));
+    } else if (currentSpec === 'e' && typeof E_STATIONS !== 'undefined') {
+      defs = E_STATIONS.map((s, i) => ({
+        x: s.x, y: s.y, type: s.type,
+        title: s.title || (typeof E_NAMES !== 'undefined' ? E_NAMES[s.type] : ('Станок ' + (s.type + 1))),
+        icon: s.icon || '⚡',
+        actionType: s.actionType || 'question',
+        minigameId: s.minigameId || null,
+        hard: !!s.hard
+      }));
+    } else if (currentSpec === 'reu' && typeof REU_STATIONS !== 'undefined') {
+      defs = REU_STATIONS.map((s, i) => ({
+        x: s.x, y: s.y, type: s.type,
+        title: s.title || (typeof REU_NAMES !== 'undefined' ? REU_NAMES[s.type] : ('Модуль ' + (s.type + 1))),
+        icon: s.icon || '🔌',
+        actionType: s.actionType || 'question',
+        minigameId: s.minigameId || null,
+        hard: !!s.hard
+      }));
     }
     crystals = defs.map((s, i) => ({
       id: i,
@@ -526,7 +546,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       seed: (i + 1) * 31.4
     }));
 
-    if (currentSpec === 'p' || currentSpec === 'ksk') needed = crystals.length;
+    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu') needed = crystals.length;
     pickups = [];
     particles = [];
     updateHUD();
@@ -623,7 +643,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const servicePC = currentSpec === 'ksk' && crystal?.stationType === 3;
     const diagnosePC = currentSpec === 'ksk' && crystal?.stationType === 1;
     const networkPC = currentSpec === 'ksk' && crystal?.stationType === 4;
-    if (assemblePC || servicePC || diagnosePC || networkPC || (currentSpec === 'p' && typeof window.startPStation === 'function')){
+    const eMinigame = currentSpec === 'e' && typeof window.startEStation === 'function';
+    const reuMinigame = currentSpec === 'reu' && typeof window.startReuStation === 'function';
+    if (assemblePC || servicePC || diagnosePC || networkPC || eMinigame || reuMinigame || (currentSpec === 'p' && typeof window.startPStation === 'function')){
       if (!crystal || crystal.done || state !== 'playing') return;
       state = 'minigame';
       stopAuto();
@@ -646,6 +668,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       else if (servicePC) window.openKskService(completeStation, cancelStationMinigame);
       else if (diagnosePC) window.openKskDiagnosis(completeStation, cancelStationMinigame);
       else if (networkPC) window.openKskNetwork(completeStation, cancelStationMinigame);
+      else if (eMinigame) window.startEStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
+      else if (reuMinigame) window.startReuStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       else window.startPStation(crystal.stationType, completedMines, completeStation, cancelStationMinigame);
       return;
     }
@@ -1408,6 +1432,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawFloor(x, y, b){
     if (currentSpec === 'ksk') return drawKskFloor(x,y);
     if (currentSpec === 'p') return drawPFloor(x,y);
+    if (currentSpec === 'e' && typeof drawEFloor === 'function') return drawEFloor(x,y);
+    if (currentSpec === 'reu' && typeof drawReuFloor === 'function') return drawReuFloor(x,y);
     const px = x * TILE, py = y * TILE;
     const isDark = (x + y) % 2 === 0;
 
@@ -1441,7 +1467,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function drawHazardZones(){
-    if (currentSpec === 'p' || currentSpec === 'ksk') return;
+    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu') return;
     // Разметка зон безопасности: жёлто-чёрная полоса вокруг каждого станка и чертежного стола
     for (const c of crystals){
       const cx = c.x * TILE, cy = c.y * TILE;
@@ -1471,6 +1497,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawWall(x, y, b){
     if (currentSpec === 'ksk') return drawKskWall(x,y);
     if (currentSpec === 'p') return drawPWall(x,y);
+    if (currentSpec === 'e' && typeof drawEWall === 'function') return drawEWall(x,y);
+    if (currentSpec === 'reu' && typeof drawReuWall === 'function') return drawReuWall(x,y);
     const px = x * TILE, py = y * TILE;
     ctx.fillStyle = '#0f131a';
     ctx.fillRect(px, py, TILE, TILE);
@@ -1493,6 +1521,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawBackWall(now){
     if (currentSpec === 'ksk') return drawKskBackWall(now);
     if (currentSpec === 'p') return drawPBackWall(now);
+    if (currentSpec === 'e' && typeof drawEBackWall === 'function') return drawEBackWall(now);
+    if (currentSpec === 'reu' && typeof drawReuBackWall === 'function') return drawReuBackWall(now);
     const wallH = 114;
     // 1. Основа задней кирпично-панельной стены (темный индустриальный антрацит)
     ctx.fillStyle = '#0f141d';
@@ -1630,7 +1660,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function drawWallDecor(now){
-    if (currentSpec === 'p' || currentSpec === 'ksk') return;
+    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu') return;
     ctx.save();
     if (currentSpec === 'kip'){
       // ============================================================
@@ -1921,6 +1951,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function drawRoomProps(now){
     if (currentSpec === 'ksk') return drawKskProps(now);
     if (currentSpec === 'p') return drawPProps(now);
+    if (currentSpec === 'e' && typeof drawEProps === 'function') return drawEProps(now);
+    if (currentSpec === 'reu' && typeof drawReuProps === 'function') return drawReuProps(now);
     // ============================================================
     // 1. БОЛЬШОЕ ОКНО СЛЕВА И РЕАЛИСТИЧНЫЙ СОЛНЕЧНЫЙ СВЕТ НА ПОЛУ
     // ============================================================
@@ -2849,72 +2881,72 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ],
     e: [
       {
-        id: 'e_electrician', name: 'Электромонтажник',
-        desc: 'Специалист по силовым сетям, трансформаторам и распределительным щитам.',
+        id: 'e_electrician', name: 'Электромонтёр',
+        desc: 'Обслуживает и ремонтирует силовое электрооборудование участка: щиты, линии, приводы под напряжением до 1000 В.',
         lines: {
-          correct: ['Напряжение 380 В в норме!', 'Шина заземлена надежно.', 'Автомат подобран по току.'],
-          wrong: ['Опасность межфазного замыкания!', 'Перегрев кабельной линии.', 'Проверь УЗО.'],
-          descend: 'Подстанция в строю!'
+          correct: ['Напряжение 380 В в норме!', 'Шина заземления надёжна.', 'Автомат подобран по току линии.'],
+          wrong: ['Опасность межфазного замыкания!', 'Перегрев кабельной линии.', 'Проверь УЗО и заземление.'],
+          descend: 'Электроучасток в строю!'
         },
-        suit: '#1e3a8a', suit2: '#172554', suitDark: '#0f172a',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#ef4444'
+        suit: '#22334d', suit2: '#162438', suitDark: '#0e1a2b',
+        helmet: '#f5a623', helmetDark: '#c98a3a', skin: '#fcd34d', accent: '#5fd0e0'
       },
       {
-        id: 'e_relay', name: 'Инженер-релейщик',
-        desc: 'Специалист релейной защиты и противоаварийной автоматики подстанций.',
+        id: 'e_relay', name: 'Оператор КРУ',
+        desc: 'Управляет распределительными устройствами подстанции, ведёт оперативные переключения и следит за индикацией фаз.',
         lines: {
-          correct: ['Уставка защиты рассчитана верно!', 'МТЗ сработала селективно.', 'Трансформатор тока проверен.'],
-          wrong: ['Ложное срабатывание защиты!', 'Нарушена селективность.', 'Обрыв цепей напряжения.'],
-          descend: 'Схема релейной защиты протестирована!'
+          correct: ['КРУ переключено без дуги!', 'Селективность защиты соблюдена.', 'Индикация трёх фаз в норме.'],
+          wrong: ['Ложное срабатывание защиты!', 'Дуговая вспышка — СТОП!', 'Проверь блокировку разъединителя.'],
+          descend: 'Подстанция принята под нагрузку!'
         },
-        suit: '#f8fafc', suit2: '#e2e8f0', suitDark: '#94a3b8',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#3b82f6'
+        suit: '#3a4453', suit2: '#2a3340', suitDark: '#1a212c',
+        helmet: '#e0483a', helmetDark: '#a8342a', skin: '#fcd34d', accent: '#f2c94c'
       },
       {
-        id: 'e_chief', name: 'Главный энергетик',
-        desc: 'Руководит энергосистемой предприятия, энергоаудитом и графиками нагрузок.',
+        id: 'e_chief', name: 'Инженер-электрик',
+        desc: 'Руководит электрохозяйством предприятия: энергоаудит, графики нагрузок, компенсация реактивной мощности.',
         lines: {
-          correct: ['Коэффициент мощности cos φ = 0.98!', 'Энергопотребление в лимите.', 'График нагрузок оптимален.'],
+          correct: ['cos φ = 0.98, отлично!', 'График нагрузок оптимален.', 'Потери в сети минимальны.'],
           wrong: ['Штраф за реактивную мощность!', 'Пиковая перегрузка ввода.', 'Проверь конденсаторную установку.'],
-          descend: 'Энергохозяйство принято!'
+          descend: 'Энергохозяйство сдано!'
         },
         suit: '#0f172a', suit2: '#020617', suitDark: '#000000',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f59e0b'
+        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f5a623'
       }
     ],
     reu: [
       {
-        id: 'reu_tech', name: 'Электромонтер РЭУ',
-        desc: 'Мастер ремонта и эксплуатации промышленного электрооборудования цехов.',
+        id: 'reu_mounter', name: 'Монтажник РЭУ',
+        desc: 'Собирает и паяет печатные модули: устанавливает компоненты по схеме, следит за качеством пайки и отсутствием перемычек.',
         lines: {
-          correct: ['Изоляция обмоток 500 МОм!', 'Подшипники смазаны, вибрация в норме.', 'Пуск двигателя плавный.'],
-          wrong: ['Пробой изоляции на корпус!', 'Перекос фаз выше нормы.', 'Проверь тепловое реле.'],
-          descend: 'Оборудование цеха допущено к работе!'
+          correct: ['Пайка блестящая, без соплей!', 'Компоненты по схеме, полярность верна.', 'Флюс отмыт, плата чистая.'],
+          wrong: ['Перемычка между дорожками!', 'Перегрев — отвал контактной площадки.', 'Перевёрнут конденсатор по полярности!'],
+          descend: 'Печатный модуль собран и проверен!'
         },
-        suit: '#1d4ed8', suit2: '#1e3a8a', suitDark: '#172554',
-        helmet: '#f97316', helmetDark: '#ea580c', skin: '#fcd34d', accent: '#facc15'
+        suit: '#4c3f8f', suit2: '#362c68', suitDark: '#241d4a',
+        helmet: '#5eead4', helmetDark: '#2dd4bf', skin: '#fcd34d', accent: '#a78bfa'
       },
       {
-        id: 'reu_service', name: 'Техник обслуживания',
-        desc: 'Диагностирует электронные блоки, частотные преобразователи и приводы станков.',
+        id: 'reu_tuner', name: 'Наладчик приборов',
+        desc: 'Настраивает и поверяет электронные приборы: снимает осциллограммы, измеряет параметры сигналов, ловит искажения формы.',
         lines: {
-          correct: ['Частотник настроен штатно!', 'Тормозной резистор в норме.', 'Плавная регулировка скорости.'],
-          wrong: ['Ошибка перегрузки по току!', 'Перегрев силового модуля IGBT.', 'Проверь экранирование кабеля.'],
-          descend: 'Электронный блок протестирован!'
+          correct: ['Форма сигнала чистая!', 'Амплитуда 2 В совпадает с эталоном.', 'Частота 1.000 кГц — точно в цель.'],
+          wrong: ['Появились шумы и наводки!', 'Клиппинг — сигнал ограничен сверху.', 'Проверь щуп и делитель осциллографа.'],
+          descend: 'Прибор настроен и поверен!'
         },
-        suit: '#0284c7', suit2: '#0369a1', suitDark: '#075985',
-        helmet: '#facc15', helmetDark: '#ca8a04', skin: '#fcd34d', accent: '#38bdf8'
+        suit: '#115e59', suit2: '#0d4f4a', suitDark: '#08312e',
+        helmet: '#a78bfa', helmetDark: '#7c5cf0', skin: '#fcd34d', accent: '#5eead4'
       },
       {
-        id: 'reu_master', name: 'Мастер участка',
-        desc: 'Организует планово-предупредительный ремонт и безопасную эксплуатацию установок.',
+        id: 'reu_engineer', name: 'Инженер-схемотехник',
+        desc: 'Проектирует принципиальные схемы и разводит печатные платы: трассировка, расчёт номиналов, подавление помех.',
         lines: {
-          correct: ['Наряд-допуск закрыт без замечаний!', 'Акт технической готовности подписан.', 'Безопасность 100%.'],
-          wrong: ['Нарушение техники безопасности!', 'Не установлены защитные заземления.', 'Отсутствует блокировка.'],
-          descend: 'Участок аттестован!'
+          correct: ['Разводка платы без перекрёстных помех!', 'Номиналы R/C рассчитаны верно.', 'Земля развязана, наводки подавлены.'],
+          wrong: ['Длинная дорожка ловит наводку!', 'Неверный делитель напряжения.', 'Заземление аналога и цифры слитно!'],
+          descend: 'Схема и плата сданы в производство!'
         },
-        suit: '#334155', suit2: '#1e293b', suitDark: '#0f172a',
-        helmet: '#f8fafc', helmetDark: '#cbd5e1', skin: '#fcd34d', accent: '#f59e0b'
+        suit: '#1f1b3a', suit2: '#151230', suitDark: '#0c0a1f',
+        helmet: '#e2e8f0', helmetDark: '#94a3b8', skin: '#fcd34d', accent: '#a78bfa'
       }
     ]
   };

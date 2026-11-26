@@ -374,6 +374,24 @@
     .btn-play.ts {
       background: linear-gradient(135deg, #0284c7, #0369a1);
     }
+    .btn-play.e {
+      background: linear-gradient(135deg, #f5a623, #c47d0e);
+      box-shadow: 0 4px 16px rgba(245, 166, 35, 0.4);
+      color: #1a1206;
+    }
+    .btn-play.e:hover {
+      box-shadow: 0 6px 22px rgba(245, 166, 35, 0.6);
+      background: linear-gradient(135deg, #ffbb4d, #f5a623);
+    }
+    .btn-play.reu {
+      background: linear-gradient(135deg, #a78bfa, #7c5cf0);
+      box-shadow: 0 4px 16px rgba(167, 139, 250, 0.4);
+      color: #0f0a1f;
+    }
+    .btn-play.reu:hover {
+      box-shadow: 0 6px 22px rgba(167, 139, 250, 0.6);
+      background: linear-gradient(135deg, #bfaaff, #a78bfa);
+    }
 
     .btn-disabled {
       appearance: none;
