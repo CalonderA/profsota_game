@@ -930,6 +930,189 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
     }
   }
 
+  /* ============================================================
+     Мини-игра «Настройка газовой горелки котла» (burner)
+     ============================================================ */
+  const BURNER_CFG = { TIME_MS: 25000, REWARD: 200, CLOSE_DELAY_MS: 1400 };
+  const burnerGame = {
+    active: false, phase: 'idle',
+    gas: 40, air: 28,
+    deadline: 0, rafId: 0, closeTimer: null
+  };
+
+  function cleanupBurner(){
+    burnerGame.active = false;
+    burnerGame.phase = 'idle';
+    if (burnerGame.rafId){ cancelAnimationFrame(burnerGame.rafId); burnerGame.rafId = 0; }
+    clearTimeout(burnerGame.closeTimer); burnerGame.closeTimer = null;
+  }
+
+  function startBurnerEvent(){
+    cleanupBurner();
+    burnerGame.active = true;
+    burnerGame.phase = 'intro';
+    burnerGame.gas = 40;
+    burnerGame.air = 28;
+
+    const gs = el('burnerGasSlider'), as = el('burnerAirSlider');
+    if (gs) gs.value = 40;
+    if (as) as.value = 28;
+    if (el('burnerGasVal')) el('burnerGasVal').textContent = '40%';
+    if (el('burnerAirVal')) el('burnerAirVal').textContent = '28%';
+    const lockBtn = el('burnerLockBtn');
+    if (lockBtn){ lockBtn.classList.add('disabled'); lockBtn.disabled = true; }
+    updateBurnerTimerUI(BURNER_CFG.TIME_MS);
+
+    if (el('burnerBannerTitle')) el('burnerBannerTitle').textContent = 'Настройка газовой горелки котла';
+    if (el('burnerBannerText')) el('burnerBannerText').textContent =
+      'Котёл работает с перерасходом и копотью. Установите подачу газа (65–75%) и подберите воздух (дутьё) так, чтобы коэффициент α был 1.05–1.20! Награда: +' + BURNER_CFG.REWARD + ' очков.';
+    const btn = el('burnerStartBtn');
+    if (btn){ btn.textContent = 'Запустить розжиг'; btn.onclick = beginBurnerActive; }
+
+    initBurnerControlsOnce();
+    if (el('burnerBanner')) el('burnerBanner').classList.remove('hidden');
+    if (el('burnerScreen')) el('burnerScreen').classList.remove('hidden');
+    updateBurnerState();
+    drawBurnerCanvas(performance.now());
+  }
+
+  let burnerControlsInited = false;
+  function initBurnerControlsOnce(){
+    if (burnerControlsInited) return;
+    burnerControlsInited = true;
+    const gs = el('burnerGasSlider'), as = el('burnerAirSlider'), lockBtn = el('burnerLockBtn');
+    if (gs) gs.addEventListener('input', e => {
+      burnerGame.gas = parseInt(e.target.value, 10) || 40;
+      if (el('burnerGasVal')) el('burnerGasVal').textContent = burnerGame.gas + '%';
+      updateBurnerState();
+    });
+    if (as) as.addEventListener('input', e => {
+      burnerGame.air = parseInt(e.target.value, 10) || 28;
+      if (el('burnerAirVal')) el('burnerAirVal').textContent = burnerGame.air + '%';
+      updateBurnerState();
+    });
+    if (lockBtn) lockBtn.addEventListener('click', () => {
+      if (burnerGame.active && burnerGame.phase === 'playing') finishBurner(true);
+    });
+  }
+
+  function updateBurnerState(){
+    const alpha = burnerGame.air / Math.max(1, burnerGame.gas);
+    const gasOk = burnerGame.gas >= 65 && burnerGame.gas <= 75;
+    const alphaOk = alpha >= 1.05 && alpha <= 1.20;
+    const ready = gasOk && alphaOk;
+
+    if (el('burnerAlphaVal')){
+      el('burnerAlphaVal').textContent = 'α = ' + alpha.toFixed(2);
+      el('burnerAlphaVal').style.color = ready ? '#34d399' : (alpha < 1.05 ? '#ef4444' : '#38bdf8');
+    }
+    if (el('burnerFlameNote')){
+      el('burnerFlameNote').textContent = ready
+        ? 'Оптимальное горение!'
+        : (!gasOk ? 'Нужен газ 65–75%' : (alpha < 1.05 ? 'Нехватка воздуха (копоть)' : 'Избыток воздуха (срыв)'));
+    }
+    if (el('burnerStatus')){
+      el('burnerStatus').textContent = ready ? 'Режим: ОПТИМАЛЬНЫЙ' : 'Режим: настройка';
+      el('burnerStatus').className = 'pipe-pill status' + (ready ? ' connected' : '');
+    }
+    const lockBtn = el('burnerLockBtn');
+    if (lockBtn){
+      lockBtn.classList.toggle('disabled', !ready);
+      lockBtn.disabled = !ready;
+    }
+  }
+
+  function beginBurnerActive(){
+    if (!burnerGame.active || burnerGame.phase !== 'intro') return;
+    if (el('burnerBanner')) el('burnerBanner').classList.add('hidden');
+    burnerGame.phase = 'playing';
+    burnerGame.deadline = performance.now() + BURNER_CFG.TIME_MS;
+    burnerGame.rafId = requestAnimationFrame(tickBurner);
+  }
+
+  function updateBurnerTimerUI(msLeft){
+    const bar = el('burnerTimerBar'), txt = el('burnerTimerText');
+    if (!bar || !txt) return;
+    txt.textContent = (Math.max(0, msLeft) / 1000).toFixed(1) + ' с';
+    const pct = clamp((msLeft / BURNER_CFG.TIME_MS) * 100, 0, 100);
+    bar.style.width = pct + '%';
+    const st = pct <= 30 ? ' low' : (pct <= 55 ? ' warn' : '');
+    bar.className = 'pipe-timer-fill' + st;
+    txt.className = 'pipe-pill timer' + (pct <= 30 ? ' low' : '');
+  }
+
+  function tickBurner(now){
+    if (!burnerGame.active || burnerGame.phase !== 'playing') return;
+    const left = burnerGame.deadline - now;
+    updateBurnerTimerUI(left);
+    drawBurnerCanvas(now);
+    if (left <= 0){ finishBurner(false); return; }
+    burnerGame.rafId = requestAnimationFrame(tickBurner);
+  }
+
+  function drawBurnerCanvas(now){
+    const cv = el('burnerCanvas');
+    if (!cv) return;
+    const g = cv.getContext('2d');
+    const w = cv.width, h = cv.height;
+    g.fillStyle = '#070a12'; g.fillRect(0, 0, w, h);
+
+    // Стенки топки и сопло горелки слева
+    g.fillStyle = '#1e293b'; g.fillRect(0, 0, w, 12); g.fillRect(0, h - 12, w, 12);
+    g.fillStyle = '#475569'; g.fillRect(0, h/2 - 26, 48, 52);
+    g.fillStyle = '#dc2626'; g.fillRect(48, h/2 - 18, 14, 36);
+
+    const alpha = burnerGame.air / Math.max(1, burnerGame.gas);
+    const gasOk = burnerGame.gas >= 65 && burnerGame.gas <= 75;
+    const alphaOk = alpha >= 1.05 && alpha <= 1.20;
+    const len = 80 + burnerGame.gas * 2.8;
+    const wobble = Math.sin(now * 0.015) * (alpha > 1.25 ? 14 : 5);
+
+    // Факел пламени
+    const grad = g.createLinearGradient(62, h/2, 62 + len, h/2);
+    if (gasOk && alphaOk){
+      grad.addColorStop(0, '#38bdf8');
+      grad.addColorStop(0.55, '#60a5fa');
+      grad.addColorStop(1, 'rgba(250, 204, 21, 0.15)');
+    } else if (alpha < 1.05){
+      grad.addColorStop(0, '#f97316');
+      grad.addColorStop(0.6, '#dc2626');
+      grad.addColorStop(1, 'rgba(100, 116, 139, 0.25)');
+    } else {
+      grad.addColorStop(0, '#bae6fd');
+      grad.addColorStop(0.6, '#38bdf8');
+      grad.addColorStop(1, 'rgba(56, 189, 248, 0.05)');
+    }
+    g.fillStyle = grad;
+    g.beginPath();
+    g.moveTo(62, h/2 - 15);
+    g.quadraticCurveTo(62 + len * 0.55, h/2 - 34 + wobble, 62 + len, h/2 + wobble * 0.6);
+    g.quadraticCurveTo(62 + len * 0.55, h/2 + 34 + wobble, 62, h/2 + 15);
+    g.closePath();
+    g.fill();
+  }
+
+  function finishBurner(won){
+    if (!burnerGame.active) return;
+    burnerGame.phase = 'done';
+    if (burnerGame.rafId){ cancelAnimationFrame(burnerGame.rafId); burnerGame.rafId = 0; }
+    if (won){
+      score += BURNER_CFG.REWARD; fuel = Math.min(100, fuel + 20);
+      sfx.good(); flash = 0.4; flashColor = '249,115,22';
+      updateHUD();
+      if (el('burnerBannerTitle')) el('burnerBannerTitle').textContent = 'Горелка настроена идеально!';
+      if (el('burnerBannerText')) el('burnerBannerText').textContent = 'Котёл вышел на расчётный КПД с минимальными выбросами. Награда: +' + BURNER_CFG.REWARD + ' очков, +20 света.';
+    } else {
+      sfx.bad(); flash = 0.3; flashColor = '255,100,100';
+      if (el('burnerBannerTitle')) el('burnerBannerTitle').textContent = 'Время настройки истекло';
+      if (el('burnerBannerText')) el('burnerBannerText').textContent = 'Режим горения не зафиксирован. Можно повторить настройку у котла.';
+    }
+    const btn = el('burnerStartBtn');
+    if (btn){ btn.textContent = 'Продолжить смену'; btn.onclick = () => closeFloorEvent(won); }
+    if (el('burnerBanner')) el('burnerBanner').classList.remove('hidden');
+    burnerGame.closeTimer = setTimeout(() => closeFloorEvent(won), BURNER_CFG.CLOSE_DELAY_MS);
+  }
+
 /* ============================================================
    Регистрация мини-игр и 2.5D оборудования ТС
    ============================================================ */
@@ -937,6 +1120,7 @@ if (window.registerMinigame) {
   registerMinigame('pipes',     { name: 'сборка контура теплотрассы', start: startPipeEvent, cleanup: cleanupPipes });
   registerMinigame('bypass',    { name: 'аварийный байпас теплосети', start: startBypassEvent, cleanup: cleanupBypass });
   registerMinigame('exchanger', { name: 'балансировка пластинчатого теплообменника', start: startExchangerEvent, cleanup: cleanupExchanger });
+  registerMinigame('burner',    { name: 'настройка газовой горелки котла', start: startBurnerEvent, cleanup: cleanupBurner });
 }
 if (window.registerStationRenderer) {
   registerStationRenderer('ts', drawTSStation);

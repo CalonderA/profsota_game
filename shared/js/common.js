@@ -366,8 +366,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         x: 11, y: 4, type: 1,
         title: 'Диагностика и наладка оборудования',
         icon: '〰',
-        actionType: 'question',
-        filterKeyword: 'наладить|сигнал|осциллограф|ошибк|калибров',
+        actionType: 'minigame',
+        minigameId: 'scope',
         hard: false
       },
       {
@@ -416,8 +416,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         x: 18, y: 4, type: 2,
         title: 'Котельные установки и системы теплоснабжения',
         icon: '🔥',
-        actionType: 'question',
-        filterKeyword: 'котел|горелк|пар|тэг|тэц|теплоснабжени',
+        actionType: 'minigame',
+        minigameId: 'burner',
         hard: true
       },
       {
@@ -1325,9 +1325,49 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   /* ============================================================
      События между уровнями (Модульный диспетчер мини-игр)
      ============================================================ */
+  const MINIGAME_SCREEN_IDS = ['calibScreen', 'clickerScreen', 'pipeScreen', 'wiresScreen', 'pidScreen', 'scopeScreen', 'bypassScreen', 'exchangerScreen', 'burnerScreen'];
+
+  function ensureMinigameCloseButtons(){
+    document.querySelectorAll('.calib-shell, .pipe-shell').forEach(shell => {
+      if (shell.querySelector('.mg-close-btn')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mg-close-btn';
+      btn.textContent = '✕';
+      btn.title = 'Выйти из мини-игры (−15 света)';
+      btn.setAttribute('aria-label', 'Выйти из мини-игры');
+      btn.addEventListener('click', cancelMinigameEvent);
+      shell.appendChild(btn);
+    });
+  }
+
+  function hideAllMinigameScreens(){
+    MINIGAME_SCREEN_IDS.forEach(id => {
+      const elNode = el(id);
+      if (elNode) elNode.classList.add('hidden');
+      const bNode = el(id.replace('Screen', 'Banner'));
+      if (bNode) bNode.classList.add('hidden');
+    });
+  }
+
+  function cancelMinigameEvent(){
+    for (const key in window.MINI_GAMES){
+      if (window.MINI_GAMES[key] && typeof window.MINI_GAMES[key].cleanup === 'function'){
+        try { window.MINI_GAMES[key].cleanup(); } catch(e){ console.error(e); }
+      }
+    }
+    hideAllMinigameScreens();
+    activeCrystal = null;
+    if (state === 'minigame'){
+      sfx.bad();
+      cancelStationMinigame();
+    }
+  }
+
   function startFloorEvent(eventId){
     state = 'minigame';
     stopAuto();
+    ensureMinigameCloseButtons();
     const g = window.MINI_GAMES[eventId];
     const gName = g ? g.name : 'производственное задание';
     toast('Начинается ' + gName + '!');
@@ -1346,13 +1386,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
         try { window.MINI_GAMES[key].cleanup(); } catch(e){ console.error(e); }
       }
     }
-    const screenIds = ['calibScreen', 'clickerScreen', 'pipeScreen', 'wiresScreen', 'pidScreen', 'bypassScreen', 'exchangerScreen'];
-    screenIds.forEach(id => {
-      const elNode = el(id);
-      if (elNode) elNode.classList.add('hidden');
-      const bNode = el(id.replace('Screen', 'Banner'));
-      if (bNode) bNode.classList.add('hidden');
-    });
+    hideAllMinigameScreens();
 
     if (activeCrystal && !activeCrystal.done){
       if (isSuccess){
@@ -3526,7 +3560,25 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const isArrow = e.code.startsWith('Arrow') || e.code === 'Space';
     if (isArrow) e.preventDefault();
 
+    if (state === 'question' && e.code === 'Escape' && !answerLock){
+      e.preventDefault();
+      if (el('qExitConfirm') && !el('qExitConfirm').classList.contains('hidden')){
+        el('qExitConfirm').classList.add('hidden');
+      } else if (el('qExitConfirm')){
+        el('qExitConfirm').classList.remove('hidden');
+      }
+      return;
+    }
+
     if (state === 'minigame'){
+      if (e.code === 'Escape'){
+        const hasOpenScreen = MINIGAME_SCREEN_IDS.some(id => el(id) && !el(id).classList.contains('hidden'));
+        if (hasOpenScreen){
+          e.preventDefault();
+          cancelMinigameEvent();
+          return;
+        }
+      }
       if (e.code === 'Space' || e.code === 'Enter'){
         e.preventDefault();
         const calibBanner = el('calibBanner');

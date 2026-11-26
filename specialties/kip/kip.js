@@ -1159,6 +1159,170 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
     }
   }
 
+  /* ============================================================
+     Мини-игра «Диагностика сигнала осциллографом» (scope)
+     ============================================================ */
+  const SCOPE_CFG = { TIME_MS: 25000, REWARD: 200, CLOSE_DELAY_MS: 1400 };
+  const scopeGame = {
+    active: false, phase: 'idle',
+    targetFreq: 3.0, targetAmp: 3.4,
+    freq: 1.5, amp: 1.5,
+    deadline: 0, rafId: 0, closeTimer: null
+  };
+
+  function cleanupScope(){
+    scopeGame.active = false;
+    scopeGame.phase = 'idle';
+    if (scopeGame.rafId){ cancelAnimationFrame(scopeGame.rafId); scopeGame.rafId = 0; }
+    clearTimeout(scopeGame.closeTimer); scopeGame.closeTimer = null;
+  }
+
+  function startScopeEvent(){
+    cleanupScope();
+    scopeGame.active = true;
+    scopeGame.phase = 'intro';
+    scopeGame.targetFreq = Number((2.0 + Math.random() * 2.4).toFixed(1));
+    scopeGame.targetAmp = Number((2.2 + Math.random() * 2.2).toFixed(1));
+    scopeGame.freq = 1.4;
+    scopeGame.amp = 1.4;
+
+    const fs = el('scopeFreqSlider'), as = el('scopeAmpSlider');
+    if (fs) fs.value = scopeGame.freq;
+    if (as) as.value = scopeGame.amp;
+    if (el('scopeFreqVal')) el('scopeFreqVal').textContent = scopeGame.freq.toFixed(1) + ' Гц';
+    if (el('scopeAmpVal')) el('scopeAmpVal').textContent = scopeGame.amp.toFixed(1) + ' В';
+    if (el('scopeTargetFreqHint')) el('scopeTargetFreqHint').textContent = `Эталон: ~${scopeGame.targetFreq.toFixed(1)} Гц`;
+
+    const lockBtn = el('scopeLockBtn');
+    if (lockBtn){ lockBtn.classList.add('disabled'); lockBtn.disabled = true; }
+    updateScopeTimerUI(SCOPE_CFG.TIME_MS);
+
+    if (el('scopeBannerTitle')) el('scopeBannerTitle').textContent = 'Диагностика сигнала осциллографом';
+    if (el('scopeBannerText')) el('scopeBannerText').textContent =
+      'На стенде диагностики обнаружено искажение сигнала датчика. Подстройте частоту (Гц) и амплитуду (В), чтобы синяя кривая совпала с зелёным эталоном! Награда: +' + SCOPE_CFG.REWARD + ' очков.';
+    const btn = el('scopeStartBtn');
+    if (btn){ btn.textContent = 'Включить осциллограф'; btn.onclick = beginScopeActive; }
+
+    initScopeControlsOnce();
+    if (el('scopeBanner')) el('scopeBanner').classList.remove('hidden');
+    if (el('scopeScreen')) el('scopeScreen').classList.remove('hidden');
+    drawScopeCanvas(performance.now());
+  }
+
+  let scopeControlsInited = false;
+  function initScopeControlsOnce(){
+    if (scopeControlsInited) return;
+    scopeControlsInited = true;
+    const fs = el('scopeFreqSlider'), as = el('scopeAmpSlider'), lockBtn = el('scopeLockBtn');
+    if (fs) fs.addEventListener('input', e => {
+      scopeGame.freq = parseFloat(e.target.value) || 1.5;
+      if (el('scopeFreqVal')) el('scopeFreqVal').textContent = scopeGame.freq.toFixed(1) + ' Гц';
+    });
+    if (as) as.addEventListener('input', e => {
+      scopeGame.amp = parseFloat(e.target.value) || 1.5;
+      if (el('scopeAmpVal')) el('scopeAmpVal').textContent = scopeGame.amp.toFixed(1) + ' В';
+    });
+    if (lockBtn) lockBtn.addEventListener('click', () => {
+      if (scopeGame.active && scopeGame.phase === 'playing') finishScope(true);
+    });
+  }
+
+  function beginScopeActive(){
+    if (!scopeGame.active || scopeGame.phase !== 'intro') return;
+    if (el('scopeBanner')) el('scopeBanner').classList.add('hidden');
+    scopeGame.phase = 'playing';
+    scopeGame.deadline = performance.now() + SCOPE_CFG.TIME_MS;
+    scopeGame.rafId = requestAnimationFrame(tickScope);
+  }
+
+  function updateScopeTimerUI(msLeft){
+    const bar = el('scopeTimerBar'), txt = el('scopeTimerText');
+    if (!bar || !txt) return;
+    txt.textContent = (Math.max(0, msLeft) / 1000).toFixed(1) + ' с';
+    const pct = clamp((msLeft / SCOPE_CFG.TIME_MS) * 100, 0, 100);
+    bar.style.width = pct + '%';
+    const st = pct <= 30 ? ' low' : (pct <= 55 ? ' warn' : '');
+    bar.className = 'calib-timer-fill' + st;
+    txt.className = 'calib-pill timer' + (pct <= 30 ? ' low' : '');
+  }
+
+  function tickScope(now){
+    if (!scopeGame.active || scopeGame.phase !== 'playing') return;
+    const left = scopeGame.deadline - now;
+    updateScopeTimerUI(left);
+    drawScopeCanvas(now);
+
+    const df = Math.abs(scopeGame.freq - scopeGame.targetFreq);
+    const da = Math.abs(scopeGame.amp - scopeGame.targetAmp);
+    const match = Math.round(clamp(100 - (df * 28 + da * 22), 0, 100));
+    const mv = el('scopeMatchVal'), mn = el('scopeMatchNote'), lockBtn = el('scopeLockBtn');
+    if (mv) mv.textContent = match + '%';
+    if (mn){
+      mn.textContent = match >= 92 ? 'Сигнал синхронизирован!' : 'Подстройте частоту и амплитуду';
+      mn.style.color = match >= 92 ? '#34d399' : '#f59e0b';
+    }
+    if (lockBtn){
+      const ready = match >= 92;
+      lockBtn.classList.toggle('disabled', !ready);
+      lockBtn.disabled = !ready;
+    }
+
+    if (left <= 0){ finishScope(false); return; }
+    scopeGame.rafId = requestAnimationFrame(tickScope);
+  }
+
+  function drawScopeCanvas(now){
+    const cv = el('scopeCanvas');
+    if (!cv) return;
+    const g = cv.getContext('2d');
+    const w = cv.width, h = cv.height, cy = h / 2;
+    g.fillStyle = '#040911'; g.fillRect(0, 0, w, h);
+
+    g.strokeStyle = 'rgba(56, 189, 248, 0.08)'; g.lineWidth = 1;
+    for (let x = 0; x < w; x += 28){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+    for (let y = 0; y < h; y += 22.5){ g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+
+    const phaseShift = now * 0.003;
+    // Зелёный эталонный луч
+    g.strokeStyle = 'rgba(34, 197, 94, 0.78)'; g.lineWidth = 2.5; g.setLineDash([6, 4]);
+    g.beginPath();
+    for (let x = 0; x <= w; x += 3){
+      const y = cy + Math.sin(x * 0.018 * scopeGame.targetFreq + phaseShift) * (scopeGame.targetAmp * 14);
+      if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke(); g.setLineDash([]);
+
+    // Синий рабочий луч
+    g.strokeStyle = '#38bdf8'; g.lineWidth = 3;
+    g.beginPath();
+    for (let x = 0; x <= w; x += 3){
+      const y = cy + Math.sin(x * 0.018 * scopeGame.freq + phaseShift) * (scopeGame.amp * 14);
+      if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+
+  function finishScope(won){
+    if (!scopeGame.active) return;
+    scopeGame.phase = 'done';
+    if (scopeGame.rafId){ cancelAnimationFrame(scopeGame.rafId); scopeGame.rafId = 0; }
+    if (won){
+      score += SCOPE_CFG.REWARD; fuel = Math.min(100, fuel + 20);
+      sfx.good(); flash = 0.4; flashColor = '56,189,248';
+      updateHUD();
+      if (el('scopeBannerTitle')) el('scopeBannerTitle').textContent = 'Сигнал синхронизирован!';
+      if (el('scopeBannerText')) el('scopeBannerText').textContent = 'Осциллограмма совпала с эталоном. Награда: +' + SCOPE_CFG.REWARD + ' очков, +20 света.';
+    } else {
+      sfx.bad(); flash = 0.3; flashColor = '255,100,100';
+      if (el('scopeBannerTitle')) el('scopeBannerTitle').textContent = 'Время диагностики истекло';
+      if (el('scopeBannerText')) el('scopeBannerText').textContent = 'Не удалось синхронизировать сигнал. Можно повторить диагностику у стенда.';
+    }
+    const btn = el('scopeStartBtn');
+    if (btn){ btn.textContent = 'Продолжить смену'; btn.onclick = () => closeFloorEvent(won); }
+    if (el('scopeBanner')) el('scopeBanner').classList.remove('hidden');
+    scopeGame.closeTimer = setTimeout(() => closeFloorEvent(won), SCOPE_CFG.CLOSE_DELAY_MS);
+  }
+
 
 /* ============================================================
    Регистрация мини-игр и 2.5D оборудования КИПиА
@@ -1167,6 +1331,7 @@ if (window.registerMinigame) {
   registerMinigame('calib', { name: 'калибровка токовой петли 4–20 мА', start: startCalibEvent, cleanup: cleanupCalib });
   registerMinigame('wires', { name: 'монтаж клеммной схемы КИПиА', start: startWiresEvent, cleanup: cleanupWires });
   registerMinigame('pid',   { name: 'настройка ПИД-регулятора давления', start: startPidEvent, cleanup: cleanupPid });
+  registerMinigame('scope', { name: 'диагностика сигнала осциллографом', start: startScopeEvent, cleanup: cleanupScope });
 }
 if (window.registerStationRenderer) {
   registerStationRenderer('kip', drawKIPStation);
