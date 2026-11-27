@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>СОТА — Лаборатория ТС (13.02.02)</title>
-  <link rel="stylesheet" href="../../shared/css/common.css?v=20261126_4">
-  <link rel="stylesheet" href="ts.css?v=20261126_4">
+  <link rel="stylesheet" href="../../shared/css/common.css?v=20261127_2">
+  <link rel="stylesheet" href="ts.css?v=20261127_2">
 </head>
 <body>
   <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
@@ -61,7 +61,7 @@
         <h1 id="startMainTitle">Шахта Знаний: СОТА</h1>
         <p class="sub" id="startMainSub">Смоленская областная технологическая академия. Обслуживайте рабочие станки и приборы в цеху, проводите замеры и решайте задачи наладчика!</p>
         <div class="rules" id="rulesGrid">
-          <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
+          <div><b>Ходьба</b>Тап по клетке или <kbd>WASD</kbd> / <kbd>←↑↓→</kbd></div>
           <div><b id="ruleUnitTitle">Станок ТС</b>Подойдите к станку — проведите диагностику</div>
           <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
           <div><b>Переход к СОТЕ</b>Выполните 5 заданий цеха, чтобы войти в СОТУ</div>
@@ -69,7 +69,6 @@
         <div class="skins-title">Скины</div>
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
-        <div class="qsource" id="qSource">вопросы загружаются…</div>
         <div class="btnrow" style="margin-top:12px">
           <button class="btn" id="startBtn">Войти в цех</button>
           <a href="../../menu.html" class="btn ghost">Выбор специальности</a>
@@ -373,6 +372,80 @@
       </div>
     </div>
 
+    <!-- ТС: Мини-игра Поверка и продувка манометров -->
+    <div class="screen hidden" id="manometerScreen">
+      <div class="pipe-shell">
+        <div class="pipe-head">
+          <div class="qtag" id="manoTag">ТС · ПОВЕРКА И ПРОДУВКА МАНОМЕТРОВ</div>
+          <div class="pipe-stats">
+            <div class="pipe-pill status" id="manoStatus">Проверено: 0/3</div>
+            <div class="pipe-pill reward">+200 очков</div>
+            <div class="pipe-pill timer" id="manoTimerText">30.0 с</div>
+          </div>
+        </div>
+        <div class="pipe-timer-track">
+          <div class="pipe-timer-fill" id="manoTimerBar"></div>
+        </div>
+
+        <div class="mano-grid" id="manoGrid">
+          <div class="mano-card" id="manoCard0">
+            <div class="mano-title" id="manoTitle0">М1 · Подача</div>
+            <div class="mano-norm" id="manoNorm0">Норма: 0.60–0.85 МПа</div>
+            <canvas class="mano-canvas" id="manoCanvas0" width="146" height="110"></canvas>
+            <div class="mano-badge" id="manoBadge0">Кран закрыт</div>
+            <div class="mano-btn-row">
+              <button type="button" class="mano-btn" data-g="0" data-act="purge">💨 Продуть</button>
+              <button type="button" class="mano-btn" data-g="0" data-act="work">⚙ Рабочий</button>
+            </div>
+            <div class="mano-btn-row">
+              <button type="button" class="mano-btn accept" data-g="0" data-act="accept" disabled>✓ Принять</button>
+              <button type="button" class="mano-btn replace" data-g="0" data-act="replace" disabled>🔧 Заменить</button>
+            </div>
+          </div>
+
+          <div class="mano-card" id="manoCard1">
+            <div class="mano-title" id="manoTitle1">М2 · Обратка</div>
+            <div class="mano-norm" id="manoNorm1">Норма: 0.35–0.55 МПа</div>
+            <canvas class="mano-canvas" id="manoCanvas1" width="146" height="110"></canvas>
+            <div class="mano-badge" id="manoBadge1">Кран закрыт</div>
+            <div class="mano-btn-row">
+              <button type="button" class="mano-btn" data-g="1" data-act="purge">💨 Продуть</button>
+              <button type="button" class="mano-btn" data-g="1" data-act="work">⚙ Рабочий</button>
+            </div>
+            <div class="mano-btn-row">
+              <button type="button" class="mano-btn accept" data-g="1" data-act="accept" disabled>✓ Принять</button>
+              <button type="button" class="mano-btn replace" data-g="1" data-act="replace" disabled>🔧 Заменить</button>
+            </div>
+          </div>
+
+          <div class="mano-card" id="manoCard2">
+            <div class="mano-title" id="manoTitle2">М3 · Подпитка</div>
+            <div class="mano-norm" id="manoNorm2">Норма: 0.25–0.45 МПа</div>
+            <canvas class="mano-canvas" id="manoCanvas2" width="146" height="110"></canvas>
+            <div class="mano-badge" id="manoBadge2">Кран закрыт</div>
+            <div class="mano-btn-row">
+              <button type="button" class="mano-btn" data-g="2" data-act="purge">💨 Продуть</button>
+              <button type="button" class="mano-btn" data-g="2" data-act="work">⚙ Рабочий</button>
+            </div>
+            <div class="mano-btn-row">
+              <button type="button" class="mano-btn accept" data-g="2" data-act="accept" disabled>✓ Принять</button>
+              <button type="button" class="mano-btn replace" data-g="2" data-act="replace" disabled>🔧 Заменить</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="clicker-banner" id="manometerBanner">
+          <h2 id="manometerBannerTitle">Поверка и продувка манометров</h2>
+          <p id="manometerBannerText">
+            На узле учёта 3 манометра. Для каждого: 1) нажмите «💨 Продуть» (стравить воздух через трёхходовой кран); 2) переключите в режим «⚙ Рабочий». Если стрелка встала в зелёную зону — жмите «✓ Принять», если прибор неисправен — «🔧 Заменить»!
+          </p>
+          <div class="btnrow">
+            <button class="btn" id="manoStartBtn">Начать поверку</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen hidden" id="endScreen">
       <div class="card">
         <h1 id="endTitle">Смена окончена</h1>
@@ -402,18 +475,11 @@
       <b>Тапните по любой клетке</b> — наладчик сам дойдёт.
       <span class="kb">На компьютере: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.</span>
     </div>
-    <a href="../../menu.html" class="exit-btn" id="exitMenuBtn">Выйти</a>
-    <div class="dpad">
-      <button class="u" data-dir="up" aria-label="Вверх">▲</button>
-      <button class="l" data-dir="left" aria-label="Влево">◀</button>
-      <button class="d" data-dir="down" aria-label="Вниз">▼</button>
-      <button class="r" data-dir="right" aria-label="Вправо">▶</button>
-    </div>
   </div>
 </div>
 
   <script>window.CURRENT_SPEC = 'ts';</script>
-  <script src="../../shared/js/common.js?v=20261126_4"></script>
-  <script src="ts.js?v=20261126_4"></script>
+  <script src="../../shared/js/common.js?v=20261127_2"></script>
+  <script src="ts.js?v=20261127_2"></script>
 </body>
 </html>

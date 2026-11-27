@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>СОТА — Лаборатория КИП (15.01.37)</title>
-  <link rel="stylesheet" href="../../shared/css/common.css?v=20261126_4">
-  <link rel="stylesheet" href="kip.css?v=20261126_4">
+  <link rel="stylesheet" href="../../shared/css/common.css?v=20261127_2">
+  <link rel="stylesheet" href="kip.css?v=20261127_2">
 </head>
 <body>
   <!-- Фирменная плашка СОТА вверху слева (Чистый логотип без круглого фона) -->
@@ -62,7 +62,7 @@
         <h1 id="startMainTitle">Шахта Знаний: СОТА</h1>
         <p class="sub" id="startMainSub">Смоленская областная технологическая академия. Обслуживайте рабочие станки и приборы в цеху, проводите замеры и решайте задачи наладчика!</p>
         <div class="rules" id="rulesGrid">
-          <div><b>Ходьба</b>Тап по клетке, <kbd>WASD</kbd> / <kbd>←↑↓→</kbd> или крестовина</div>
+          <div><b>Ходьба</b>Тап по клетке или <kbd>WASD</kbd> / <kbd>←↑↓→</kbd></div>
           <div><b id="ruleUnitTitle">Станок КИП</b>Подойдите к станку — проведите диагностику</div>
           <div><b>Сложный узел</b>Фиолетовый индикатор: сложная задача, ×2 очков</div>
           <div><b>Переход к СОТЕ</b>Выполните 5 заданий цеха, чтобы войти в СОТУ</div>
@@ -70,7 +70,6 @@
         <div class="skins-title">Скины</div>
         <div class="skins" id="skinRow"></div>
         <div class="skin-desc" id="skinDesc"></div>
-        <div class="qsource" id="qSource">вопросы загружаются…</div>
         <div class="btnrow" style="margin-top:12px">
           <button class="btn" id="startBtn">Войти в цех</button>
           <a href="../../menu.html" class="btn ghost">Выбор специальности</a>
@@ -455,7 +454,65 @@
       </div>
     </div>
 
-    <!-- ТС: Мини-игра Аварийный байпас -->
+    <!-- КИП: Мини-игра Проверка цепей мультиметром -->
+    <div class="screen hidden" id="meterScreen">
+      <div class="calib-shell">
+        <div class="calib-head">
+          <div class="qtag" id="meterTag">КИП · ПРОВЕРКА ЦЕПЕЙ МУЛЬТИМЕТРОМ</div>
+          <div class="calib-stats">
+            <div class="calib-pill target" id="meterStepPill">Точка 1/3</div>
+            <div class="calib-pill reward">+200 очков</div>
+            <div class="calib-pill timer" id="meterTimerText">28.0 с</div>
+          </div>
+        </div>
+        <div class="calib-timer-track">
+          <div class="calib-timer-fill" id="meterTimerBar"></div>
+        </div>
+
+        <div class="meter-workspace">
+          <div class="meter-device">
+            <div class="meter-lcd">
+              <div class="meter-lcd-top">
+                <span id="meterLcdMode">РЕЖИМ: ---</span>
+                <span id="meterLcdUnit">—</span>
+              </div>
+              <div class="meter-lcd-val idle" id="meterLcdVal">----</div>
+            </div>
+            <div class="meter-modes">
+              <button type="button" class="meter-mode-btn" data-mode="vdc">V⎓<small>Пост. В</small></button>
+              <button type="button" class="meter-mode-btn" data-mode="vrms">V~<small>Перем. В</small></button>
+              <button type="button" class="meter-mode-btn" data-mode="ohm">Ω<small>Омметр</small></button>
+              <button type="button" class="meter-mode-btn" data-mode="ma">mA<small>Ток 4–20</small></button>
+            </div>
+          </div>
+
+          <div class="meter-probe-panel">
+            <div class="meter-point-box">
+              <div class="meter-point-title" id="meterPointTitle">Контрольная точка 1</div>
+              <div class="meter-point-spec" id="meterPointSpec">Норма: 24.0 В DC</div>
+            </div>
+            <div class="meter-probe-status" id="meterProbeStatus">
+              Выберите нужный предел измерений на мультиметре слева, чтобы снять показания.
+            </div>
+            <div class="meter-verdict-row">
+              <button type="button" class="meter-verdict-btn ok" id="meterOkBtn" disabled>✓ Цепь в норме</button>
+              <button type="button" class="meter-verdict-btn fault" id="meterFaultBtn" disabled>⚠ Обнаружен дефект</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="clicker-banner" id="meterBanner">
+          <h2 id="meterBannerTitle">Проверка цепей мультиметром</h2>
+          <p id="meterBannerText">
+            На стенде 3 контрольные точки (питание 24 В DC, резистор HART 250 Ом и токовая петля 4–20 мА). Выберите подходящий режим мультиметра (V⎓, Ω или mA), сверьте показания с нормой и зафиксируйте — цепь исправна или есть дефект!
+          </p>
+          <div class="btnrow">
+            <button class="btn" id="meterStartBtn">Взять щупы</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen hidden" id="endScreen">
       <div class="card">
         <h1 id="endTitle">Смена окончена</h1>
@@ -485,18 +542,11 @@
       <b>Тапните по любой клетке</b> — наладчик сам дойдёт.
       <span class="kb">На компьютере: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / стрелки.</span>
     </div>
-    <a href="../../menu.html" class="exit-btn" id="exitMenuBtn">Выйти</a>
-    <div class="dpad">
-      <button class="u" data-dir="up" aria-label="Вверх">▲</button>
-      <button class="l" data-dir="left" aria-label="Влево">◀</button>
-      <button class="d" data-dir="down" aria-label="Вниз">▼</button>
-      <button class="r" data-dir="right" aria-label="Вправо">▶</button>
-    </div>
   </div>
 </div>
 
   <script>window.CURRENT_SPEC = 'kip';</script>
-  <script src="../../shared/js/common.js?v=20261126_4"></script>
-  <script src="kip.js?v=20261126_4"></script>
+  <script src="../../shared/js/common.js?v=20261127_2"></script>
+  <script src="kip.js?v=20261127_2"></script>
 </body>
 </html>

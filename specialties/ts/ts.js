@@ -725,56 +725,76 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
      4: Теплообменное оборудование и теплотехника (теплообменник)
      ============================================================ */
   function drawTSStation(type, done, hard, now, seed){
-    const drawBench = (w) => {
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      ctx.fillRect(-w/2 - 2, 18, w + 4, 5);
-      ctx.fillStyle = '#0f172a';
+    const accent = hard ? '#c084fc' : (done ? '#34d399' : '#f97316');
+    const drawStool = (sx = 0) => {
+      ctx.fillStyle = 'rgba(7,11,22,0.55)';
+      ctx.beginPath(); ctx.ellipse(sx, 24, 13, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(sx - 11, 21, 22, 2.5);
+      ctx.fillStyle = '#090d16'; ctx.fillRect(sx - 12, 22, 3, 2); ctx.fillRect(sx + 9, 22, 3, 2);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(sx - 1.5, 13, 3, 9);
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(sx - 11, 6, 22, 9, 3); ctx.fill();
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(sx - 11, 5, 22, 6, 3); ctx.fill();
+      ctx.fillStyle = '#64748b'; ctx.fillRect(sx - 9, 5, 18, 1.5);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.strokeRect(sx - 11, 5, 22, 9);
+    };
+    const drawBench = (w, withChair = true) => {
+      ctx.fillStyle = 'rgba(6,10,20,0.6)';
+      ctx.fillRect(-w/2 - 3, 17, w + 8, 6);
+      ctx.fillStyle = '#0b111e';
       ctx.fillRect(-w/2 + 4, 3, w - 8, 16);
-      // Тумбы
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(-w/2 + 2, 3, 22, 16);
-      ctx.fillRect(w/2 - 24, 3, 22, 16);
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(-w/2 + 4, 5, 18, 4); ctx.fillRect(-w/2 + 4, 11, 18, 5);
-      ctx.fillRect(w/2 - 22, 5, 18, 4); ctx.fillRect(w/2 - 22, 11, 18, 5);
-      // Столешница
-      ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.roundRect(-w/2, -7, w, 11, 2); ctx.fill();
-      ctx.fillStyle = '#64748b'; ctx.fillRect(-w/2, 1, w, 3);
-      ctx.fillStyle = '#334155'; ctx.fillRect(-w/2 + 2, -5, w - 4, 5);
+      ctx.fillStyle = '#141c2f';
+      ctx.fillRect(-w/2 + 4, 15, w - 8, 3);
+      [-w/2 + 2, w/2 - 24].forEach(px => {
+        ctx.fillStyle = '#172033'; ctx.fillRect(px, 3, 22, 16);
+        ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.strokeRect(px, 3, 22, 16);
+        ctx.fillStyle = '#293548'; ctx.fillRect(px + 2, 5, 18, 4.5); ctx.fillRect(px + 2, 11, 18, 5.5);
+        ctx.fillStyle = '#475569'; ctx.fillRect(px + 2, 5, 18, 1); ctx.fillRect(px + 2, 11, 18, 1);
+        ctx.fillStyle = '#cbd5e1'; ctx.fillRect(px + 8, 7, 6, 1); ctx.fillRect(px + 8, 13.5, 6, 1);
+      });
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(-w/2, -7, w, 11, 2); ctx.fill();
+      ctx.fillStyle = '#64748b'; ctx.fillRect(-w/2 + 2, -6, w - 4, 4);
+      ctx.fillStyle = '#cbd5e1'; ctx.fillRect(-w/2 + 2, -7, w - 4, 1.5);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-w/2, 1, w, 3.5);
+      ctx.fillStyle = accent; ctx.fillRect(-w/2 + 4, 2.5, w - 8, 1.3);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1; ctx.strokeRect(-w/2, -7, w, 11.5);
+      if (withChair) drawStool(0);
     };
 
     if (type === 0){
       // 0. КОНТРОЛЬНО-ИЗМЕРИТЕЛЬНЫЕ ПРИБОРЫ (КИП) (слева вверху)
-      // Доска со схемой теплового узла
-      ctx.fillStyle = '#0b1320'; ctx.fillRect(-54, -44, 108, 28);
+      ctx.fillStyle = '#09111f'; ctx.fillRect(-54, -44, 108, 28);
+      ctx.strokeStyle = '#050912'; ctx.lineWidth = 2; ctx.strokeRect(-55, -45, 110, 30);
       ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(-54, -44, 108, 28);
       ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(-44, -34); ctx.lineTo(38, -34); ctx.lineTo(38, -22); ctx.lineTo(-44, -22); ctx.closePath();
       ctx.stroke();
 
-      drawBench(116);
+      drawBench(118, true);
 
       // Жёлтый переносной газоанализатор слева
-      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(-48, -26, 15, 20, 2); ctx.fill();
+      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(-48, -26, 15, 19, 2); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#0f172a'; ctx.fillRect(-46, -24, 11, 6);
       // Большой стрелочный манометр
-      ctx.fillStyle = '#64748b'; ctx.fillRect(-24, -14, 3, 9);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(-24, -14, 3, 7);
       ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(-22.5, -21, 9, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.3; ctx.stroke();
       ctx.strokeStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(-22.5, -21); ctx.lineTo(-18, -25); ctx.stroke();
 
       // Два синих дифманометра по центру
       [-6, 8].forEach(dx => {
-        ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(dx, -23, 11, 17, 2); ctx.fill();
+        ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(dx, -23, 11, 16, 2); ctx.fill();
+        ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
         ctx.fillStyle = '#020617'; ctx.fillRect(dx + 2, -20, 7, 5);
       });
 
       // Квадратный монитор тепловой телеметрии справа
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(24, -29, 28, 23);
-      ctx.strokeStyle = '#64748b'; ctx.strokeRect(24, -29, 28, 23);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(24, -29, 28, 22);
+      ctx.fillStyle = '#475569'; ctx.fillRect(24, -29, 28, 2);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1; ctx.strokeRect(24, -29, 28, 22);
       ctx.fillStyle = '#021814'; ctx.fillRect(26, -27, 24, 17);
-      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.3;
+      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.4;
       ctx.beginPath();
       for (let i = 0; i < 22; i++){
         const wx = 27 + i;
@@ -785,75 +805,73 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
     }
     else if (type === 1){
       // 1. ТЕПЛОГЕНЕРИРУЮЩЕЕ И НАСОСНОЕ ОБОРУДОВАНИЕ (по центру вверху)
-      drawBench(120);
+      drawBench(122, false);
 
-      // Магистрали подачи (красная) и обратки (синяя)
       ctx.fillStyle = '#ef4444'; ctx.fillRect(-52, -32, 82, 6);
-      ctx.fillStyle = '#0284c7'; ctx.fillRect(-52, -8, 82, 5);
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(-52, -8, 82, 4);
       ctx.fillStyle = '#64748b';
-      ctx.fillRect(-38, -32, 5, 29);
-      ctx.fillRect(-6, -32, 5, 29);
-      ctx.fillRect(22, -32, 5, 29);
+      ctx.fillRect(-38, -32, 5, 26);
+      ctx.fillRect(-6, -32, 5, 26);
+      ctx.fillRect(22, -32, 5, 26);
 
-      // Два больших манометра сверху слева
       [-42, -26].forEach(mx => {
         ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(mx, -38, 6, 0, Math.PI*2); ctx.fill();
         ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1; ctx.stroke();
         ctx.strokeStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(mx, -38); ctx.lineTo(mx + 3, -41); ctx.stroke();
       });
 
-      // Центробежные насосы (зелёно-синий слева и синий справа)
-      ctx.fillStyle = '#0d9488'; ctx.beginPath(); ctx.roundRect(-44, -22, 22, 18, 3); ctx.fill();
-      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.arc(-33, -13, 7, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#1d4ed8'; ctx.beginPath(); ctx.roundRect(0, -22, 20, 18, 3); ctx.fill();
-      ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(10, -13, 6.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#0d9488'; ctx.beginPath(); ctx.roundRect(-44, -22, 22, 16, 3); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.arc(-33, -14, 6.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#1d4ed8'; ctx.beginPath(); ctx.roundRect(0, -22, 20, 16, 3); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(10, -14, 6, 0, Math.PI*2); ctx.fill();
 
-      // Красные штурвалы задвижек на байпасе
       [-14, 14].forEach(vx => {
         ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.ellipse(vx, -36, 7, 3, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 0.9; ctx.stroke();
       });
 
-      // Шкаф управления насосами справа
-      ctx.fillStyle = '#475569'; ctx.fillRect(34, -40, 20, 35);
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.strokeRect(34, -40, 20, 35);
+      ctx.fillStyle = '#475569'; ctx.fillRect(34, -40, 20, 34);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(34, -40, 20, 2);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1; ctx.strokeRect(34, -40, 20, 34);
       ctx.fillStyle = '#22c55e'; ctx.fillRect(38, -35, 4, 4);
       ctx.fillStyle = '#ef4444'; ctx.fillRect(45, -35, 4, 4);
       ctx.fillStyle = '#0f172a'; ctx.fillRect(37, -26, 14, 8);
     }
     else if (type === 2){
       // 2. КОТЕЛЬНЫЕ УСТАНОВКИ И СИСТЕМЫ ТЕПЛОСНАБЖЕНИЯ (справа вверху)
-      // Бетонный постамент с жёлтым ограждением
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(-60, 6, 120, 14);
+      ctx.fillStyle = 'rgba(6,10,20,0.6)'; ctx.fillRect(-62, 16, 124, 6);
+      ctx.fillStyle = '#172033'; ctx.fillRect(-60, 6, 120, 14);
       ctx.fillStyle = '#334155'; ctx.fillRect(-60, 4, 120, 4);
+      ctx.fillStyle = accent; ctx.fillRect(-58, 7, 116, 1.3);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1; ctx.strokeRect(-60, 4, 120, 16);
       ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(-56, 4); ctx.lineTo(-56, -4); ctx.lineTo(56, -4); ctx.lineTo(56, 4); ctx.stroke();
 
-      // Вертикальный пульт управления котлом слева
-      ctx.fillStyle = '#475569'; ctx.fillRect(-54, -40, 24, 44);
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.2; ctx.strokeRect(-54, -40, 24, 44);
+      ctx.fillStyle = '#3b4861'; ctx.fillRect(-54, -40, 24, 44);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(-54, -40, 24, 2);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.2; ctx.strokeRect(-54, -40, 24, 44);
       ctx.fillStyle = '#041d38'; ctx.fillRect(-50, -34, 16, 12);
       ctx.fillStyle = '#38bdf8'; ctx.fillRect(-48, -31, 12, 2);
       ctx.fillStyle = '#22c55e'; ctx.fillRect(-48, -18, 4, 4);
       ctx.fillStyle = '#ef4444'; ctx.fillRect(-41, -18, 4, 4);
 
-      // Красные и оранжевые трубы подачи над котлом
       ctx.fillStyle = '#ea580c'; ctx.fillRect(-44, -48, 40, 5);
       ctx.fillStyle = '#dc2626'; ctx.fillRect(-20, -48, 5, 16);
 
-      // Толстый серебристый дымоход вверх
-      ctx.fillStyle = '#64748b'; ctx.fillRect(28, -56, 16, 30);
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.strokeRect(28, -56, 16, 30);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(28, -54, 16, 28);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.strokeRect(28, -54, 16, 28);
       ctx.fillStyle = '#cbd5e1'; ctx.fillRect(27, -42, 18, 3);
 
-      // Массивный цилиндрический котёл
       const boilW = 84, boilH = 40;
-      ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.roundRect(-24, -36, boilW, boilH, 8); ctx.fill();
-      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#f97316');
+      ctx.fillStyle = '#5b6b82'; ctx.beginPath(); ctx.roundRect(-24, -36, boilW, boilH, 8); ctx.fill();
+      ctx.strokeStyle = accent;
       ctx.lineWidth = 1.8; ctx.stroke();
-      ctx.fillStyle = '#94a3b8'; ctx.fillRect(-16, -33, boilW - 16, 5);
+      ctx.fillStyle = '#94a3b8'; ctx.fillRect(-16, -33, boilW - 16, 4);
 
-      // Красная газовая горелка спереди и светящееся окно топки
       ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.roundRect(-30, -20, 24, 20, 3); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(-6, -15, 11, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
       const fPulse = Math.sin(now * 0.01 + seed) * 2.5;
@@ -862,67 +880,60 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
       ctx.fillStyle = '#facc15';
       ctx.beginPath(); ctx.moveTo(-10, -10); ctx.quadraticCurveTo(-6, -20 + fPulse, -2, -10); ctx.closePath(); ctx.fill();
 
-      // Символ пламени на корпусе котла
       ctx.fillStyle = '#f97316';
       ctx.beginPath(); ctx.moveTo(24, -10); ctx.quadraticCurveTo(30, -26, 36, -10); ctx.closePath(); ctx.fill();
     }
     else if (type === 3){
       // 3. ТРУБОПРОВОДЫ И АРМАТУРА (МОНТАЖ И НАЛАДКА) (слева внизу)
-      drawBench(120);
+      drawBench(122, true);
 
-      // П-образный узел стального трубопровода над верстаком
       ctx.fillStyle = '#94a3b8';
       ctx.fillRect(-52, -32, 60, 7);
       ctx.fillRect(-52, -32, 7, 25);
       ctx.fillRect(2, -32, 7, 20);
       ctx.fillRect(2, -17, 48, 7);
       ctx.fillRect(43, -17, 7, 10);
-      // Фланцы с болтами
       ctx.fillStyle = '#475569';
       [-40, -14, 18, 38].forEach(fx => ctx.fillRect(fx, -35, 4, 13));
 
-      // Красные штурвалы задвижек (сверху и на нижней трубе)
       [[-24, -39], [16, -24]].forEach(([vx, vy]) => {
         ctx.fillStyle = '#1e293b'; ctx.fillRect(vx - 1.5, vy, 3, 7);
         ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.ellipse(vx, vy, 9, 4, 0, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1; ctx.stroke();
       });
 
-      // Жёлтые контрольные датчики на трубе справа
       ctx.fillStyle = '#f59e0b'; ctx.fillRect(26, -29, 8, 12);
-      ctx.fillRect(36, -29, 8, 12);
-      // Трубный ключ на столешнице
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 0.8; ctx.strokeRect(26, -29, 8, 12);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(36, -29, 8, 12);
+      ctx.strokeRect(36, -29, 8, 12);
       ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(-40, -2); ctx.lineTo(-18, -2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-40, -3); ctx.lineTo(-18, -3); ctx.stroke();
     }
     else {
       // 4. ТЕПЛООБМЕННОЕ ОБОРУДОВАНИЕ И ТЕПЛОТЕХНИКА (справа внизу)
-      drawBench(120);
+      drawBench(122, false);
 
-      // Синий пластинчатый теплообменник слева
-      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(-50, -34, 26, 30, 3); ctx.fill();
-      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#38bdf8');
+      ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(-50, -34, 26, 28, 3); ctx.fill();
+      ctx.strokeStyle = accent;
       ctx.lineWidth = 1.4; ctx.stroke();
       ctx.fillStyle = '#cbd5e1';
       for (let px = -45; px < -28; px += 3.5){
-        ctx.fillRect(px, -30, 1.8, 22);
+        ctx.fillRect(px, -30, 1.8, 20);
       }
 
-      // Белый секционный радиатор по центру
       ctx.fillStyle = '#f1f5f9';
       for (let rx = -16; rx <= 14; rx += 6){
-        ctx.beginPath(); ctx.roundRect(rx, -28, 4.5, 22, 2); ctx.fill();
-        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 0.8; ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(rx, -28, 4.5, 21, 2); ctx.fill();
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 0.8; ctx.stroke();
       }
 
-      // Медно-красные трубы обвязки сверху
       ctx.fillStyle = '#ea580c';
       ctx.fillRect(-38, -42, 74, 5);
       ctx.fillRect(-38, -42, 5, 10);
       ctx.fillRect(31, -42, 5, 18);
 
-      // Серый тепловычислитель с экраном справа
-      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(26, -30, 26, 24, 3); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(26, -30, 26, 23, 3); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#042f2e'; ctx.fillRect(30, -26, 18, 10);
       ctx.fillStyle = '#34d399'; ctx.fillRect(32, -23, 14, 2.5);
       ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(34, -12, 2, 0, Math.PI*2); ctx.fill();
@@ -1113,10 +1124,287 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
     burnerGame.closeTimer = setTimeout(() => closeFloorEvent(won), BURNER_CFG.CLOSE_DELAY_MS);
   }
 
+  /* ============================================================
+     Мини-игра «Поверка и продувка манометров» (manometer)
+     ============================================================ */
+  const MANO_CFG = {
+    TIME_MS: 30000,
+    REWARD: 200,
+    CLOSE_DELAY_MS: 1400
+  };
+
+  let manoGame = {
+    active: false,
+    phase: 'banner',
+    gauges: [],
+    deadline: 0,
+    rafId: 0,
+    closeTimer: 0
+  };
+
+  function cleanupManometer(){
+    if (manoGame.rafId) cancelAnimationFrame(manoGame.rafId);
+    if (manoGame.closeTimer) clearTimeout(manoGame.closeTimer);
+    manoGame.active = false;
+    manoGame.rafId = 0;
+    manoGame.closeTimer = 0;
+  }
+
+  function startManometerEvent(){
+    cleanupManometer();
+    manoGame.active = true;
+    manoGame.phase = 'banner';
+
+    const specs = [
+      { title: 'М1 · Подача', norm: 'Норма: 0.60–0.85 МПа', minOk: 0.60, maxOk: 0.85, goodVal: 0.72 },
+      { title: 'М2 · Обратка', norm: 'Норма: 0.35–0.55 МПа', minOk: 0.35, maxOk: 0.55, goodVal: 0.44 },
+      { title: 'М3 · Подпитка', norm: 'Норма: 0.25–0.45 МПа', minOk: 0.25, maxOk: 0.45, goodVal: 0.34 }
+    ];
+    const faultIdx = Math.floor(Math.random() * 3);
+    manoGame.gauges = specs.map((s, idx) => ({
+      ...s,
+      faulty: idx === faultIdx,
+      replaced: false,
+      purged: false,
+      valve: 'closed', // 'closed' | 'purge' | 'work'
+      done: false,
+      val: idx === faultIdx ? 1.15 : 0.12
+    }));
+
+    if (el('manometerBannerTitle')) el('manometerBannerTitle').textContent = 'Поверка и продувка манометров';
+    if (el('manometerBannerText')) el('manometerBannerText').textContent = 'На узле учёта 3 манометра. Для каждого: 1) нажмите «💨 Продуть» (стравить воздух через трёхходовой кран); 2) включите «⚙ Рабочий» режим. Если стрелка в зелёной зоне — «✓ Принять», если прибор зашкаливает или заклинил — «🔧 Заменить»!';
+    const startBtn = el('manoStartBtn');
+    if (startBtn){
+      startBtn.textContent = 'Начать поверку';
+      startBtn.onclick = beginManometerRound;
+    }
+
+    document.querySelectorAll('#manoGrid .mano-btn').forEach(btn => {
+      btn.onclick = () => {
+        const gIdx = Number(btn.getAttribute('data-g'));
+        const act = btn.getAttribute('data-act');
+        handleManoAction(gIdx, act);
+      };
+    });
+
+    updateManoCardsUI();
+    drawAllManoCanvases(performance.now());
+    updateManoTimerUI(MANO_CFG.TIME_MS);
+    if (el('manometerBanner')) el('manometerBanner').classList.remove('hidden');
+    if (el('manometerScreen')) el('manometerScreen').classList.remove('hidden');
+  }
+
+  function beginManometerRound(){
+    if (!manoGame.active) return;
+    if (el('manometerBanner')) el('manometerBanner').classList.add('hidden');
+    manoGame.phase = 'playing';
+    manoGame.deadline = performance.now() + MANO_CFG.TIME_MS;
+    manoGame.rafId = requestAnimationFrame(tickManometer);
+  }
+
+  function handleManoAction(idx, act){
+    if (!manoGame.active || manoGame.phase !== 'playing') return;
+    const g = manoGame.gauges[idx];
+    if (!g || g.done) return;
+
+    if (act === 'purge'){
+      g.valve = 'purge';
+      g.purged = true;
+      try { sfx.step(); } catch(e){}
+    } else if (act === 'work'){
+      if (!g.purged){
+        try { sfx.bad(); } catch(e){}
+        const b = el('manoBadge' + idx);
+        if (b){ b.textContent = 'Сначала продуйте кран!'; b.className = 'mano-badge bad'; }
+        return;
+      }
+      g.valve = 'work';
+      try { sfx.step(); } catch(e){}
+    } else if (act === 'accept'){
+      if (g.valve !== 'work') return;
+      if (g.faulty && !g.replaced){
+        try { sfx.bad(); } catch(e){}
+        manoGame.deadline -= 2500;
+        const b = el('manoBadge' + idx);
+        if (b){ b.textContent = 'Стрелка зашкаливает (−2.5 с)! Замените!'; b.className = 'mano-badge bad'; }
+        return;
+      }
+      g.done = true;
+      try { sfx.good(); } catch(e){}
+    } else if (act === 'replace'){
+      if (g.valve !== 'work') return;
+      if (!g.faulty || g.replaced){
+        try { sfx.bad(); } catch(e){}
+        manoGame.deadline -= 2000;
+        const b = el('manoBadge' + idx);
+        if (b){ b.textContent = 'Прибор исправен (−2 с)! Нажмите Принять!'; b.className = 'mano-badge bad'; }
+        return;
+      }
+      g.replaced = true;
+      g.done = true;
+      try { sfx.good(); } catch(e){}
+    }
+
+    updateManoCardsUI();
+    if (manoGame.gauges.every(item => item.done)){
+      finishManometer(true);
+    }
+  }
+
+  function updateManoCardsUI(){
+    const doneCount = manoGame.gauges.filter(g => g.done).length;
+    if (el('manoStatus')) el('manoStatus').textContent = 'Проверено: ' + doneCount + '/3';
+
+    manoGame.gauges.forEach((g, idx) => {
+      const card = el('manoCard' + idx);
+      const badge = el('manoBadge' + idx);
+      if (card) card.classList.toggle('done', g.done);
+      if (el('manoTitle' + idx)) el('manoTitle' + idx).textContent = g.title;
+      if (el('manoNorm' + idx)) el('manoNorm' + idx).textContent = g.norm;
+
+      const purgeBtn = document.querySelector(`#manoCard${idx} [data-act="purge"]`);
+      const workBtn = document.querySelector(`#manoCard${idx} [data-act="work"]`);
+      const accBtn = document.querySelector(`#manoCard${idx} [data-act="accept"]`);
+      const repBtn = document.querySelector(`#manoCard${idx} [data-act="replace"]`);
+
+      if (purgeBtn){ purgeBtn.classList.toggle('active', g.valve === 'purge'); purgeBtn.disabled = g.done; }
+      if (workBtn){ workBtn.classList.toggle('active', g.valve === 'work'); workBtn.disabled = g.done || !g.purged; }
+      if (accBtn) accBtn.disabled = g.done || g.valve !== 'work';
+      if (repBtn) repBtn.disabled = g.done || g.valve !== 'work';
+
+      if (badge){
+        if (g.done){
+          badge.textContent = g.replaced ? '✓ Заменён и принят' : '✓ Поверен и принят';
+          badge.className = 'mano-badge ok';
+        } else if (g.valve === 'purge'){
+          badge.textContent = 'Продувка: сброс воздуха…';
+          badge.className = 'mano-badge purged';
+        } else if (g.valve === 'work'){
+          if (g.faulty && !g.replaced){
+            badge.textContent = 'Авария: стрелка зашкалила!';
+            badge.className = 'mano-badge bad';
+          } else {
+            badge.textContent = 'Давление в норме — примите!';
+            badge.className = 'mano-badge ok';
+          }
+        } else {
+          badge.textContent = 'Кран закрыт · нажмите Продуть';
+          badge.className = 'mano-badge';
+        }
+      }
+    });
+  }
+
+  function updateManoTimerUI(msLeft){
+    const bar = el('manoTimerBar'), txt = el('manoTimerText');
+    if (!bar || !txt) return;
+    txt.textContent = (Math.max(0, msLeft) / 1000).toFixed(1) + ' с';
+    const pct = clamp((msLeft / MANO_CFG.TIME_MS) * 100, 0, 100);
+    bar.style.width = pct + '%';
+    const st = pct <= 30 ? ' low' : (pct <= 55 ? ' warn' : '');
+    bar.className = 'pipe-timer-fill' + st;
+    txt.className = 'pipe-pill timer' + (pct <= 30 ? ' low' : '');
+  }
+
+  function tickManometer(now){
+    if (!manoGame.active || manoGame.phase !== 'playing') return;
+    const left = manoGame.deadline - now;
+    updateManoTimerUI(left);
+    manoGame.gauges.forEach((g, idx) => {
+      let target = g.faulty && !g.replaced ? 1.15 : 0.12;
+      if (g.valve === 'purge') target = 0.02 + Math.sin(now * 0.03 + idx) * 0.03;
+      else if (g.valve === 'work') target = (g.faulty && !g.replaced) ? 1.18 : g.goodVal;
+      g.val += (target - g.val) * 0.16;
+    });
+    drawAllManoCanvases(now);
+    if (left <= 0){ finishManometer(false); return; }
+    manoGame.rafId = requestAnimationFrame(tickManometer);
+  }
+
+  function drawAllManoCanvases(now){
+    manoGame.gauges.forEach((g, idx) => {
+      const cv = el('manoCanvas' + idx);
+      if (!cv) return;
+      const c = cv.getContext('2d');
+      const w = cv.width, h = cv.height;
+      const cx = w / 2, cy = h / 2 + 8, r = 40;
+      c.fillStyle = '#070d19'; c.fillRect(0, 0, w, h);
+
+      // Циферблат
+      c.fillStyle = '#0f172a';
+      c.beginPath(); c.arc(cx, cy, r + 4, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = g.done ? '#10b981' : (g.faulty && g.valve === 'work' && !g.replaced ? '#ef4444' : '#475569');
+      c.lineWidth = 2.5; c.stroke();
+
+      // Шкала 0..1.2 МПа от 140° до 400°
+      const a0 = Math.PI * 0.78, aSpan = Math.PI * 1.44;
+      const valToAng = (v) => a0 + clamp(v / 1.2, 0, 1) * aSpan;
+
+      c.lineWidth = 5;
+      c.strokeStyle = '#334155';
+      c.beginPath(); c.arc(cx, cy, r - 6, a0, a0 + aSpan); c.stroke();
+
+      c.strokeStyle = '#10b981';
+      c.beginPath(); c.arc(cx, cy, r - 6, valToAng(g.minOk), valToAng(g.maxOk)); c.stroke();
+
+      c.strokeStyle = '#ef4444';
+      c.beginPath(); c.arc(cx, cy, r - 6, valToAng(1.0), a0 + aSpan); c.stroke();
+
+      // Анимация продувки воздухом
+      if (g.valve === 'purge' && !g.done){
+        c.fillStyle = 'rgba(125, 211, 252, 0.45)';
+        for (let i = 0; i < 4; i++){
+          const bx = cx - 26 + ((now * 0.05 + i * 18) % 52);
+          const by = cy - 20 - ((now * 0.04 + i * 11) % 24);
+          c.beginPath(); c.arc(bx, by, 2.5, 0, Math.PI * 2); c.fill();
+        }
+      }
+
+      // Стрелка
+      const ang = valToAng(g.val);
+      c.strokeStyle = (g.faulty && !g.replaced && g.valve === 'work') ? '#ef4444' : '#f8fafc';
+      c.lineWidth = 2.4;
+      c.beginPath();
+      c.moveTo(cx, cy);
+      c.lineTo(cx + Math.cos(ang) * (r - 9), cy + Math.sin(ang) * (r - 9));
+      c.stroke();
+
+      c.fillStyle = '#f59e0b';
+      c.beginPath(); c.arc(cx, cy, 4, 0, Math.PI * 2); c.fill();
+
+      c.fillStyle = '#cbd5e1';
+      c.font = 'bold 11px monospace';
+      c.textAlign = 'center';
+      c.fillText(g.val.toFixed(2) + ' МПа', cx, cy + 28);
+    });
+  }
+
+  function finishManometer(won){
+    if (!manoGame.active) return;
+    manoGame.phase = 'done';
+    if (manoGame.rafId){ cancelAnimationFrame(manoGame.rafId); manoGame.rafId = 0; }
+    if (won){
+      score += MANO_CFG.REWARD; fuel = Math.min(100, fuel + 20);
+      sfx.good(); flash = 0.4; flashColor = '249,115,22';
+      updateHUD();
+      if (el('manometerBannerTitle')) el('manometerBannerTitle').textContent = 'Все манометры поверены!';
+      if (el('manometerBannerText')) el('manometerBannerText').textContent = 'Воздух стравлен, неисправный прибор заменён. Награда: +' + MANO_CFG.REWARD + ' очков, +20 света.';
+    } else {
+      sfx.bad(); flash = 0.3; flashColor = '255,100,100';
+      if (el('manometerBannerTitle')) el('manometerBannerTitle').textContent = 'Время поверки истекло';
+      if (el('manometerBannerText')) el('manometerBannerText').textContent = 'Не все манометры прошли поверку. Можно повторить у стенда.';
+    }
+    const btn = el('manoStartBtn');
+    if (btn){ btn.textContent = 'Продолжить смену'; btn.onclick = () => closeFloorEvent(won); }
+    if (el('manometerBanner')) el('manometerBanner').classList.remove('hidden');
+    manoGame.closeTimer = setTimeout(() => closeFloorEvent(won), MANO_CFG.CLOSE_DELAY_MS);
+  }
+
 /* ============================================================
    Регистрация мини-игр и 2.5D оборудования ТС
    ============================================================ */
 if (window.registerMinigame) {
+  registerMinigame('manometer', { name: 'поверка и продувка манометров', start: startManometerEvent, cleanup: cleanupManometer });
   registerMinigame('pipes',     { name: 'сборка контура теплотрассы', start: startPipeEvent, cleanup: cleanupPipes });
   registerMinigame('bypass',    { name: 'аварийный байпас теплосети', start: startBypassEvent, cleanup: cleanupBypass });
   registerMinigame('exchanger', { name: 'балансировка пластинчатого теплообменника', start: startExchangerEvent, cleanup: cleanupExchanger });

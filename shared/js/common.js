@@ -110,10 +110,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   function updateQuestionsBadge(){
     const b = el('qSource');
     if (!b) return;
-    const n = QUESTIONS.length;
-    b.textContent = n + ' ' + plural(n, 'вопрос', 'вопроса', 'вопросов') + ' · ' +
-      (questionsSource === 'json' ? 'questions.json' : 'встроенный набор');
-    b.classList.toggle('warn', questionsSource !== 'json');
+    b.remove();
   }
 
   /* ============================================================
@@ -357,9 +354,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       {
         x: 4, y: 4, type: 0,
         title: 'Контрольно-измерительные приборы',
-        icon: '⏱',
-        actionType: 'question',
-        filterKeyword: 'прибор|мультиметр|манометр|измерени',
+        icon: '📟',
+        actionType: 'minigame',
+        minigameId: 'meter',
         hard: false
       },
       {
@@ -399,9 +396,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       {
         x: 4, y: 4, type: 0,
         title: 'Контрольно-измерительные приборы (КИП)',
-        icon: '⏱',
-        actionType: 'question',
-        filterKeyword: 'манометр|термометр|давление|расход',
+        icon: '⏲',
+        actionType: 'minigame',
+        minigameId: 'manometer',
         hard: false
       },
       {
@@ -490,8 +487,8 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     player.y = start.y * TILE + TILE / 2;
     player.dir = 1;
 
-    // Выходная золотая дверь на правой стене
-    exitCell = { x: 21, y: 6 };
+    // Выходная точка к СОТА
+    exitCell = (currentSpec === 'kip' || currentSpec === 'ts') ? { x: 20, y: 7 } : { x: 21, y: 6 };
 
     // 5 специализированных рабочих мест (в точности по референсам)
     let defs = getStationDefs();
@@ -1327,7 +1324,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   /* ============================================================
      События между уровнями (Модульный диспетчер мини-игр)
      ============================================================ */
-  const MINIGAME_SCREEN_IDS = ['calibScreen', 'clickerScreen', 'pipeScreen', 'wiresScreen', 'pidScreen', 'scopeScreen', 'bypassScreen', 'exchangerScreen', 'burnerScreen'];
+  const MINIGAME_SCREEN_IDS = ['calibScreen', 'clickerScreen', 'pipeScreen', 'wiresScreen', 'pidScreen', 'scopeScreen', 'meterScreen', 'bypassScreen', 'exchangerScreen', 'burnerScreen', 'manometerScreen'];
 
   function ensureMinigameCloseButtons(){
     document.querySelectorAll('.calib-shell, .pipe-shell').forEach(shell => {
@@ -1503,7 +1500,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
   }
 
   function drawHazardZones(){
-    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu') return;
+    if (currentSpec === 'p' || currentSpec === 'ksk' || currentSpec === 'e' || currentSpec === 'reu' || currentSpec === 'kip' || currentSpec === 'ts') return;
     // Разметка зон безопасности: жёлто-чёрная полоса вокруг каждого станка и чертежного стола
     for (const c of crystals){
       const cx = c.x * TILE, cy = c.y * TILE;
@@ -2193,9 +2190,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
       }
       ctx.restore();
 
-      // БИМЕТАЛЛИЧЕСКИЙ РАДИАТОР ОТОПЛЕНИЯ (x = 2.5 * TILE, y = 10 * TILE)
+      // БИМЕТАЛЛИЧЕСКИЙ РАДИАТОР ОТОПЛЕНИЯ (слева внизу, не перекрывает нижний левый станок)
       ctx.save();
-      const radX = 2.5 * TILE, radY = 10 * TILE;
+      const radX = 1.45 * TILE, radY = 12.8 * TILE;
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
       ctx.beginPath(); ctx.ellipse(radX + 22, radY + 20, 26, 6, 0, 0, Math.PI*2); ctx.fill();
       for (let s = 0; s < 7; s++){
@@ -2275,25 +2272,22 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const tblW = 106, tblH = 38;
 
     ctx.save();
-    // Желто-черная разметка безопасности на полу под столом
-    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3;
-    ctx.strokeRect(cx - tblW/2 - 8, cy - tblH/2 - 4, tblW + 16, tblH + 24);
-    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
-    ctx.strokeRect(cx - tblW/2 - 8, cy - tblH/2 - 4, tblW + 16, tblH + 24);
-    ctx.setLineDash([]);
+    // Тень стола (чистая, без жёлто-чёрной рамки — в стиле П)
+    ctx.fillStyle = 'rgba(7,12,24,0.6)';
+    ctx.beginPath(); ctx.roundRect(cx - tblW/2 - 3, cy + 4, tblW + 6, 20, 6); ctx.fill();
 
-    // Тень стола
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath(); ctx.ellipse(cx, cy + 18, tblW/2 + 6, 12, 0, 0, Math.PI * 2); ctx.fill();
+    // Ножки и передняя траверса стола
+    ctx.fillStyle = '#0b101b';
+    ctx.fillRect(cx - tblW/2 + 6, cy - 2, 6, 21);
+    ctx.fillRect(cx + tblW/2 - 12, cy - 2, 6, 21);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(cx - tblW/2 + 12, cy + 10, tblW - 24, 5);
 
-    // Ножки стола
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(cx - tblW/2 + 6, cy - 4, 5, 20);
-    ctx.fillRect(cx + tblW/2 - 11, cy - 4, 5, 20);
-
-    // Столешница
-    ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(cx - tblW/2, cy - tblH/2, tblW, tblH, 4); ctx.fill();
-    ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.stroke();
+    // 2.5D столешница с передней гранью и светлым кантом
+    ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(cx - tblW/2, cy - tblH/2 + 4, tblW, tblH, 4); ctx.fill();
+    ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(cx - tblW/2, cy - tblH/2, tblW, tblH - 3, 4); ctx.fill();
+    ctx.fillStyle = '#64748b'; ctx.fillRect(cx - tblW/2 + 3, cy - tblH/2, tblW - 6, 2);
+    ctx.strokeStyle = '#0b101b'; ctx.lineWidth = 1.2; ctx.strokeRect(cx - tblW/2, cy - tblH/2, tblW, tblH);
 
     // Развернутый синий чертеж цеха с белыми линиями схем
     ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(cx - 30, cy - tblH/2 + 4, 60, 26, 2); ctx.fill();
@@ -2645,18 +2639,18 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ctx.save();
     ctx.translate(px, py);
 
-    // 1. Мягкая тень под основанием станции
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath(); ctx.ellipse(0, 16, 34, 10, 0, 0, Math.PI * 2); ctx.fill();
+    // 1. Мягкая тень под основанием станции (шире, под 2.5D-верстак)
+    ctx.fillStyle = 'rgba(7,11,22,0.55)';
+    ctx.beginPath(); ctx.ellipse(0, 17, 56, 12, 0, 0, Math.PI * 2); ctx.fill();
 
     // 2. Свечение активной зоны под станцией
     if (!done){
       const glowColor = hard ? '192, 132, 252' : (currentSpec === 'ts' ? '245, 158, 11' : '56, 189, 248');
-      const g = ctx.createRadialGradient(0, 8, 4, 0, 8, 42);
-      g.addColorStop(0, 'rgba(' + glowColor + ',' + (0.35 * pulse) + ')');
+      const g = ctx.createRadialGradient(0, 4, 6, 0, 4, 62);
+      g.addColorStop(0, 'rgba(' + glowColor + ',' + (0.28 * pulse) + ')');
       g.addColorStop(1, 'rgba(' + glowColor + ',0)');
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(0, 8, 42, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 4, 62, 0, Math.PI * 2); ctx.fill();
     }
 
     // 3. Отрисовка специализированного оборудования (гарантированная)
@@ -2669,7 +2663,7 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     }
 
     // 4. ПУЛЬСИРУЮЩИЙ ЗНАЧОК СВЕРХУ: [ ! ] ЕСЛИ НЕ ВЫПОЛНЕНО, [ ✓ ] ЕСЛИ СДАНО
-    const badgeY = -42 + Math.sin(now * 0.004 + c.seed) * 3;
+    const badgeY = -54 + Math.sin(now * 0.004 + c.seed) * 2.5;
     ctx.save();
     if (!done){
       // Золотистый ореол
@@ -2735,8 +2729,9 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     const x = exitCell.x * TILE + TILE / 2;
     const y = exitCell.y * TILE + TILE / 2;
     const sprite = getSotaSprite();
-    const width = 124;
+    const width = (currentSpec === 'kip' || currentSpec === 'ts') ? 104 : 124;
     const height = sprite ? width * sprite.height / sprite.width : 94;
+    const plateHalf = Math.max(54, Math.round(width / 2));
     ctx.save();
     const glow = ctx.createRadialGradient(x, y, 5, x, y, 76);
     glow.addColorStop(0, exitOpen ? '#70dbad40' : '#e5b95a20');
@@ -2744,15 +2739,15 @@ window.registerStationRenderer = function(spec, fn){ window.STATION_RENDERERS[sp
     ctx.fillStyle = glow;
     ctx.fillRect(x - 76, y - 76, 152, 152);
     ctx.fillStyle = '#070b1480';
-    ctx.beginPath();ctx.ellipse(x, y + 19, 63, 12, 0, 0, Math.PI * 2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x, y + 19, plateHalf, 11, 0, 0, Math.PI * 2);ctx.fill();
     if (sprite) {
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(sprite, x - width / 2, y + 19 - height, width, height);
     }
     ctx.fillStyle = '#0b1b2be8';
-    ctx.fillRect(x - 63, y + 24, 126, 32);
+    ctx.fillRect(x - plateHalf, y + 24, plateHalf * 2, 32);
     ctx.fillStyle = exitOpen ? '#58c7aa' : '#c2a458';
-    ctx.fillRect(x - 63, y + 24, 126, 1);
+    ctx.fillRect(x - plateHalf, y + 24, plateHalf * 2, 1);
     ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'center';ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = exitOpen ? '#81e4c7' : '#e3dfcc';
