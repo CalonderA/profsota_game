@@ -554,38 +554,10 @@
   .dpad .d{grid-column:2;grid-row:2}
   .dpad .r{grid-column:3;grid-row:2}
 
-  /* Мобильная адаптация: D-Pad ВСЕГДА доступен на сенсорных экранах и узких дисплеях */
+  /* Мобильная адаптация: скрываем нижнюю панель с крестовиной и кнопкой выхода — управление тапом по клетке */
   @media (max-width:760px), (pointer:coarse){
-    .dpad {
-      display: grid !important;
-      grid-template-columns: repeat(3, 52px);
-      grid-template-rows: repeat(2, 46px);
-      gap: 6px;
-      margin: 4px auto 0;
-      touch-action: manipulation;
-    }
-    .dpad button {
-      font-size: 20px;
-      border-radius: 12px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(56, 189, 248, 0.45);
-      color: #38bdf8;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-      touch-action: manipulation;
-    }
-    .dpad button:active {
-      background: rgba(56, 189, 248, 0.4);
-      transform: scale(0.92);
-    }
-    #controls {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-    .hint {
-      display: none;
+    .dpad, .exit-btn, .hint, #controls {
+      display: none !important;
     }
   }
 
@@ -731,11 +703,7 @@
   .stat b { font-size: 12px; }
   .meter { width: 44px; height: 6px; }
   #stage { border-radius: 10px; }
-  #controls { flex-wrap: nowrap; gap: 6px; }
-  .mode-badge { display: none; }
-  .exit-btn { min-height: 44px; display: flex; align-items: center; }
-  .dpad { margin: 0 0 0 auto; grid-template-columns: repeat(3,48px); grid-template-rows: repeat(2,44px); gap: 4px; }
-  .dpad button { touch-action: none; }
+  #controls { display: none; }
   .screen { position: fixed; inset: max(45px, env(safe-area-inset-top)) 0 0; z-index: 50; padding: 12px 10px max(16px, env(safe-area-inset-bottom)); align-items: flex-start; overscroll-behavior: contain; }
   .screen.hidden { visibility: hidden; }
   .screen > .card { flex: 0 0 auto; max-width: 580px; width: 100%; padding: 18px 14px; margin: auto 0; }
@@ -764,9 +732,7 @@
 @media (orientation: landscape) and (max-height: 450px) {
   #app { padding-top: 35px; }
   .hud .brand { display: none; }
-  #controls { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); z-index: 2; }
-  #controls .exit-btn { display: none; }
-  .dpad { opacity: .85; }
+  #controls { display: none; }
   .citygrid { max-height: 45dvh; }
 }
 

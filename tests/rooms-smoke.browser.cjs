@@ -25,8 +25,16 @@ const server=http.createServer((req,res)=>{
    }
    if(spec==='e'||spec==='reu'){
     assert.equal(await page.evaluate(spec=>typeof window[spec==='e'?'startEStation':'startReuStation'],spec),'function');
-    await page.evaluate(()=>openQuestion(crystals[0]));
-    assert.equal(await page.evaluate(()=>state),'minigame',spec+' station launches');
+    for(let n=0;n<5;n++){
+     await page.evaluate(n=>openQuestion(crystals.find(c=>c.stationType===n)),n);
+     assert.equal(await page.evaluate(()=>state),'minigame',spec+' station '+n+' launches');
+     await page.reload();await page.evaluate(()=>startGame(null));
+    }
+   }
+   if(spec==='kip'||spec==='ts'){
+    const id=spec==='kip'?'meter':'manometer';
+    await page.evaluate(id=>interactStation(crystals.find(c=>c.minigameId===id)),id);
+    assert(await page.locator('#'+id+'Screen').isVisible(),spec+' new station launches');
    }
    assert.deepEqual(errors,[],spec+' browser errors');console.log('PASS: '+spec);await page.close();
   }

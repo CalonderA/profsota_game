@@ -911,39 +911,60 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
      4: Электрические схемы и щитное оборудование (шкаф автоматики)
      ============================================================ */
   function drawKIPStation(type, done, hard, now, seed){
-    const drawBench = (w, leftPedestal = true, rightPedestal = true) => {
-      // Тень на полу
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      ctx.fillRect(-w/2 - 2, 18, w + 4, 5);
-      // Нижняя стенка / опора
-      ctx.fillStyle = '#0f172a';
+    const accent = hard ? '#c084fc' : (done ? '#34d399' : '#38bdf8');
+    const drawStool = (sx = 0) => {
+      ctx.fillStyle = 'rgba(7,11,22,0.55)';
+      ctx.beginPath(); ctx.ellipse(sx, 24, 13, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(sx - 11, 21, 22, 2.5);
+      ctx.fillStyle = '#090d16'; ctx.fillRect(sx - 12, 22, 3, 2); ctx.fillRect(sx + 9, 22, 3, 2);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(sx - 1.5, 13, 3, 9);
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(sx - 11, 6, 22, 9, 3); ctx.fill();
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.roundRect(sx - 11, 5, 22, 6, 3); ctx.fill();
+      ctx.fillStyle = '#64748b'; ctx.fillRect(sx - 9, 5, 18, 1.5);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.strokeRect(sx - 11, 5, 22, 9);
+    };
+    const drawBench = (w, leftPedestal = true, rightPedestal = true, withChair = true) => {
+      // Мягкая 2.5D тень от стола на полу
+      ctx.fillStyle = 'rgba(6,10,20,0.6)';
+      ctx.fillRect(-w/2 - 3, 17, w + 8, 6);
+      // Тёмный подстольный каркас и опоры
+      ctx.fillStyle = '#0b111e';
       ctx.fillRect(-w/2 + 4, 3, w - 8, 16);
-      // Тумбы с ящиками
-      if (leftPedestal){
-        ctx.fillStyle = '#1e293b'; ctx.fillRect(-w/2 + 2, 3, 24, 16);
-        ctx.fillStyle = '#334155'; ctx.fillRect(-w/2 + 4, 5, 20, 4); ctx.fillRect(-w/2 + 4, 11, 20, 5);
-        ctx.fillStyle = '#94a3b8'; ctx.fillRect(-w/2 + 11, 6.5, 6, 1); ctx.fillRect(-w/2 + 11, 13, 6, 1);
-      }
-      if (rightPedestal){
-        ctx.fillStyle = '#1e293b'; ctx.fillRect(w/2 - 26, 3, 24, 16);
-        ctx.fillStyle = '#334155'; ctx.fillRect(w/2 - 24, 5, 20, 4); ctx.fillRect(w/2 - 24, 11, 20, 5);
-        ctx.fillStyle = '#94a3b8'; ctx.fillRect(w/2 - 17, 6.5, 6, 1); ctx.fillRect(w/2 - 17, 13, 6, 1);
-      }
-      // Столешница (2.5D торец + верхняя плоскость)
-      ctx.fillStyle = '#94a3b8';
+      ctx.fillStyle = '#141c2f';
+      ctx.fillRect(-w/2 + 4, 15, w - 8, 3);
+      // Тумбы с ящиками и чёткой фаской
+      const drawPed = (px) => {
+        ctx.fillStyle = '#172033'; ctx.fillRect(px, 3, 24, 16);
+        ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.strokeRect(px, 3, 24, 16);
+        ctx.fillStyle = '#293548'; ctx.fillRect(px + 2, 5, 20, 4.5); ctx.fillRect(px + 2, 11, 20, 5.5);
+        ctx.fillStyle = '#475569'; ctx.fillRect(px + 2, 5, 20, 1); ctx.fillRect(px + 2, 11, 20, 1);
+        ctx.fillStyle = '#cbd5e1'; ctx.fillRect(px + 9, 7, 6, 1); ctx.fillRect(px + 9, 13.5, 6, 1);
+      };
+      if (leftPedestal) drawPed(-w/2 + 2);
+      if (rightPedestal) drawPed(w/2 - 26);
+      // 2.5D столешница: верхняя плоскость, передняя грань и LED-кант (в стиле П)
+      ctx.fillStyle = '#475569';
       ctx.beginPath(); ctx.roundRect(-w/2, -7, w, 11, 2); ctx.fill();
       ctx.fillStyle = '#64748b';
-      ctx.fillRect(-w/2, 1, w, 3);
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(-w/2 + 2, -5, w - 4, 5);
+      ctx.fillRect(-w/2 + 2, -6, w - 4, 4);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(-w/2 + 2, -7, w - 4, 1.5);
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(-w/2, 1, w, 3.5);
+      ctx.fillStyle = accent;
+      ctx.fillRect(-w/2 + 4, 2.5, w - 8, 1.3);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1;
+      ctx.strokeRect(-w/2, -7, w, 11.5);
+      if (withChair) drawStool(0);
     };
 
     if (type === 0){
       // 0. КОНТРОЛЬНО-ИЗМЕРИТЕЛЬНЫЕ ПРИБОРЫ (слева вверху)
-      // Настенная P&ID-доска сзади
-      ctx.fillStyle = '#0b1320'; ctx.fillRect(-54, -44, 108, 28);
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.4; ctx.strokeRect(-54, -44, 108, 28);
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1;
+      // Настенная P&ID-доска сзади в стальной раме
+      ctx.fillStyle = '#09111f'; ctx.fillRect(-54, -44, 108, 28);
+      ctx.strokeStyle = '#050912'; ctx.lineWidth = 2; ctx.strokeRect(-55, -45, 110, 30);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; ctx.strokeRect(-54, -44, 108, 28);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.1;
       ctx.beginPath();
       ctx.moveTo(-46, -33); ctx.lineTo(-24, -33); ctx.lineTo(-16, -38); ctx.lineTo(4, -38);
       ctx.moveTo(-24, -33); ctx.lineTo(-24, -24); ctx.lineTo(-6, -24);
@@ -952,27 +973,28 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
       ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.2; ctx.stroke();
       ctx.strokeStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(32, -31); ctx.lineTo(36, -34); ctx.stroke();
 
-      drawBench(116, true, true);
+      drawBench(118, true, true, true);
 
       // Широкоформатный осциллограф слева
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(-52, -28, 38, 24);
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.strokeRect(-52, -28, 38, 24);
-      ctx.fillStyle = '#021814'; ctx.fillRect(-49, -25, 26, 16);
-      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.4;
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-52, -28, 38, 22);
+      ctx.fillStyle = '#475569'; ctx.fillRect(-52, -28, 38, 2);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.2; ctx.strokeRect(-52, -28, 38, 22);
+      ctx.fillStyle = '#021814'; ctx.fillRect(-49, -25, 25, 16);
+      ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5;
       ctx.beginPath();
-      for (let i = 0; i < 24; i++){
+      for (let i = 0; i < 23; i++){
         const wx = -48 + i;
         const wy = -17 + Math.sin(i * 0.48 + now * 0.008 + seed) * 5;
         if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
       }
       ctx.stroke();
-      // Ручки осциллографа
       ctx.fillStyle = '#94a3b8';
-      ctx.fillRect(-20, -24, 3, 3); ctx.fillRect(-20, -18, 3, 3); ctx.fillRect(-20, -12, 3, 3);
+      ctx.fillRect(-21, -24, 3, 3); ctx.fillRect(-21, -18, 3, 3); ctx.fillRect(-21, -12, 3, 3);
 
       // Блок питания и частотомер по центру
-      ctx.fillStyle = '#334155'; ctx.fillRect(-10, -25, 28, 20);
-      ctx.strokeStyle = '#64748b'; ctx.strokeRect(-10, -25, 28, 20);
+      ctx.fillStyle = '#293548'; ctx.fillRect(-10, -25, 28, 19);
+      ctx.fillStyle = '#475569'; ctx.fillRect(-10, -25, 28, 1.5);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1; ctx.strokeRect(-10, -25, 28, 19);
       ctx.fillStyle = '#020617'; ctx.fillRect(-7, -22, 22, 8);
       ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 6px monospace'; ctx.textAlign = 'center';
       ctx.fillText('24.0V', 4, -16);
@@ -980,21 +1002,23 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
       ctx.fillStyle = '#ef4444'; ctx.fillRect(0, -11, 3, 3);
 
       // Два жёлтых мультиметра справа и провода щупов
-      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(22, -23, 14, 18, 2); ctx.fill();
+      ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(22, -23, 14, 17, 2); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#0f172a'; ctx.fillRect(24, -21, 10, 5);
-      ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.roundRect(39, -20, 12, 15, 2); ctx.fill();
+      ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.roundRect(39, -20, 12, 14, 2); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#0f172a'; ctx.fillRect(41, -18, 8, 4);
       ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(26, -5); ctx.quadraticCurveTo(16, 6, 4, -2); ctx.stroke();
-      ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(31, -5); ctx.quadraticCurveTo(22, 8, 12, -1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(26, -6); ctx.quadraticCurveTo(16, 4, 4, -3); ctx.stroke();
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(31, -6); ctx.quadraticCurveTo(22, 5, 12, -2); ctx.stroke();
     }
     else if (type === 1){
       // 1. ДИАГНОСТИКА И НАЛАДКА ОБОРУДОВАНИЯ (по центру вверху)
       // Настенный перфорированный щит с инструментом
-      ctx.fillStyle = '#161e2e'; ctx.fillRect(-54, -46, 108, 30);
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.3; ctx.strokeRect(-54, -46, 108, 30);
-      // Развешанные ключи, отвёртки и пассатижи
+      ctx.fillStyle = '#151d2e'; ctx.fillRect(-54, -46, 108, 30);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.8; ctx.strokeRect(-54, -46, 108, 30);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.strokeRect(-53, -45, 106, 28);
       [-44, -36, -28, -20, 18, 26, 34, 42].forEach((ix, idx) => {
         ctx.fillStyle = idx < 4 ? '#cbd5e1' : '#94a3b8';
         ctx.fillRect(ix, -40, 2.5, 16);
@@ -1002,19 +1026,21 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
         ctx.fillRect(ix - 1, -43, 4.5, 5);
       });
 
-      drawBench(116, true, true);
+      drawBench(118, true, true, true);
 
       // Портативный осциллограф слева
       ctx.fillStyle = '#1e293b'; ctx.fillRect(-50, -25, 22, 19);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1; ctx.strokeRect(-50, -25, 22, 19);
       ctx.fillStyle = '#022c22'; ctx.fillRect(-48, -23, 18, 11);
       ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1.1;
       ctx.beginPath(); ctx.moveTo(-47, -18); ctx.lineTo(-42, -21); ctx.lineTo(-37, -14); ctx.lineTo(-31, -18); ctx.stroke();
 
-      // Широкоформатный монитор SCADA по центру с клавиатурой
-      ctx.fillStyle = '#0f172a'; ctx.fillRect(-22, -32, 42, 25);
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.3; ctx.strokeRect(-22, -32, 42, 25);
+      // Широкоформатный монитор SCADA по центру с клавиатурой (2.5D рамка как в П)
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-22, -33, 42, 26);
+      ctx.fillStyle = '#475569'; ctx.fillRect(-22, -33, 42, 2);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.3; ctx.strokeRect(-22, -33, 42, 26);
       ctx.fillStyle = '#061325'; ctx.fillRect(-20, -30, 38, 21);
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.4;
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.5;
       ctx.beginPath();
       for (let i = 0; i < 34; i++){
         const wx = -18 + i;
@@ -1022,81 +1048,75 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
         if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
       }
       ctx.stroke();
-      // Клавиатура
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(-16, -5, 28, 4);
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(-16, -6, 28, 3.5);
+      ctx.fillStyle = '#64748b'; ctx.fillRect(-14, -5, 24, 1.5);
 
       // Жёлтый мультиметр и стенд испытания справа
       ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(24, -22, 13, 16, 2); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#0f172a'; ctx.fillRect(26, -20, 9, 5);
       ctx.fillStyle = '#334155'; ctx.fillRect(40, -27, 14, 21);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.1; ctx.strokeRect(40, -27, 14, 21);
       ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(47, -21, 2.5, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle = '#38bdf8'; ctx.fillRect(43, -15, 8, 5);
     }
     else if (type === 2){
       // 2. ИСПОЛНИТЕЛЬНЫЕ МЕХАНИЗМЫ И ПРИВОДЫ (справа вверху)
-      // Массивное основание под стеклянной камерой
-      drawBench(120, true, true);
+      drawBench(122, true, true, false);
 
-      // Трубы уходящие вверх из камеры
       ctx.fillStyle = '#475569';
-      ctx.fillRect(-42, -52, 6, 12);
-      ctx.fillRect(36, -52, 6, 12);
+      ctx.fillRect(-42, -51, 6, 10);
+      ctx.fillRect(36, -51, 6, 10);
 
       // Прозрачная стеклянная камера с неоновой синей рамкой сверху
-      const boxW = 112, boxH = 44;
-      ctx.fillStyle = 'rgba(12, 20, 36, 0.72)';
-      ctx.fillRect(-boxW/2, -46, boxW, boxH);
-      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#38bdf8');
+      const boxW = 112, boxH = 42;
+      ctx.fillStyle = 'rgba(10, 18, 34, 0.78)';
+      ctx.fillRect(-boxW/2, -45, boxW, boxH);
+      ctx.strokeStyle = accent;
       ctx.lineWidth = 1.8;
-      ctx.strokeRect(-boxW/2, -46, boxW, boxH);
-      // Верхняя световая полоса бокса
+      ctx.strokeRect(-boxW/2, -45, boxW, boxH);
       ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
-      ctx.fillRect(-boxW/2 + 2, -45, boxW - 4, 3);
-      // Блики стекла
+      ctx.fillRect(-boxW/2 + 2, -44, boxW - 4, 2.5);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.beginPath();
-      ctx.moveTo(-boxW/2 + 8, -42); ctx.lineTo(-boxW/2 + 28, -42);
-      ctx.lineTo(-boxW/2 + 12, -4); ctx.lineTo(-boxW/2 + 4, -4);
+      ctx.moveTo(-boxW/2 + 8, -41); ctx.lineTo(-boxW/2 + 28, -41);
+      ctx.lineTo(-boxW/2 + 12, -5); ctx.lineTo(-boxW/2 + 4, -5);
       ctx.fill();
 
-      // Внутренний жёлто-синий трубопровод с фланцами
       ctx.fillStyle = '#eab308'; ctx.fillRect(-48, -22, 52, 8);
       ctx.fillStyle = '#0284c7'; ctx.fillRect(4, -22, 44, 8);
       ctx.fillStyle = '#64748b';
       [-40, -20, 0, 22, 40].forEach(fx => ctx.fillRect(fx, -25, 4.5, 14));
 
-      // Синий шкафчик привода слева
       ctx.fillStyle = '#1d4ed8'; ctx.beginPath(); ctx.roundRect(-48, -36, 18, 28, 2); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#38bdf8'; ctx.fillRect(-44, -32, 10, 6);
 
-      // Электропривод с красным маховиком по центру
       ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.roundRect(-10, -34, 20, 20, 3); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, -35, 7.5, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 1.2; ctx.stroke();
 
-      // Белый манометр и синий датчик расхода справа
       ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(20, -32, 6.5, 0, Math.PI*2); ctx.fill();
       ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.1; ctx.stroke();
       ctx.strokeStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(20, -32); ctx.lineTo(23, -35); ctx.stroke();
       ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(33, -38, 16, 16, 3); ctx.fill();
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = '#34d399'; ctx.fillRect(36, -33, 10, 5);
     }
     else if (type === 3){
       // 3. ДАТЧИКИ И ИЗМЕРИТЕЛЬНЫЕ СИСТЕМЫ (слева внизу)
-      drawBench(120, true, true);
+      drawBench(122, true, true, true);
 
-      // Объёмная П-образная трубная обвязка из нержавейки
       ctx.fillStyle = '#94a3b8';
       ctx.fillRect(-50, -18, 100, 6);
-      ctx.fillRect(-50, -34, 6, 28);
-      ctx.fillRect(44, -34, 6, 28);
+      ctx.fillRect(-50, -34, 6, 27);
+      ctx.fillRect(44, -34, 6, 27);
       ctx.fillStyle = '#64748b';
       ctx.fillRect(-52, -36, 24, 5);
-      // Фланцы
       ctx.fillStyle = '#cbd5e1';
       [-46, -24, 0, 24, 42].forEach(fx => ctx.fillRect(fx, -20, 4, 10));
 
-      // Два массивных синих датчика давления (Метран / Rosemount)
       [-28, 14].forEach(sx => {
         ctx.fillStyle = '#64748b'; ctx.fillRect(sx + 5, -26, 3, 8);
         ctx.fillStyle = '#0284c7'; ctx.beginPath(); ctx.roundRect(sx - 2, -40, 17, 15, 3); ctx.fill();
@@ -1105,13 +1125,11 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
         ctx.fillStyle = '#34d399'; ctx.fillRect(sx + 4, -33.5, 5, 2);
       });
 
-      // Цифровой терминал-расходомер по центру
       ctx.fillStyle = '#0f172a'; ctx.fillRect(-9, -31, 20, 15);
       ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.2; ctx.strokeRect(-9, -31, 20, 15);
       ctx.fillStyle = '#38bdf8'; ctx.fillRect(-6, -27, 14, 3);
       ctx.fillStyle = '#22c55e'; ctx.fillRect(-6, -21, 8, 2);
 
-      // Вертикальная стеклянная колонна-ротаметр справа
       ctx.fillStyle = 'rgba(56, 189, 248, 0.25)'; ctx.fillRect(34, -40, 8, 24);
       ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.strokeRect(34, -40, 8, 24);
       const bobY = -28 + Math.sin(now * 0.005 + seed) * 4;
@@ -1119,40 +1137,35 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
     }
     else {
       // 4. ЭЛЕКТРИЧЕСКИЕ СХЕМЫ И ЩИТНОЕ ОБОРУДОВАНИЕ (справа внизу)
-      drawBench(120, true, false);
+      drawBench(122, true, false, false);
 
-      // Раскрытый двухстворчатый шкаф автоматики слева-центр
-      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(-54, -42, 60, 38, 3); ctx.fill();
-      ctx.strokeStyle = hard ? '#c084fc' : (done ? '#10b981' : '#f59e0b');
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(-54, -42, 60, 37, 3); ctx.fill();
+      ctx.strokeStyle = accent;
       ctx.lineWidth = 1.5; ctx.stroke();
-      // Внутренние DIN-рейки с цветными автоматами и клеммами
       ctx.fillStyle = '#475569';
       ctx.fillRect(-50, -34, 52, 2.5);
       ctx.fillRect(-50, -23, 52, 2.5);
       ctx.fillRect(-50, -12, 52, 2.5);
-      // Модули ПЛК и автоматы
       ctx.fillStyle = '#0284c7'; ctx.fillRect(-48, -38, 14, 9);
       ctx.fillStyle = '#f59e0b'; ctx.fillRect(-32, -38, 10, 9);
       ctx.fillStyle = '#ef4444'; ctx.fillRect(-20, -38, 8, 9);
       ctx.fillStyle = '#64748b'; ctx.fillRect(-10, -38, 10, 9);
-      // Нижний ряд клемм и светодиоды
       const blink = Math.sin(now * 0.008 + seed) > 0;
       ctx.fillStyle = blink ? '#22c55e' : '#0f172a'; ctx.fillRect(-46, -37, 2.5, 2.5);
       ctx.fillStyle = '#38bdf8'; ctx.fillRect(-41, -37, 2.5, 2.5);
       ctx.fillStyle = '#eab308'; ctx.fillRect(-48, -27, 24, 7);
       ctx.fillStyle = '#38bdf8'; ctx.fillRect(-20, -27, 18, 7);
 
-      // Раскрытый инженерный ноутбук по центру на столе
-      ctx.fillStyle = '#0f172a'; ctx.fillRect(-12, -20, 28, 16);
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(-12, -20, 28, 16);
-      ctx.fillStyle = '#041d38'; ctx.fillRect(-10, -18, 24, 12);
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(-12, -21, 28, 16);
+      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(-12, -21, 28, 16);
+      ctx.fillStyle = '#041d38'; ctx.fillRect(-10, -19, 24, 12);
       ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(-8, -12); ctx.lineTo(0, -12); ctx.lineTo(4, -15); ctx.lineTo(12, -15); ctx.stroke();
-      ctx.fillStyle = '#475569'; ctx.fillRect(-14, -4, 32, 4);
+      ctx.beginPath(); ctx.moveTo(-8, -13); ctx.lineTo(0, -13); ctx.lineTo(4, -16); ctx.lineTo(12, -16); ctx.stroke();
+      ctx.fillStyle = '#475569'; ctx.fillRect(-14, -5, 32, 3.5);
 
-      // Высокий серый силовой шкаф справа
-      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(24, -40, 32, 58, 3); ctx.fill();
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.roundRect(24, -40, 32, 57, 3); ctx.fill();
+      ctx.fillStyle = '#64748b'; ctx.fillRect(26, -40, 28, 2);
+      ctx.strokeStyle = '#090d16'; ctx.lineWidth = 1.2; ctx.stroke();
       ctx.fillStyle = '#334155'; ctx.fillRect(28, -35, 24, 24);
       ctx.fillStyle = '#f59e0b'; ctx.fillRect(44, -22, 3, 6);
       ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(34, -30, 2, 0, Math.PI*2); ctx.fill();
@@ -1324,10 +1337,217 @@ window.registerStationRenderer = window.registerStationRenderer || function(spec
   }
 
 
+  /* ============================================================
+     Мини-игра «Проверка цепей мультиметром» (meter)
+     ============================================================ */
+  const METER_CFG = {
+    TIME_MS: 28000,
+    REWARD: 200,
+    CLOSE_DELAY_MS: 1400
+  };
+  const METER_POOL = [
+    { mode: 'vdc', unit: 'В DC', label: 'V⎓', title: 'Шина питания ПЛК (DC 24 В)', spec: 'Норма: 24.0 В (допуск 22.5–25.5 В)', normVal: '24.1', faultVal: '14.3' },
+    { mode: 'ohm', unit: 'Ом', label: 'Ω', title: 'Нагрузочный резистор HART (250 Ом)', spec: 'Норма: 250 Ом (допуск 240–260 Ом)', normVal: '250', faultVal: 'OL' },
+    { mode: 'ma', unit: 'мА', label: 'mA', title: 'Выходной ток датчика давления P1', spec: 'Норма: 4.0–20.0 мА (ожидается ~12.0 мА)', normVal: '12.0', faultVal: '1.8' }
+  ];
+
+  let meterGame = {
+    active: false,
+    phase: 'banner',
+    step: 0,
+    selectedMode: null,
+    tasks: [],
+    deadline: 0,
+    rafId: 0,
+    closeTimer: 0
+  };
+
+  function cleanupMeter(){
+    if (meterGame.rafId) cancelAnimationFrame(meterGame.rafId);
+    if (meterGame.closeTimer) clearTimeout(meterGame.closeTimer);
+    meterGame.active = false;
+    meterGame.rafId = 0;
+    meterGame.closeTimer = 0;
+  }
+
+  function startMeterEvent(){
+    cleanupMeter();
+    meterGame.active = true;
+    meterGame.phase = 'banner';
+    meterGame.step = 0;
+    meterGame.selectedMode = null;
+
+    // 3 точки в случайном порядке, минимум 1 с реальным дефектом
+    const faultIdx = Math.floor(Math.random() * METER_POOL.length);
+    meterGame.tasks = METER_POOL.map((t, i) => ({ ...t, isFault: i === faultIdx }))
+      .sort(() => Math.random() - 0.5);
+
+    if (el('meterBannerTitle')) el('meterBannerTitle').textContent = 'Проверка цепей мультиметром';
+    if (el('meterBannerText')) el('meterBannerText').textContent = 'На стенде 3 контрольные точки (питание 24 В DC, резистор HART 250 Ом и токовая петля 4–20 мА). Выберите нужный режим мультиметра (V⎓, Ω или mA), сверьте показания с нормой и вынесите вердикт!';
+    const btn = el('meterStartBtn');
+    if (btn){
+      btn.textContent = 'Взять щупы';
+      btn.onclick = beginMeterRound;
+    }
+
+    document.querySelectorAll('#meterScreen .meter-mode-btn').forEach(b => {
+      b.classList.remove('active');
+      b.onclick = () => selectMeterMode(b.getAttribute('data-mode'));
+    });
+    if (el('meterOkBtn')) el('meterOkBtn').onclick = () => submitMeterVerdict(false);
+    if (el('meterFaultBtn')) el('meterFaultBtn').onclick = () => submitMeterVerdict(true);
+
+    updateMeterStepUI();
+    updateMeterTimerUI(METER_CFG.TIME_MS);
+    if (el('meterBanner')) el('meterBanner').classList.remove('hidden');
+    if (el('meterScreen')) el('meterScreen').classList.remove('hidden');
+  }
+
+  function beginMeterRound(){
+    if (!meterGame.active) return;
+    if (el('meterBanner')) el('meterBanner').classList.add('hidden');
+    meterGame.phase = 'playing';
+    meterGame.deadline = performance.now() + METER_CFG.TIME_MS;
+    meterGame.rafId = requestAnimationFrame(tickMeter);
+  }
+
+  function selectMeterMode(mode){
+    if (!meterGame.active || meterGame.phase !== 'playing') return;
+    meterGame.selectedMode = mode;
+    document.querySelectorAll('#meterScreen .meter-mode-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+    });
+    try { sfx.step(); } catch(e){}
+    updateMeterStepUI();
+  }
+
+  function updateMeterStepUI(){
+    const task = meterGame.tasks[meterGame.step];
+    if (!task) return;
+    if (el('meterStepPill')) el('meterStepPill').textContent = 'Точка ' + (meterGame.step + 1) + '/' + meterGame.tasks.length;
+    if (el('meterPointTitle')) el('meterPointTitle').textContent = task.title;
+    if (el('meterPointSpec')) el('meterPointSpec').textContent = task.spec;
+
+    const lcdVal = el('meterLcdVal');
+    const lcdMode = el('meterLcdMode');
+    const lcdUnit = el('meterLcdUnit');
+    const status = el('meterProbeStatus');
+    const okBtn = el('meterOkBtn');
+    const faultBtn = el('meterFaultBtn');
+
+    if (!meterGame.selectedMode){
+      if (lcdMode) lcdMode.textContent = 'РЕЖИМ: ---';
+      if (lcdUnit) lcdUnit.textContent = '—';
+      if (lcdVal){ lcdVal.textContent = '----'; lcdVal.className = 'meter-lcd-val idle'; }
+      if (status){
+        status.textContent = 'Выберите нужный предел измерений на мультиметре слева (V⎓, Ω или mA).';
+        status.className = 'meter-probe-status';
+      }
+      if (okBtn) okBtn.disabled = true;
+      if (faultBtn) faultBtn.disabled = true;
+      return;
+    }
+
+    const modeMeta = { vdc: 'DC V⎓', vrms: 'AC V~', ohm: 'OHM Ω', ma: 'LOOP mA' };
+    if (lcdMode) lcdMode.textContent = 'РЕЖИМ: ' + (modeMeta[meterGame.selectedMode] || meterGame.selectedMode);
+
+    if (meterGame.selectedMode !== task.mode){
+      if (lcdUnit) lcdUnit.textContent = meterGame.selectedMode === 'vrms' ? 'В AC' : (meterGame.selectedMode === 'ohm' ? 'Ом' : (meterGame.selectedMode === 'ma' ? 'мА' : 'В DC'));
+      if (lcdVal){ lcdVal.textContent = '0.00'; lcdVal.className = 'meter-lcd-val idle'; }
+      if (status){
+        status.textContent = 'Неверный предел измерений! Для этой точки нужен режим ' + task.label + '.';
+        status.className = 'meter-probe-status warn';
+      }
+      if (okBtn) okBtn.disabled = true;
+      if (faultBtn) faultBtn.disabled = true;
+    } else {
+      const val = task.isFault ? task.faultVal : task.normVal;
+      if (lcdUnit) lcdUnit.textContent = task.unit;
+      if (lcdVal){
+        lcdVal.textContent = val;
+        lcdVal.className = 'meter-lcd-val' + (task.isFault ? ' fault' : '');
+      }
+      if (status){
+        status.textContent = 'Показания сняты (' + val + (val === 'OL' ? '' : ' ' + task.unit) + '). Сверьте с допуском и выберите вердикт!';
+        status.className = 'meter-probe-status ok';
+      }
+      if (okBtn) okBtn.disabled = false;
+      if (faultBtn) faultBtn.disabled = false;
+    }
+  }
+
+  function submitMeterVerdict(claimFault){
+    if (!meterGame.active || meterGame.phase !== 'playing') return;
+    const task = meterGame.tasks[meterGame.step];
+    if (!task || meterGame.selectedMode !== task.mode) return;
+
+    if (claimFault === task.isFault){
+      try { sfx.good(); } catch(e){}
+      meterGame.step++;
+      meterGame.selectedMode = null;
+      document.querySelectorAll('#meterScreen .meter-mode-btn').forEach(b => b.classList.remove('active'));
+      if (meterGame.step >= meterGame.tasks.length){
+        finishMeter(true);
+      } else {
+        updateMeterStepUI();
+      }
+    } else {
+      try { sfx.bad(); } catch(e){}
+      meterGame.deadline -= 2500;
+      const status = el('meterProbeStatus');
+      if (status){
+        status.textContent = 'Ошибка диагностики (−2.5 с)! Перепроверьте измерение относительно допуска.';
+        status.className = 'meter-probe-status warn';
+      }
+    }
+  }
+
+  function updateMeterTimerUI(msLeft){
+    const bar = el('meterTimerBar'), txt = el('meterTimerText');
+    if (!bar || !txt) return;
+    txt.textContent = (Math.max(0, msLeft) / 1000).toFixed(1) + ' с';
+    const pct = clamp((msLeft / METER_CFG.TIME_MS) * 100, 0, 100);
+    bar.style.width = pct + '%';
+    const st = pct <= 30 ? ' low' : (pct <= 55 ? ' warn' : '');
+    bar.className = 'calib-timer-fill' + st;
+    txt.className = 'calib-pill timer' + (pct <= 30 ? ' low' : '');
+  }
+
+  function tickMeter(now){
+    if (!meterGame.active || meterGame.phase !== 'playing') return;
+    const left = meterGame.deadline - now;
+    updateMeterTimerUI(left);
+    if (left <= 0){ finishMeter(false); return; }
+    meterGame.rafId = requestAnimationFrame(tickMeter);
+  }
+
+  function finishMeter(won){
+    if (!meterGame.active) return;
+    meterGame.phase = 'done';
+    if (meterGame.rafId){ cancelAnimationFrame(meterGame.rafId); meterGame.rafId = 0; }
+    if (won){
+      score += METER_CFG.REWARD; fuel = Math.min(100, fuel + 20);
+      sfx.good(); flash = 0.4; flashColor = '56,189,248';
+      updateHUD();
+      if (el('meterBannerTitle')) el('meterBannerTitle').textContent = 'Все цепи прозвонены!';
+      if (el('meterBannerText')) el('meterBannerText').textContent = 'Питание, резистор HART и токовая петля проверены мультиметром. Награда: +' + METER_CFG.REWARD + ' очков, +20 света.';
+    } else {
+      sfx.bad(); flash = 0.3; flashColor = '255,100,100';
+      if (el('meterBannerTitle')) el('meterBannerTitle').textContent = 'Время проверки истекло';
+      if (el('meterBannerText')) el('meterBannerText').textContent = 'Не все точки успели прозвонить. Можно повторить диагностику у стенда.';
+    }
+    const btn = el('meterStartBtn');
+    if (btn){ btn.textContent = 'Продолжить смену'; btn.onclick = () => closeFloorEvent(won); }
+    if (el('meterBanner')) el('meterBanner').classList.remove('hidden');
+    meterGame.closeTimer = setTimeout(() => closeFloorEvent(won), METER_CFG.CLOSE_DELAY_MS);
+  }
+
+
 /* ============================================================
    Регистрация мини-игр и 2.5D оборудования КИПиА
    ============================================================ */
 if (window.registerMinigame) {
+  registerMinigame('meter', { name: 'проверка цепей мультиметром', start: startMeterEvent, cleanup: cleanupMeter });
   registerMinigame('calib', { name: 'калибровка токовой петли 4–20 мА', start: startCalibEvent, cleanup: cleanupCalib });
   registerMinigame('wires', { name: 'монтаж клеммной схемы КИПиА', start: startWiresEvent, cleanup: cleanupWires });
   registerMinigame('pid',   { name: 'настройка ПИД-регулятора давления', start: startPidEvent, cleanup: cleanupPid });
