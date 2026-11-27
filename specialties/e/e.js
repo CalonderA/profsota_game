@@ -93,16 +93,15 @@ function eCable(points, color){
 }
 
 // ==================================================================
-// ИНТЕРЬЕР ЭЛЕКТРОУЧАСТКА (13.02.13)
-// Индустриальная подстанция: сталь, янтарный неон, зоны опасности,
-// силовое оборудование с живой индикацией.
+// ИНТЕРЬЕР ЭЛЕКТРОУЧАСТКА (13.02.13) — «диспетчерский зал энергосети»
+// Холодный синий металл, циановые экраны, живая схема сети на стене.
 // ==================================================================
 const E_COL = {
-  floor: ['#252a33', '#1f242c', '#282d37', '#222730'],
-  steel: '#3a4453', steelDark: '#1a212c',
-  amber: '#f5a623', amber2: '#ffd166',
-  hazard: '#f2c94c', hazardDark: '#17171a',
-  copper: '#c98a3a', red: '#e0483a', cyan: '#5fd0e0', ok: '#6ef0b6'
+  floor: ['#232b3a', '#1e2531', '#28303f', '#212936'],
+  bench: '#71809a', benchDark: '#2e3745',
+  violet: '#8fb7e8', teal: '#5fd0e0', tealDark: '#1f7f96',
+  amber: '#5fd0e0', hazard: '#f2c94c', hazardDark: '#17171a',
+  copper: '#d98a3a', red: '#e0483a', cyan: '#5fd0e0', ok: '#7be0a6'
 };
 
 const eFloorCache = new Map();
@@ -117,31 +116,30 @@ function drawEFloor(x, y){
     g.fillStyle = E_COL.floor[(x + y * 3) % 4];
     g.fillRect(0, 0, 44, 44);
     // Стыки стальных плит и заклёпки
-    g.fillStyle = '#0d1117'; g.fillRect(0, 43, 44, 1); g.fillRect(43, 0, 1, 44);
-    g.fillStyle = '#454e5c'; g.fillRect(0, 0, 44, 1);
-    g.fillStyle = '#525b6a';
+    g.fillStyle = '#0c1118'; g.fillRect(0, 43, 44, 1); g.fillRect(43, 0, 1, 44);
+    g.fillStyle = '#3f4a5c'; g.fillRect(0, 0, 44, 1);
+    g.fillStyle = '#4d5870';
     g.fillRect(3, 3, 1, 1); g.fillRect(40, 3, 1, 1); g.fillRect(3, 40, 1, 1); g.fillRect(40, 40, 1, 1);
-    // Стружка, царапины и искры
-    for (let i = 0; i < 18; i++){
-      g.fillStyle = i % 3 ? '#8ea0bb22' : '#05070c55';
+    // Потёртости и блики полировки
+    for (let i = 0; i < 16; i++){
+      g.fillStyle = i % 3 ? '#9fb4d018' : '#060a1255';
       g.fillRect(2 + (n + i * 13) % 40, 2 + (n * 3 + i * 7) % 40, i % 5 === 0 ? 3 : 1, 1);
     }
-    if (n % 7 === 0){ g.fillStyle = '#0a0806aa'; g.beginPath(); g.ellipse(16 + n % 12, 24, 6, 3, 0, 0, Math.PI * 2); g.fill(); }
-    if (n % 5 === 0){ g.fillStyle = '#f5a62318'; g.fillRect(0, 20, 44, 2); }
+    if (n % 6 === 0){ g.fillStyle = '#5fd0e012'; g.fillRect(0, 20, 44, 2); }
     eFloorCache.set(key, tile);
   }
   ctx.drawImage(tile, x * 44, y * 44);
-  // Технологический кабель-канал вдоль боковых стен
+  // Циановый кабель-канал вдоль боковых стен
   if (x === 1 || x === 21){
     const px = x * 44 + (x === 1 ? 2 : 36);
-    ctx.fillStyle = '#2a2113'; ctx.fillRect(px, y * 44, 6, 44);
-    ctx.fillStyle = E_COL.amber; ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#10222b'; ctx.fillRect(px, y * 44, 6, 44);
+    ctx.fillStyle = E_COL.cyan; ctx.globalAlpha = 0.55;
     ctx.fillRect(px, y * 44, 6, 2);
     ctx.globalAlpha = 1;
   }
-  // Разметка проезда по оси цеха
+  // Светодиодная полоса-навигация по оси цеха
   if (y === 4 || y === 8){
-    ctx.globalAlpha = 0.14; ctx.fillStyle = E_COL.amber;
+    ctx.globalAlpha = 0.13; ctx.fillStyle = E_COL.cyan;
     ctx.fillRect(x * 44 + 18, y * 44, 8, 44);
     ctx.globalAlpha = 1;
   }
@@ -151,73 +149,73 @@ function drawEWall(x, y){
   if (y < 2) return;
   const px = x * 44, py = y * 44;
   if (y === 14){
-    // Защитный отбойник с жёлто-чёрной разметкой
-    eBox(px, py, 44, 12, 12, '#3a3524', '#141310');
+    // Отбойник с жёлто-чёрной разметкой
+    eBox(px, py, 44, 12, 12, '#39362a', '#15130d');
     for (let i = 0; i < 44; i += 11){
       eRect(px + i, py + 1, 6, 11, E_COL.hazard);
       eRect(px + i + 6, py + 1, 5, 11, E_COL.hazardDark);
     }
-    eRect(px, py, 44, 1, '#5a5333');
+    eRect(px, py, 44, 1, '#5a5433');
   } else {
-    eRect(px, py, 44, 44, '#161c26');
-    eRect(px, py, 44, 1, '#232c39');
-    eRect(px + (x === 0 ? 40 : 2), py, 2, 44, '#0f141c');
-    // Янтарный короб-провод вдоль стены
+    eRect(px, py, 44, 44, '#131a26');
+    eRect(px, py, 44, 1, '#1f2a3a');
+    eRect(px + (x === 0 ? 40 : 2), py, 2, 44, '#0e1420');
+    // Циановый короб-провод вдоль стены
     const cx = px + (x === 0 ? 34 : 8);
-    eRect(cx, py, 4, 44, '#2a2113');
-    eRect(cx, py, 4, 3, E_COL.amber);
-    eRect(cx, py + 20, 4, 3, E_COL.amber);
+    eRect(cx, py, 4, 44, '#10222b');
+    eRect(cx, py, 4, 3, E_COL.cyan);
+    eRect(cx, py + 20, 4, 3, E_COL.cyan);
     // Распределительная коробка
-    eRect(cx - 4, py + 16, 12, 10, '#2a3340');
-    eRect(cx - 2, py + 18, 8, 2, E_COL.copper);
+    eRect(cx - 4, py + 16, 12, 10, '#1e2a3a');
+    eRect(cx - 2, py + 18, 8, 2, E_COL.tealDark);
   }
 }
 
 function drawEBackWall(now){
   const wallH = 88;
   // Стальные панели с швами и заклёпками
-  eRect(0, 0, VW, wallH, '#0e131c');
+  eRect(0, 0, VW, wallH, '#0d1420');
   for (let x = 0; x < VW; x += 58){
-    eRect(x, 0, 2, wallH, '#1b2230');
-    eRect(x + 3, 13, 50, 1, '#232c3c');
-    eRect(x + 3, 55, 50, 1, '#232c3c');
-    eRect(x + 7, 6, 2, 2, '#3c4658'); eRect(x + 47, 6, 2, 2, '#3c4658');
-    eRect(x + 7, 72, 2, 2, '#3c4658'); eRect(x + 47, 72, 2, 2, '#3c4658');
+    eRect(x, 0, 2, wallH, '#1d2839');
+    eRect(x + 3, 13, 50, 1, '#26334a');
+    eRect(x + 3, 55, 50, 1, '#26334a');
+    eRect(x + 7, 6, 2, 2, '#3c4c68'); eRect(x + 47, 6, 2, 2, '#3c4c68');
+    eRect(x + 7, 72, 2, 2, '#3c4c68'); eRect(x + 47, 72, 2, 2, '#3c4c68');
   }
   // Цоколь
-  eRect(0, 80, VW, 8, '#080c13');
-  eRect(0, 80, VW, 2, '#3a4254');
-  // Верхний кабельный лоток с пучком проводки
-  eRect(0, 0, VW, 10, '#080c13');
-  eRect(0, 10, VW, 4, '#4a5568');
-  eRect(0, 14, VW, 1, '#5e6c82');
+  eRect(0, 80, VW, 8, '#080d15');
+  eRect(0, 80, VW, 2, '#3a4a64');
+  // Верхний кабельный лоток с пучком
+  eRect(0, 0, VW, 10, '#080d15');
+  eRect(0, 10, VW, 4, '#44536c');
+  eRect(0, 14, VW, 1, '#5c6f8e');
   ctx.lineWidth = 2;
-  [['#e0483a', 3], ['#5fd0e0', 6], ['#c98a3a', 9]].forEach((row) => {
+  [['#5fd0e0', 3], ['#e0483a', 6], ['#7be0a6', 9]].forEach((row) => {
     ctx.strokeStyle = row[0];
     ctx.beginPath(); ctx.moveTo(0, row[1]); ctx.lineTo(VW, row[1]); ctx.stroke();
   });
 
-  // Тёплое неоновое зарево участка
-  eGlow(506, 40, 300, '#f5a6231e');
+  // Холодное зарево экранов
+  eGlow(506, 40, 300, '#5fd0e01c');
 
   // ---- Центральная вывеска ----
-  eBox(300, 12, 412, 42, 7, '#26313f', '#0e141d');
-  eRect(306, 16, 400, 34, '#0a0f17');
-  eRect(306, 16, 400, 2, '#ffd166');
-  eText('ЭЛЕКТРОУЧАСТОК', 506, 40, 22, '#ffd166', 'center');
-  eText('13.02.13 · ЭЛЕКТРООБОРУДОВАНИЕ И ЭЛЕКТРОХОЗЯЙСТВО', 506, 55, 8, '#e8b23a', 'center');
+  eBox(300, 12, 412, 42, 7, '#20303f', '#0c1420');
+  eRect(306, 16, 400, 34, '#081019');
+  eRect(306, 16, 400, 2, '#5fd0e0');
+  eText('ЭНЕРГОДИСПЕТЧЕР', 506, 40, 22, '#9fe4f2', 'center');
+  eText('13.02.13 · ЭЛЕКТРООБОРУДОВАНИЕ И ЭЛЕКТРОХОЗЯЙСТВО', 506, 55, 8, '#5fa8c8', 'center');
 
   // Прожекторы по краям вывески
   [288, 716].forEach((lx) => {
-    eRect(lx, 10, 10, 44, '#1a222e');
-    eRect(lx + 2, 14, 6, 36, '#0c121a');
-    eRect(lx + 3, 22, 4, 22, '#ffd166');
-    eGlow(lx + 5, 34, 58, '#f5a62330');
+    eRect(lx, 10, 10, 44, '#151e2c');
+    eRect(lx + 2, 14, 6, 36, '#0a1019');
+    eRect(lx + 3, 22, 4, 22, '#5fd0e0');
+    eGlow(lx + 5, 34, 58, '#5fd0e030');
   });
 
   // ---- Знак электробезопасности слева ----
-  eBox(42, 16, 110, 58, 6, '#2a2116', '#160f08');
-  eRect(47, 20, 100, 50, '#1c1508');
+  eBox(42, 16, 110, 58, 6, '#2a2a16', '#151508');
+  eRect(47, 20, 100, 50, '#1c1808');
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(93, 24); ctx.lineTo(138, 62); ctx.lineTo(48, 62); ctx.closePath();
@@ -228,7 +226,7 @@ function drawEBackWall(now){
   ctx.moveTo(99, 28); ctx.lineTo(106, 44); ctx.lineTo(97, 44); ctx.lineTo(102, 56);
   ctx.lineTo(86, 41); ctx.lineTo(95, 41); ctx.closePath(); ctx.fill();
   ctx.restore();
-  eText('ОПАСНО · 380 В', 97, 78, 7, '#c9a13a', 'center');
+  eText('ОПАСНО · 380 В', 97, 78, 7, '#c9b13a', 'center');
 
   // ---- Аварийная кнопка «СТОП» ----
   eBox(742, 18, 62, 54, 7, '#3a2226', '#1a0f12');
@@ -240,34 +238,35 @@ function drawEBackWall(now){
   eGlow(773, 40, 34, '#e0483a26');
   eText('СТОП', 773, 70, 8, '#e8b23a', 'center');
 
-  // ---- Табло напряжения справа ----
+  // ---- Экран нагрузки справа (живой график) ----
   eBox(826, 16, 160, 56, 8, '#16301f', '#08140d');
   eRect(832, 21, 148, 38, '#05140b');
-  eText('380 / 220 В', 906, 42, 16, '#7be0a6', 'center');
-  eText('ВВОД · ЩИТ №1 · ВКЛ', 906, 58, 8, '#5fbf88', 'center');
-  eGlow(906, 40, 78, '#48d8a420');
-  // Индикация трёх фаз
-  ['#e0483a', '#f2c94c', '#5fd0e0'].forEach((c, i) => {
-    eRect(844 + i * 11, 24, 7, 7, '#0a1a12');
-    eRect(845 + i * 11, 25, 5, 5, c);
-  });
-
-  // ---- Однолинейная схема под вывеской ----
-  eBox(336, 60, 340, 18, 4, '#4a5568', '#232b3a');
-  eRect(342, 63, 328, 12, '#0c1018');
-  eRect(346, 69, 320, 1, '#c98a3a');
-  for (let i = 0; i < 7; i++){
-    eRect(360 + i * 44, 65, 14, 8, '#2b3a52');
-    eRect(363 + i * 44, 67, 8, 1, i % 2 ? '#5fd0e0' : '#7be0a6');
+  for (let b = 0; b < 12; b++){
+    const h = 6 + Math.abs(Math.sin(now / 700 + b * 1.3)) * 22;
+    eRect(838 + b * 11, 52 - h, 7, h, b % 3 === 2 ? '#5fd0e0' : '#1f6f5a');
   }
+  eText('НАГРУЗКА · МВт', 906, 30, 8, '#7be0a6', 'center');
+  eGlow(906, 40, 78, '#48d8a420');
+
+  // ---- Живая однолинейная схема сети под вывеской ----
+  eBox(336, 60, 340, 18, 4, '#3c5068', '#1a2735');
+  eRect(342, 63, 328, 12, '#0a1220');
+  eRect(346, 69, 320, 1, '#3c6f86');
+  const nodes = [352, 402, 452, 502, 552, 602, 652];
+  nodes.forEach((nx, i) => {
+    const pulse = 0.5 + 0.5 * Math.sin(now / 400 + i * 1.1);
+    eRect(nx, 65, 12, 8, '#153042');
+    eRect(nx + 3, 67, 6, 4, pulse > 0.5 ? '#5fd0e0' : '#1f5f78');
+    eGlow(nx + 6, 69, 10 + pulse * 6, '#5fd0e022');
+  });
 }
 
 function drawEProps(now){
-  // Световые пятна от прожекторов и ламп
-  eGlow(160, 150, 210, '#f5a62316');
-  eGlow(506, 150, 240, '#f5a6231a');
-  eGlow(860, 150, 210, '#f5a62316');
-  eGlow(506, 440, 250, '#f5a6230e');
+  // Световые пятна от экранов и ламп
+  eGlow(160, 150, 210, '#5fd0e014');
+  eGlow(506, 150, 240, '#5fd0e01a');
+  eGlow(860, 150, 210, '#5fd0e014');
+  eGlow(506, 440, 250, '#5fd0e00c');
 
   const ty = 2 * 44;
 
@@ -280,36 +279,36 @@ function drawEProps(now){
     for (let k = 0; k < 48; k += 12) eRect(fx, ty + 24 + k, 5, 6, E_COL.hazard);
   });
   // Бак трансформатора с радиаторными рёбрами
-  eBox(tx + 26, ty + 28, 148, 42, 24, '#7c8064', '#2b3040');
-  for (let i = 0; i < 8; i++) eRect(tx + 32 + i * 17, ty + 28, 6, 42, '#3d4250');
+  eBox(tx + 26, ty + 28, 148, 42, 24, '#6d7a8e', '#26303f');
+  for (let i = 0; i < 8; i++) eRect(tx + 32 + i * 17, ty + 28, 6, 42, '#34404f');
   // Вводы-изоляторы сверху
   for (let i = 0; i < 3; i++){
-    eRect(tx + 56 + i * 44, ty + 12, 8, 18, '#8a8f9c');
-    eRect(tx + 54 + i * 44, ty + 8, 12, 5, '#c9cfd8');
-    eGlow(tx + 60 + i * 44, ty + 8, 22, '#f5a62333');
+    eRect(tx + 56 + i * 44, ty + 12, 8, 18, '#8a93a2');
+    eRect(tx + 54 + i * 44, ty + 8, 12, 5, '#c9d2dc');
+    eGlow(tx + 60 + i * 44, ty + 8, 22, '#5fd0e02e');
   }
   // Маслоуказатель и шильдик
   eRect(tx + 128, ty + 38, 10, 26, '#0d141d');
   eRect(tx + 130, ty + 40, 6, 16, E_COL.copper);
-  eRect(tx + 34, ty + 34, 28, 14, '#222a37');
-  eText('ТМ-100', tx + 48, ty + 44, 7, '#d7c98a', 'center');
-  eText('ЯЧЕЙКА · 10 кВ', tx + 98, ty + 82, 8, '#9aa6bd', 'center');
+  eRect(tx + 34, ty + 34, 28, 14, '#1f2a37');
+  eText('ТМ-100', tx + 48, ty + 44, 7, '#b7d2c9', 'center');
+  eText('ЯЧЕЙКА · 10 кВ', tx + 98, ty + 82, 8, '#8ea3bd', 'center');
 
   // ---- Шкафы КРУ слева (x 2..7, y 2..3) ----
   for (let i = 0; i < 3; i++){
     const cx = 2 * 44 + 8 + i * 88;
     eRect(cx + 4, ty + 66, 82, 10, '#05070c99');
-    eBox(cx, ty - 4, 82, 56, 24, '#5c6779', '#222a37');
-    eRect(cx + 6, ty + 2, 70, 40, '#0d141d');
+    eBox(cx, ty - 4, 82, 56, 24, '#546278', '#1f2938');
+    eRect(cx + 6, ty + 2, 70, 40, '#0c1320');
     for (let r = 0; r < 4; r++){
       const on = (r + i) % 2 === 0;
-      eRect(cx + 12, ty + 6 + r * 9, 58, 6, '#2b3a52');
-      eRect(cx + 16, ty + 8 + r * 9, 42, 1, on ? '#5fd0e0' : '#c98a3a');
-      for (let d = 0; d < 4; d++) eRect(cx + 60 - d * 5, ty + 7 + r * 9, 2, 4, on ? '#7be0a6' : '#33415a');
+      eRect(cx + 12, ty + 6 + r * 9, 58, 6, '#233850');
+      eRect(cx + 16, ty + 8 + r * 9, 42, 1, on ? '#5fd0e0' : '#3c6f86');
+      for (let d = 0; d < 4; d++) eRect(cx + 60 - d * 5, ty + 7 + r * 9, 2, 4, on ? '#7be0a6' : '#2c3e58');
     }
-    eRect(cx + 36, ty + 46, 16, 4, '#d7c98a');
-    eText('КРУ-' + (i + 1), cx + 41, ty + 64, 8, '#9aa6bd', 'center');
-    eGlow(cx + 41, ty + 20, 46, '#5fd0e014');
+    eRect(cx + 36, ty + 46, 16, 4, '#b7c9d8');
+    eText('КРУ-' + (i + 1), cx + 41, ty + 64, 8, '#8ea3bd', 'center');
+    eGlow(cx + 41, ty + 20, 46, '#5fd0e016');
   }
 
   // ---- Кабельные барабаны справа (x 16..20, y 2..3) ----
@@ -317,36 +316,36 @@ function drawEProps(now){
     const dx = 16 * 44 + 34 + i * 100, dy = ty + 42;
     eRect(dx - 34, dy + 30, 68, 8, '#05070c99');
     ctx.beginPath(); ctx.arc(dx, dy, 32, 0, Math.PI * 2);
-    ctx.fillStyle = '#3a2f1c'; ctx.fill();
-    ctx.strokeStyle = '#6b5a34'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = '#2b3140'; ctx.fill();
+    ctx.strokeStyle = '#4a5871'; ctx.lineWidth = 3; ctx.stroke();
     for (let k = 0; k < 4; k++){
       ctx.beginPath(); ctx.arc(dx, dy, 26 - k * 5, 0, Math.PI * 2);
-      ctx.strokeStyle = k % 2 ? '#c9a13a' : '#8a6a1f'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = k % 2 ? '#5f8fb0' : '#38506e'; ctx.lineWidth = 2; ctx.stroke();
     }
     ctx.beginPath(); ctx.arc(dx, dy, 7, 0, Math.PI * 2);
-    ctx.fillStyle = '#6b5a34'; ctx.fill();
-    eGlow(dx, dy, 42, '#c98a3a14');
+    ctx.fillStyle = '#4a5871'; ctx.fill();
+    eGlow(dx, dy, 42, '#5fd0e012');
   }
-  eText('КАТУШКИ · КГ 3×2,5', 16 * 44 + 84, ty + 88, 8, '#9aa6bd', 'center');
+  eText('КАТУШКИ · КГ 3×2,5', 16 * 44 + 84, ty + 88, 8, '#8ea3bd', 'center');
 
   // ---- Верстаки за станциями (y = 5 и y = 9) ----
   const benches = [[4, 5], [15, 5], [4, 9], [15, 9]];
   benches.forEach((b, i) => {
     const px = b[0] * 44, py = b[1] * 44;
     eRect(px - 4, py + 50, 136, 8, '#05070c99');
-    eBox(px - 6, py + 12, 140, 24, 16, '#9a8a6a', '#403826');
-    for (let k = 0; k < 4; k++) eRect(px - 2, py + 18 + k * 5, 132, 1, '#5b4f38');
+    eBox(px - 6, py + 12, 140, 24, 16, '#71809a', '#2e3745');
+    for (let k = 0; k < 4; k++) eRect(px - 2, py + 18 + k * 5, 132, 1, '#3a4456');
     // Мультиметр с индикацией
     eRect(px + 10, py + 14, 30, 12, '#1d2430');
     eRect(px + 14, py + 17, 22, 6, '#0d1a14');
     eRect(px + 16, py + 19, 12 + (i % 2) * 6, 1, '#6ef0b6');
     // Ящик с инструментом и отвёртки
-    eRect(px + 88, py + 12, 30, 12, '#2a3040');
-    eRect(px + 92, py + 14, 22, 3, '#c98a3a');
+    eRect(px + 88, py + 12, 30, 12, '#253044');
+    eRect(px + 92, py + 14, 22, 3, '#5fd0e0');
     eRect(px + 52, py + 13, 4, 10, '#c0392b');
     eRect(px + 58, py + 13, 4, 10, '#7be0a6');
     eText('VDE', px + 6, py + 40, 8, '#7c8794');
-    eGlow(px + 26, py + 20, 42, '#f5a6230e');
+    eGlow(px + 26, py + 20, 42, '#5fd0e00e');
   });
 
   // ---- Кабельные барабаны в нижних углах ----
@@ -354,28 +353,28 @@ function drawEProps(now){
     const dx = c[0] * 44 + 44, dy = c[1] * 44 + 22;
     eRect(dx - 24, dy + 20, 48, 8, '#05070c99');
     ctx.beginPath(); ctx.arc(dx, dy, 22, 0, Math.PI * 2);
-    ctx.fillStyle = '#3a2f1c'; ctx.fill();
-    ctx.strokeStyle = '#c9a13a'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = '#2b3140'; ctx.fill();
+    ctx.strokeStyle = '#5f8fb0'; ctx.lineWidth = 3; ctx.stroke();
     ctx.beginPath(); ctx.arc(dx, dy, 12, 0, Math.PI * 2);
-    ctx.strokeStyle = '#8a6a1f'; ctx.lineWidth = 2; ctx.stroke();
-    eText(i ? 'КГ' : 'ВВГ', dx, dy + 4, 8, '#c9cfd8', 'center');
+    ctx.strokeStyle = '#38506e'; ctx.lineWidth = 2; ctx.stroke();
+    eText(i ? 'КГ' : 'ВВГ', dx, dy + 4, 8, '#c9d4de', 'center');
   });
 
   // ---- Диэлектрический коврик перед стендом монтажа ----
-  eRect(10 * 44 + 2, 11 * 44 + 2, 92, 38, '#171b22');
+  eRect(10 * 44 + 2, 11 * 44 + 2, 92, 38, '#141a22');
   eRect(10 * 44 + 2, 11 * 44 + 2, 92, 2, E_COL.hazard);
   eRect(10 * 44 + 2, 11 * 44 + 38, 92, 2, E_COL.hazard);
 
   // ---- Полупрозрачная разметка на полу ----
-  eText('ЭЛЕКТРОЩИТ · 380 В', 506, 540, 13, '#3d4656', 'center');
-  eText('НЕ ТРОГАЙ · ОПАСНО', 506, 562, 10, '#4a3a12', 'center');
+  eText('ЭНЕРГОБЛОК · 380 В', 506, 540, 13, '#3a4558', 'center');
+  eText('БЕРЕГИСЬ НАПРЯЖЕНИЯ', 506, 562, 10, '#2f3d55', 'center');
 }
 
 /* ------------------------------------------------------------------
    ОТРИСОВКА СТАНКА Э
    ------------------------------------------------------------------ */
 function eMonitor(x, y, kind, now){
-  eGlow(x + 22, y + 22, 46, kind === 'meter' ? '#f5a62326' : '#5fd0e01f');
+  eGlow(x + 22, y + 22, 46, kind === 'meter' ? '#5fd0e026' : '#5fd0e01f');
   eBox(x, y, 46, 34, 8, '#4a5568', '#11161f');
   eRect(x + 4, y + 5, 38, 25, '#0a1420');
   if (kind === 'meter'){
@@ -392,8 +391,8 @@ function eMonitor(x, y, kind, now){
 }
 
 function drawEStation(type, done, hard, now, seed){
-  const accent = done ? '#4fd69f' : (hard ? '#c084fc' : '#f5a623');
-  eGlow(0, -6, 78, done ? '#48d8a41f' : '#f5a62322');
+  const accent = done ? '#4fd69f' : (hard ? '#c084fc' : '#5fd0e0');
+  eGlow(0, -6, 78, done ? '#48d8a41f' : '#5fd0e022');
 
   if (type === 0){
     // Распределительный щит на стойке
@@ -454,17 +453,17 @@ function drawEStation(type, done, hard, now, seed){
     ctx.beginPath(); ctx.arc(0, 6, 8, 0, Math.PI * 2);
     ctx.fillStyle = '#232b38'; ctx.fill();
     eBox(-18, -34, 36, 20, 6, '#2b3442', '#171d28');
-    eText('M', 0, -20, 12, '#f5a623', 'center');
+    eText('M', 0, -20, 12, '#5fd0e0', 'center');
     eCable([18, -30, 40, -34, 46, -12, 40, 8], '#c0392b');
     eRect(-44, 42, 88, 2, accent);
   } else {
     // 3D-стенд монтажа: проектор и голографический куб
     eRect(-58, 44, 120, 14, '#070a11a0');
     eBox(-46, 44, 92, 12, 12, '#2a3040', '#141821');
-    eGlow(0, -24, 58, '#f5a6232e');
+    eGlow(0, -24, 58, '#5fd0e02e');
     eBox(-32, 8, 64, 32, 10, '#39424f', '#1b222d');
     eRect(-26, 14, 52, 4, '#0d1a14');
-    eText('3D-МОНТАЖ', 0, 30, 9, '#f5a623', 'center');
+    eText('3D-МОНТАЖ', 0, 30, 9, '#5fd0e0', 'center');
     eRect(-30, 20, 3, 3, '#5fd0e0'); eRect(27, 20, 3, 3, '#7be0a6');
     // Изометрический куб-голограмма
     const s = 26;
@@ -477,9 +476,9 @@ function drawEStation(type, done, hard, now, seed){
       if (fill){ ctx.fillStyle = fill; ctx.fill(); }
       if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1.6; ctx.stroke(); }
     };
-    quad([top[0], top[1], bot[1], bot[0]], '#f5a62326', '#f5a623cc');
-    quad([top[1], top[2], bot[2], bot[1]], '#ffd1661a', '#f5a62399');
-    quad(top, '#ffd16633', '#ffd166');
+    quad([top[0], top[1], bot[1], bot[0]], '#5fd0e026', '#5fd0e0cc');
+    quad([top[1], top[2], bot[2], bot[1]], '#7be0a61a', '#5fd0e099');
+    quad(top, '#7be0a633', '#7be0a6');
     eRect(-7, -24 - s * 0.5 + 3, 6, 6, '#5fd0e0');
     eRect(3, -24 - s * 0.5 + 8, 6, 6, '#7be0a6');
     eRect(-46, 42, 92, 2, accent);
@@ -490,607 +489,379 @@ window.STATION_RENDERERS = window.STATION_RENDERERS || {};
 window.STATION_RENDERERS.e = drawEStation;
 
 /* ------------------------------------------------------------------
-   МИНИ-ИГРЫ Э
+   МИНИ-ИГРЫ Э — красивые задания-карточки с интерактивными схемами
+   (движок task-game.js: точки-пропуски прямо на картинке)
    ------------------------------------------------------------------ */
-const EKit = window.LabKit;
 
-function eTile(dev, cls){
-  const b = EKit.h('button', 'lab-tile' + (cls ? ' ' + cls : ''));
-  b.type = 'button';
-  b.dataset.id = dev.id;
-  b.setAttribute('aria-pressed', 'false');
-  b.appendChild(EKit.h('strong', null, dev.name));
-  if (dev.note) b.appendChild(EKit.h('span', null, dev.note));
-  return b;
+/* ---------- SVG-иллюстрации ---------- */
+
+/* Щит с DIN-рейкой: 4 посадочных места под автоматы */
+function eSvgPanel(){
+  return '<svg viewBox="0 0 340 150" width="340">' +
+    '<rect x="20" y="14" width="300" height="122" rx="10" fill="#182234" stroke="#3c4c6c" stroke-width="2"/>' +
+    '<rect x="34" y="28" width="272" height="26" fill="#0d1420" stroke="#2c3850"/>' +
+    '<text x="170" y="45" fill="#8ea3b8" font-size="11" text-anchor="middle" font-family="monospace">ВВОД 380 В</text>' +
+    '<rect x="34" y="64" width="272" height="46" rx="4" fill="#0a0f1a" stroke="#2c3850"/>' +
+    '<rect x="34" y="106" width="272" height="5" fill="#3c4c6c"/>' +
+    [62, 124, 186, 248].map((mx, i) =>
+      '<rect x="' + (mx - 26) + '" y="70" width="52" height="34" rx="4" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
+      '<rect x="' + (mx - 12) + '" y="76" width="24" height="9" rx="2" fill="#0d1522"/>' +
+      '<text x="' + mx + '" y="102" fill="#5f7f9a" font-size="10" text-anchor="middle" font-family="monospace">№' + (i + 1) + '</text>'
+    ).join('') +
+    '<text x="170" y="130" fill="#7f93ad" font-size="10" text-anchor="middle" font-family="monospace">ДИН-РЕЙКА · СТАВЬ ПО ПОРЯДКУ</text>' +
+  '</svg>';
 }
-function ePointsOf(mistakes, base){
-  return Math.max(base, 220 - mistakes * 25);
+
+/* Розетка: клеммы PE / L / N + живой провод выбранного цвета */
+function eSvgSocketLive(wireColor, connectedPos, highlight){
+  // connectedPos: 'L' | 'N' | 'PE' | null — рисует провод, когда фишка поставлена
+  const term = { L: [96, 108], N: [244, 108], PE: [170, 52] };
+  let wire = '';
+  if (connectedPos && term[connectedPos]){
+    const [tx, ty] = term[connectedPos];
+    wire = '<path d="M18 ' + ty + ' C 50 ' + ty + ', 60 ' + ty + ', ' + (tx - 14) + ' ' + ty + '" fill="none" stroke="' + wireColor + '" stroke-width="9" stroke-linecap="round"/>' +
+      '<circle cx="' + (tx - 14) + '" cy="' + ty + '" r="6" fill="' + wireColor + '"/>';
+  }
+  const hl = highlight && term[highlight]
+    ? '<circle cx="' + term[highlight][0] + '" cy="' + term[highlight][1] + '" r="20" fill="none" stroke="#f5a623" stroke-dasharray="5 4" stroke-width="2"/>'
+    : '';
+  return '<svg viewBox="0 0 340 170" width="340">' +
+    '<rect x="60" y="16" width="220" height="140" rx="22" fill="#e9edf2" stroke="#c3cad4" stroke-width="2"/>' +
+    '<rect x="72" y="28" width="196" height="116" rx="16" fill="#f7fafd"/>' +
+    // клеммы-гнёзда
+    '<rect x="140" y="36" width="60" height="26" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
+    '<text x="170" y="53" fill="#8b94a1" font-size="10" text-anchor="middle" font-family="monospace">PE</text>' +
+    '<rect x="76" y="92" width="46" height="30" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
+    '<text x="99" y="111" fill="#8b94a1" font-size="10" text-anchor="middle" font-family="monospace">L</text>' +
+    '<rect x="218" y="92" width="46" height="30" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
+    '<text x="241" y="111" fill="#8b94a1" font-size="10" text-anchor="middle" font-family="monospace">N</text>' +
+    hl + wire +
+    '<text x="18" y="' + (connectedPos ? term[connectedPos][1] - 12 : 90) + '" fill="#8ea3b8" font-size="10" font-family="monospace">провод →</text>' +
+  '</svg>';
+}
+
+/* Мультиметр: поворотный диск режимов */
+function eSvgDial(active){
+  // активная позиция подсвечивается жёлтым
+  const modes = [
+    { id: 'V', x: 96, y: 96, label: 'V~' },
+    { id: 'R', x: 170, y: 76, label: 'Ω' },
+    { id: 'B', x: 244, y: 96, label: '♪' }
+  ];
+  const m = modes.find((x) => x.id === active);
+  return '<svg viewBox="0 0 340 150" width="340">' +
+    '<rect x="60" y="12" width="220" height="126" rx="12" fill="#1d2430" stroke="#3c4a5e" stroke-width="2"/>' +
+    '<rect x="78" y="22" width="184" height="34" rx="6" fill="#071510"/>' +
+    '<text x="286" y="44" fill="#6ef0b6" font-size="13" text-anchor="end" font-family="monospace">- - -</text>' +
+    '<circle cx="170" cy="96" r="34" fill="#10151e" stroke="#46536a" stroke-width="3"/>' +
+    '<circle cx="170" cy="96" r="5" fill="#c7ccd6"/>' +
+    modes.map((p) =>
+      '<circle cx="' + p.x + '" cy="' + p.y + '" r="15" fill="' + (m && m.id === p.id ? '#3a2f10' : '#0d1420') + '" stroke="' + (m && m.id === p.id ? '#f5a623' : '#46536a') + '" stroke-width="2"/>' +
+      '<text x="' + p.x + '" y="' + (p.y + 5) + '" fill="' + (m && m.id === p.id ? '#ffd166' : '#8ea3b8') + '" font-size="13" text-anchor="middle" font-family="monospace">' + p.label + '</text>'
+    ).join('') +
+    (m ? '<line x1="170" y1="96" x2="' + m.x + '" y2="' + m.y + '" stroke="#f5a623" stroke-width="3"/>' : '<line x1="170" y1="96" x2="170" y2="62" stroke="#8ea3b8" stroke-width="3"/>') +
+    '<text x="170" y="140" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">РЕЖИМ · ПОВЕРНИ ДИСК</text>' +
+  '</svg>';
+}
+
+/* Цепь: автомат → розетки → свет (для поиска обрыва) */
+function eSvgChainActive(){
+  return '<svg viewBox="0 0 340 130" width="340">' +
+    '<rect x="24" y="36" width="86" height="44" rx="8" fill="#182234" stroke="#f5a623" stroke-width="2"/>' +
+    '<text x="67" y="54" fill="#e6eef8" font-size="13" text-anchor="middle" font-family="monospace">QF1</text>' +
+    '<text x="67" y="70" fill="#9fb0c6" font-size="9" text-anchor="middle" font-family="monospace">ввод</text>' +
+    '<line x1="110" y1="58" x2="146" y2="58" stroke="#4b5b7a" stroke-width="2"/>' +
+    '<rect x="146" y="36" width="90" height="44" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
+    '<text x="191" y="54" fill="#9fb0c6" font-size="11" text-anchor="middle" font-family="monospace">Розетки</text>' +
+    '<text x="191" y="70" fill="#5f7f9a" font-size="9" text-anchor="middle" font-family="monospace">0 В · 0 В</text>' +
+    '<line x1="236" y1="58" x2="272" y2="58" stroke="#4b5b7a" stroke-width="2"/>' +
+    '<rect x="272" y="36" width="54" height="44" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
+    '<text x="299" y="54" fill="#9fb0c6" font-size="11" text-anchor="middle" font-family="monospace">Свет</text>' +
+    '<text x="299" y="70" fill="#5f7f9a" font-size="9" text-anchor="middle" font-family="monospace">0 В</text>' +
+    '<text x="170" y="108" fill="#e0483a" font-size="11" text-anchor="middle" font-family="monospace">ВЕЗДЕ 0 В — ОБРЫВ В НАЧАЛЕ ЦЕПИ?</text>' +
+  '</svg>';
+}
+
+/* Двигатель + цепочка шагов пуска */
+function eSvgMotorChain(){
+  return '<svg viewBox="0 0 340 140" width="340">' +
+    [40, 118, 196, 274].map((bx, i) =>
+      '<rect x="' + (bx - 34) + '" y="30" width="76" height="44" rx="8" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
+      '<text x="' + bx + '" y="56" fill="#5f7f9a" font-size="11" text-anchor="middle" font-family="monospace">ШАГ ' + (i + 1) + '</text>'
+    ).join('') +
+    '<circle cx="170" cy="106" r="24" fill="#182234" stroke="#3c4c6c" stroke-width="3"/>' +
+    '<circle cx="170" cy="106" r="6" fill="#0d1420" stroke="#5fd0e0"/>' +
+    '<path d="M170 82 v8 M170 122 v8 M146 106 h8 M186 106 h8" stroke="#4b5b7a" stroke-width="3"/>' +
+    '<text x="212" y="110" fill="#f5a623" font-size="11" font-family="monospace">M 3~ 380 В</text>' +
+  '</svg>';
+}
+
+/* Шкаф с 4 отсеками-функциями */
+function eSvgCabinet(){
+  return '<svg viewBox="0 0 300 190" width="300">' +
+    '<rect x="30" y="12" width="240" height="166" rx="10" fill="#182234" stroke="#3c4c6c" stroke-width="2"/>' +
+    '<rect x="42" y="24" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
+    '<text x="94" y="52" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ПЕРЕГРУЗКА</text>' +
+    '<text x="94" y="64" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">И КЗ</text>' +
+    '<rect x="154" y="24" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
+    '<text x="206" y="52" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">УТЕЧКА</text>' +
+    '<text x="206" y="64" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ТОКА</text>' +
+    '<rect x="42" y="98" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
+    '<text x="94" y="126" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">УЧЁТ</text>' +
+    '<text x="94" y="138" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ЭНЕРГИИ</text>' +
+    '<rect x="154" y="98" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
+    '<text x="206" y="126" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ЗЕМЛЯ</text>' +
+    '<text x="206" y="138" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">В ОДНУ ТОЧКУ</text>' +
+    '<rect x="30" y="182" width="240" height="4" fill="#3c4c6c"/>' +
+  '</svg>';
+}
+
+/* Фишка-цвет провода */
+function eWireChipSvg(color){
+  return '<svg viewBox="0 0 60 24" width="52" height="21"><path d="M4 12 C 18 2, 42 22, 56 12" fill="none" stroke="' + color + '" stroke-width="8" stroke-linecap="round"/></svg>';
 }
 
 /* ---- Игра 1. Сборка распределительного щита ---- */
 function openEPanel(done, cancel){
-  const devices = [
-    { id: 'main',  name: 'Вводной автомат C40', note: '2P · общее отключение щита' },
-    { id: 'rcd',   name: 'УЗО 30 мА',           note: 'защита от утечки тока' },
-    { id: 'sock',  name: 'Автомат «Розетки» C16', note: 'групповая линия 16 А' },
-    { id: 'light', name: 'Автомат «Освещение» C10', note: 'групповая линия 10 А' }
-  ];
-  const order = ['main', 'rcd', 'sock', 'light'];
-  const slotDefs = [
-    { label: '№1 · от ввода' },
-    { label: '№2' },
-    { label: '№3' },
-    { label: '№4 · к нагрузке' }
-  ];
-  let mistakes = 0, solved = 0, selected = null;
-
-  const ui = EKit.create({
+  return window.openTaskGame({
     theme: 'e',
-    tag: 'Распределительный щит · оборудование',
+    icon: '⚡',
     title: 'Сборка распределительного щита',
-    objective: 'Расставьте аппараты на DIN-рейку в правильном порядке: от ввода питания к линиям нагрузки. Сначала выберите аппарат, затем слот на рейке.',
-    howto: [
-      'Выберите аппарат в списке «Аппараты в наличии» — плитка подсветится.',
-      'Нажмите на слот DIN-рейки, чтобы поставить в него аппарат.',
-      'Порядок строго от ввода к нагрузке: вводной автомат → УЗО → линия розеток → линия освещения.',
-      'Заполните все 4 слота — щит собран.'
+    intro: 'Расставьте аппараты защиты прямо на ДИН-рейке щита.',
+    memo: [
+      ['QF — автомат', 'Отключает линию при перегрузке и коротком замыкании. Число — ток в амперах: C40 на вводе, C16 розетки, C10 свет.'],
+      ['УЗО', 'Защита человека: отключает при утечке 30 мА.'],
+      ['PE', 'Жёлто-зелёный проводник заземления — соединяет корпуса с землёй.'],
+      ['Порядок', 'Ввод → УЗО → розетки → свет. Контактор и лампа в квартирном щите не нужны.']
     ],
-    hint: 'Правило щита: начинаем с общего вводного автомата, затем идёт УЗО (защита от утечки), и только потом автоматы групп нагрузки.',
-    steps: 4,
+    steps: [
+      {
+        title: 'Этап 1 · Порядок аппаратов',
+        task: 'Нажмите место №1 на рейке, затем фишку аппарата. Соберите весь щит по порядку.',
+        art: eSvgPanel(),
+        hotspots: [
+          { x: 18.2, y: 52 }, { x: 36.5, y: 52 }, { x: 54.7, y: 52 }, { x: 72.9, y: 52 }
+        ],
+        slots: [
+          { label: '№1 · сразу после ввода', answer: 'Вводной автомат C40' },
+          { label: '№2 · защита людей', answer: 'УЗО 30 мА' },
+          { label: '№3 · линия розеток', answer: 'Автомат C16' },
+          { label: '№4 · линия освещения', answer: 'Автомат C10' }
+        ],
+        chips: [
+          { label: 'Вводной автомат C40', sub: 'общее отключение' },
+          { label: 'УЗО 30 мА', sub: 'от утечки тока' },
+          { label: 'Автомат C16', sub: 'розетки' },
+          { label: 'Автомат C10', sub: 'свет' },
+          { label: 'Контактор КМ', sub: 'лишний' },
+          { label: 'Лампа HL', sub: 'лишняя' }
+        ],
+        chipsLabel: 'Аппараты щита',
+        hint: 'Ввод — УЗО — розетки — свет.',
+        success: 'Щит собран правильно!'
+      },
+      {
+        title: 'Этап 2 · Ток групповой линии',
+        task: 'Стиральная машина и компьютер в комнате. Какой автомат поставить на линию розеток?',
+        art: eSvgDial(null),
+        slots: [{ label: 'Автомат линии розеток', answer: 'C16 (16 А)' }],
+        chips: [ { label: 'C16 (16 А)' }, { label: 'C10 (10 А)' }, { label: 'C40 (40 А)' } ],
+        chipsLabel: 'Номиналы автоматов',
+        hint: 'Розеточная группа — 16 А. C10 — для света, а C40 — это ввод всего щита.',
+        success: 'Верно: 16 А для розеток.'
+      },
+      {
+        title: 'Этап 3 · Заземление',
+        task: 'Каким проводником соединяют корпуса приборов с землёй?',
+        slots: [{ label: 'Проводник заземления', answer: 'PE (жёлто-зелёный)' }],
+        chips: [
+          { label: 'PE (жёлто-зелёный)', svg: eWireChipSvg('#7ba33a') },
+          { label: 'N (голубой)', svg: eWireChipSvg('#2b6fa8') },
+          { label: 'L (коричневый)', svg: eWireChipSvg('#8a5a2b') }
+        ],
+        chipsLabel: 'Провода',
+        hint: 'PE — жёлто-зелёный, N — голубой, L — коричневый. Земля — это всегда PE.',
+        success: 'Отлично, корпуса заземлены!'
+      }
+    ],
     onDone: done, onCancel: cancel
   });
-
-  const feedback = EKit.h('p', 'lab-feedback');
-  const columns = EKit.h('div', 'lab-columns');
-  const leftCol = EKit.h('div');
-  leftCol.appendChild(EKit.h('h3', 'lab-col-title', 'Аппараты в наличии'));
-  const tray = EKit.h('div', 'lab-tray');
-  EKit.shuffle(devices).forEach((dev) => {
-    const t = eTile(dev);
-    t.onclick = () => {
-      selected = dev.id;
-      tray.querySelectorAll('.lab-tile').forEach((n) => n.setAttribute('aria-pressed', String(n.dataset.id === dev.id)));
-      feedback.className = 'lab-feedback';
-      feedback.textContent = 'Выбрано: ' + dev.name + '. Нажмите слот на рейке.';
-    };
-    tray.appendChild(t);
-  });
-  leftCol.appendChild(tray);
-
-  const rightCol = EKit.h('div');
-  rightCol.appendChild(EKit.h('h3', 'lab-col-title', 'DIN-рейка щита'));
-  const rail = EKit.h('div', 'lab-rail');
-  const railSlots = EKit.h('div', 'lab-rail-slots');
-  const slotEls = slotDefs.map((sd, i) => {
-    const s = EKit.h('button', 'lab-slot');
-    s.type = 'button';
-    s.appendChild(EKit.h('small', null, sd.label));
-    s.appendChild(EKit.h('strong', null, 'пусто'));
-    s.onclick = () => place(s, i);
-    railSlots.appendChild(s);
-    return s;
-  });
-  rail.appendChild(railSlots);
-  rightCol.appendChild(rail);
-
-  columns.append(leftCol, rightCol);
-  ui.body.append(columns, feedback);
-
-  function place(slot, index){
-    if (ui.isClosed() || slot.classList.contains('correct')) return;
-    if (!selected){
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Сначала выберите аппарат из списка слева.';
-      return;
-    }
-    const dev = devices.find((d) => d.id === selected);
-    if (dev.id === order[index]){
-      slot.classList.add('correct');
-      slot.querySelector('strong').textContent = dev.name;
-      slot.querySelector('small').textContent = dev.note;
-      slot.disabled = true;
-      tray.querySelector('[data-id="' + dev.id + '"]').disabled = true;
-      selected = null;
-      solved++;
-      ui.setProgress(solved, 4);
-      feedback.className = 'lab-feedback ok';
-      feedback.textContent = 'Верно: ' + dev.name + ' установлен в слот ' + slotDefs[index].label + '.';
-      if (solved === order.length){
-        rail.classList.add('built');
-        feedback.textContent += ' Щит собран. Осталось подать напряжение!';
-        setTimeout(() => ui.finish(ePointsOf(mistakes, 60)), 650);
-      }
-    } else {
-      mistakes++;
-      slot.classList.add('incorrect');
-      setTimeout(() => slot.classList.remove('incorrect'), 400);
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Не по порядку: ' + dev.name + ' ставится не сюда. Соблюдайте порядок «ввод → защита → группы».';
-    }
-  }
-  return ui;
 }
 
 /* ---- Игра 2. Электромонтаж розетки ---- */
 function openESocket(done, cancel){
-  const wires = [
-    { id: 'pe', name: 'Жёлто-зелёный провод', note: 'заземляющий PE' },
-    { id: 'n',  name: 'Синий провод',         note: 'рабочий ноль N' },
-    { id: 'l',  name: 'Коричневый провод',    note: 'фаза L' }
+  const stages = [
+    { pos: 'L', wire: '#8a5a2b', name: 'Коричневый', answer: 'L — фаза', hs: { x: 28, y: 63 }, title: 'Этап 1 · Фаза' },
+    { pos: 'N', wire: '#2b6fa8', name: 'Голубой', answer: 'N — ноль', hs: { x: 72, y: 63 }, title: 'Этап 2 · Ноль' },
+    { pos: 'PE', wire: '#7ba33a', name: 'Жёлто-зелёный', answer: 'PE — земля', hs: { x: 50, y: 29 }, title: 'Этап 3 · Земля' }
   ];
-  const terms = [
-    { id: 'l',  name: 'L',  sub: 'фаза',      dot: '#8a5a2b' },
-    { id: 'n',  name: 'N',  sub: 'ноль',      dot: '#2b6fa8' },
-    { id: 'pe', name: 'PE', sub: 'заземление', dot: '#7ba33a' }
-  ];
-  let mistakes = 0, solved = 0, selected = null, deenergized = false;
-
-  const ui = EKit.create({
+  return window.openTaskGame({
     theme: 'e',
-    tag: 'Розеточная линия · монтаж',
+    icon: '🔌',
     title: 'Электромонтаж розетки',
-    objective: 'Сначала обесточьте линию, затем подключите провода к клеммам розетки: фаза L, рабочий ноль N и заземление PE.',
-    howto: [
-      'Переключите автомат в положение «отключено» — под напряжением работать запрещено.',
-      'Выберите провод в списке слева (цвет подсказывает назначение).',
-      'Нажмите на клемму розетки, куда этот провод подключается.',
-      'Подключите все три провода: L, N и PE.'
+    intro: 'Подключите провода прямо на клеммах розетки. Перепутаете — будет авария!',
+    memo: [
+      ['L — фаза', 'Коричневый провод. «Рабочий» провод под напряжением.'],
+      ['N — ноль', 'Голубой провод. Обратный провод цепи.'],
+      ['PE — земля', 'Жёлто-зелёный провод. Защита: соединяет корпуса с землёй.']
     ],
-    hint: 'Коричневый = фаза L, синий = рабочий ноль N, жёлто-зелёный = заземление PE.',
+    steps: stages.map((s, i) => ({
+      title: s.title,
+      task: 'Куда подключается ' + s.name.toLowerCase() + ' провод? Нажмите на клемму на розетке.',
+      art: (vals) => eSvgSocketLive(s.wire, vals[0] === s.answer ? s.pos : null, s.pos),
+      hotspots: [s.hs],
+      slots: [{ label: 'Клемма ' + s.name.toLowerCase() + ' провода', answer: s.answer }],
+      chips: [ { label: 'L — фаза' }, { label: 'N — ноль' }, { label: 'PE — земля' } ],
+      chipsLabel: 'Клеммы',
+      hint: i === 0 ? 'Коричневый — всегда фаза L.' : i === 1 ? 'Голубой — ноль N (Neutral).' : 'Жёлто-зелёный — защитная земля PE.',
+      success: 'Провод подключён верно!'
+    })),
     onDone: done, onCancel: cancel
   });
-
-  const feedback = EKit.h('p', 'lab-feedback');
-
-  // Шаг безопасности
-  const safety = EKit.h('div', 'lab-switch-row');
-  const sw = EKit.h('button', 'lab-switch');
-  sw.type = 'button';
-  sw.setAttribute('aria-pressed', 'false');
-  sw.appendChild(EKit.h('i'));
-  const safetyText = EKit.h('div');
-  safetyText.appendChild(EKit.h('strong', null, 'Автомат в щите: ПОД НАПРЯЖЕНИЕМ'));
-  safetyText.appendChild(EKit.h('div', null, 'Нажмите переключатель, чтобы обесточить линию перед монтажом'));
-  safety.append(sw, safetyText);
-  sw.onclick = () => {
-    deenergized = !deenergized;
-    sw.classList.toggle('on', deenergized);
-    sw.setAttribute('aria-pressed', String(deenergized));
-    safety.classList.toggle('ok', deenergized);
-    safety.classList.toggle('bad', !deenergized);
-    safetyText.firstChild.textContent = deenergized ? 'Автомат отключён: НАПРЯЖЕНИЯ НЕТ' : 'Автомат в щите: ПОД НАПРЯЖЕНИЕМ';
-    feedback.className = 'lab-feedback';
-    feedback.textContent = deenergized ? 'Линия обесточена — можно монтировать.' : 'Опасно! Линия под напряжением 230 В.';
-  };
-
-  const columns = EKit.h('div', 'lab-columns');
-  const leftCol = EKit.h('div');
-  leftCol.appendChild(EKit.h('h3', 'lab-col-title', 'Провода'));
-  const tray = EKit.h('div', 'lab-tray');
-  EKit.shuffle(wires).forEach((w) => {
-    const t = eTile(w);
-    t.onclick = () => {
-      selected = w.id;
-      tray.querySelectorAll('.lab-tile').forEach((n) => n.setAttribute('aria-pressed', String(n.dataset.id === w.id)));
-      feedback.className = 'lab-feedback';
-      feedback.textContent = 'Выбрано: ' + w.name + ' (' + w.note + '). Нажмите клемму.';
-    };
-    tray.appendChild(t);
-  });
-  leftCol.appendChild(tray);
-
-  const rightCol = EKit.h('div');
-  rightCol.appendChild(EKit.h('h3', 'lab-col-title', 'Клеммы розетки'));
-  const socket = EKit.h('div', 'lab-socket');
-  const termEls = terms.map((tm) => {
-    const s = EKit.h('button', 'lab-slot');
-    s.type = 'button';
-    const dot = EKit.h('span', 'term-dot');
-    dot.style.background = tm.dot;
-    s.append(dot, EKit.h('strong', null, tm.name), EKit.h('small', null, tm.sub));
-    s.onclick = () => connect(s, tm);
-    socket.appendChild(s);
-    return s;
-  });
-  rightCol.appendChild(socket);
-
-  columns.append(leftCol, rightCol);
-  ui.body.append(safety, columns, feedback);
-
-  function connect(slot, term){
-    if (ui.isClosed() || slot.classList.contains('correct')) return;
-    if (!deenergized){
-      mistakes++;
-      slot.classList.add('incorrect');
-      setTimeout(() => slot.classList.remove('incorrect'), 400);
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Стоп! Сначала отключите автомат — работать под напряжением запрещено.';
-      return;
-    }
-    if (!selected){
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Сначала выберите провод слева.';
-      return;
-    }
-    const wire = wires.find((w) => w.id === selected);
-    if (wire.id === term.id){
-      slot.classList.add('correct');
-      slot.querySelector('strong').textContent = term.name + ' ✓';
-      slot.querySelector('small').textContent = wire.name;
-      slot.disabled = true;
-      tray.querySelector('[data-id="' + wire.id + '"]').disabled = true;
-      selected = null;
-      solved++;
-      feedback.className = 'lab-feedback ok';
-      feedback.textContent = term.name + ' — ' + wire.note + ' подключён верно.';
-      if (solved === terms.length){
-        feedback.textContent = 'Розетка подключена: L, N и PE на своих местах. Можно подавать напряжение!';
-        setTimeout(() => ui.finish(ePointsOf(mistakes, 60)), 650);
-      }
-    } else {
-      mistakes++;
-      slot.classList.add('incorrect');
-      setTimeout(() => slot.classList.remove('incorrect'), 400);
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Неверно: ' + wire.name + ' — это не ' + term.name + '. Проверьте назначение провода по цвету.';
-    }
-  }
-  return ui;
 }
 
 /* ---- Игра 3. Поиск неисправности мультиметром ---- */
 function openEMeter(done, cancel){
-  const points = [
-    { id: 'av',   name: 'Автомат QF1', kind: 'feeder' },
-    { id: 'r1',   name: 'Розетка №1',  kind: 'branch' },
-    { id: 'r2',   name: 'Розетка №2',  kind: 'branch' },
-    { id: 'lamp', name: 'Светильник',  kind: 'load' }
-  ];
-  // Неисправный элемент выбирается случайно — каждый раз новая поломка.
-  const faultId = points[Math.floor(Math.random() * points.length)].id;
-  const modes = [
-    { id: 'v',  label: 'V~ напряжение' },
-    { id: 'r',  label: 'Ω сопротивление' },
-    { id: 'b',  label: '🅞 прозвонка' }
-  ];
-  // Нормальные показания (цепь исправна)
-  const okV = { av: '230 В', r1: '230 В', r2: '230 В', lamp: '230 В' };
-  const okR = { av: '0,0 Ом', r1: '0,2 Ом', r2: '0,2 Ом', lamp: '18 Ом' };
-  const okB = { av: 'есть сигнал', r1: 'есть сигнал', r2: 'есть сигнал', lamp: 'есть сигнал' };
-  // Показания неисправной точки зависят от её роли в цепи.
-  const readings = {
-    v: { av: '0 В', r1: '0 В', r2: '0 В', lamp: '0 В' },
-    r: { av: 'обрыв ∞', r1: 'обрыв ∞', r2: 'обрыв ∞', lamp: 'обрыв ∞' },
-    b: { av: 'нет сигнала', r1: 'нет сигнала', r2: 'нет сигнала', lamp: 'нет сигнала' }
-  };
-  const faultPt = points.find((p) => p.id === faultId);
-  points.forEach((p) => {
-    if (p.id === faultId){
-      readings.v[p.id]  = '0 В';
-      readings.r[p.id]  = 'обрыв ∞';
-      readings.b[p.id]  = 'нет сигнала';
-      return;
-    }
-    // Если сгорел вводной автомат — питание пропадает везде ниже по цепи.
-    if (faultPt.kind === 'feeder' && p.kind !== 'feeder'){
-      readings.v[p.id] = '0 В';
-      readings.r[p.id] = 'обрыв ∞';
-      readings.b[p.id] = 'нет сигнала';
-      return;
-    }
-    // Остальные точки исправны.
-    readings.v[p.id] = okV[p.id];
-    readings.r[p.id] = okR[p.id];
-    readings.b[p.id] = okB[p.id];
-  });
-  let mistakes = 0, mode = 'v';
-
-  const ui = EKit.create({
+  return window.openTaskGame({
     theme: 'e',
-    tag: 'Диагностика · мультиметр',
-    title: 'Поиск неисправности в розеточной группе',
-    objective: 'Жалоба: часть розеточной группы не работает. Переключайте режим мультиметра, замеряйте точки и найдите неисправный элемент — каждый раз он разный.',
-    howto: [
-      'Выберите режим мультиметра слева: V~ (напряжение), Ω (сопротивление) или 🅞 (прозвонка).',
-      'Нажмите точки схемы справа — прибор покажет показание (в одну точку зондируется только текущая).',
-      'Сравните показания: у исправных точек они одинаковые, у неисправной — 0 В, «обрыв ∞» и «нет сигнала».',
-      'Отметьте неисправный элемент в блоке «Определите неисправность».'
+    icon: '🔍',
+    title: 'Поиск неисправности мультиметром',
+    intro: 'Розетки не работают. Пройдите диагностику: поверните диск прибора и найдите обрыв.',
+    memo: [
+      ['V~ — напряжение', 'Режим измерения переменного напряжения. В розетке должно быть ~230 В.'],
+      ['Ω — сопротивление', 'Обрыв цепи — «∞», бесконечность.'],
+      ['Прозвонка ♪', 'Пищит, если цепь целая. Удобно искать обрыв при снятом питании.'],
+      ['Правило обрыва', '0 В сразу везде = обрыв в самом начале цепи.']
     ],
-    hint: 'Признак обрыва: в прозвонке «нет сигнала», сопротивление «обрыв ∞», а напряжение 0 В. Если сгорел вводной автомат — 0 В будет сразу на всех точках ниже по цепи.',
+    steps: [
+      {
+        title: 'Этап 1 · Режим прибора',
+        task: 'Проверяем: есть ли в розетках напряжение. Нажмите нужный режим на диске.',
+        art: eSvgDial(null),
+        hotspots: [ { x: 28, y: 64 } ],
+        slots: [{ label: 'Режим мультиметра', answer: 'V~ (напряжение)' }],
+        chips: [ { label: 'V~ (напряжение)' }, { label: 'Ω (сопротивление)' }, { label: 'Прозвонка' } ],
+        chipsLabel: 'Режимы',
+        hint: 'Живую розетку проверяют напряжением — V~.',
+        success: 'Диск на V~. Прибор готов.'
+      },
+      {
+        title: 'Этап 2 · Где обрыв',
+        task: 'Мультиметр показывает 0 В во всех точках. Нажмите на схеме элемент, который сломан.',
+        art: eSvgChainActive(),
+        hotspots: [ { x: 19.7, y: 44 } ],
+        slots: [{ label: 'Неисправный элемент', answer: 'Вводной автомат QF1' }],
+        chips: [ { label: 'Вводной автомат QF1' }, { label: 'Вторая розетка' }, { label: 'Светильник' } ],
+        chipsLabel: 'Элементы цепи',
+        hint: '0 В сразу везде = питание пропало в самом начале цепи.',
+        success: 'Точно! Обрыв на вводе — поэтому гаснет всё.'
+      },
+      {
+        title: 'Этап 3 · Проверка без питания',
+        task: 'Питание сняли. Каким режимом быстрее всего найти обрыв провода? Нажмите на диске.',
+        art: eSvgDial(null),
+        hotspots: [ { x: 71.8, y: 64 } ],
+        slots: [{ label: 'Режим поиска обрыва', answer: 'Прозвонка' }],
+        chips: [ { label: 'Прозвонка' }, { label: 'V~ (напряжение)' }, { label: 'A (ток)' } ],
+        chipsLabel: 'Режимы',
+        hint: 'Прозвонка пищит на целой цепи. Молчит — значит обрыв.',
+        success: 'Диагностика завершена — неисправность найдена!'
+      }
+    ],
     onDone: done, onCancel: cancel
   });
-
-  const layout = EKit.h('div', 'lab-columns');
-  const leftCol = EKit.h('div');
-  leftCol.appendChild(EKit.h('h3', 'lab-col-title', 'Мультиметр'));
-  const meter = EKit.h('div', 'lab-meter');
-  const screen = EKit.h('div', 'lab-meter-screen dead', '--- ---');
-  const modesRow = EKit.h('div', 'lab-modes');
-  const modeBtns = modes.map((m) => {
-    const b = EKit.h('button', 'lab-mode', m.label);
-    b.type = 'button';
-    b.setAttribute('aria-pressed', String(m.id === mode));
-    b.onclick = () => {
-      mode = m.id;
-      modeBtns.forEach((n) => n.setAttribute('aria-pressed', String(n === b)));
-      screen.className = 'lab-meter-screen dead';
-      screen.textContent = '--- ---';
-    };
-    modesRow.appendChild(b);
-    return b;
-  });
-  meter.append(screen, modesRow);
-  leftCol.appendChild(meter);
-  leftCol.appendChild(EKit.h('p', 'lab-note', 'Сначала выберите режим, затем нажмите точку схемы — прибор покажет значение. Найденную неисправность отметьте в правой колонке.'));
-
-  const rightCol = EKit.h('div');
-  rightCol.appendChild(EKit.h('h3', 'lab-col-title', 'Схема розеточной группы'));
-  const pts = EKit.h('div', 'lab-points');
-  points.forEach((p) => {
-    const b = EKit.h('button', 'lab-point');
-    b.type = 'button';
-    b.appendChild(EKit.h('strong', null, p.name));
-    b.onclick = () => {
-      screen.className = 'lab-meter-screen';
-      screen.textContent = readings[mode][p.id];
-      pts.querySelectorAll('.lab-point').forEach((n) => n.classList.remove('probed'));
-      b.classList.add('probed');
-    };
-    pts.appendChild(b);
-  });
-  rightCol.appendChild(pts);
-
-  const decideTitle = EKit.h('h3', 'lab-col-title', 'Определите неисправность');
-  decideTitle.style.marginTop = '16px';
-  rightCol.appendChild(decideTitle);
-  const decide = EKit.h('div', 'lab-points');
-  const candidates = points.map((p) => ({ id: p.id, name: 'Неисправно: ' + p.name }));
-  const faultExplanation = {
-    av: 'Верно! Сгорел вводной автомат QF1 — обрыв фазы на вводе, отсюда 0 В сразу на всех точках ниже по цепи.',
-    r1: 'Верно! Обрыв в розетке №1 — нулевой проводник отвалился, цепь разорвана, отсюда 0 В и «обрыв ∞».',
-    r2: 'Верно! Обрыв в розетке №2 — нулевой проводник отвалился, цепь разорвана, отсюда 0 В и «обрыв ∞».',
-    lamp: 'Верно! Перегорел светильник — спираль лампы в обрыв, отсюда 0 В и «нет сигнала» в прозвонке.'
-  };
-  EKit.shuffle(candidates).forEach((c) => {
-    const b = EKit.h('button', 'lab-point');
-    b.type = 'button';
-    b.appendChild(EKit.h('strong', null, c.name));
-    b.onclick = () => {
-      if (c.id === faultId){
-        b.classList.add('probed');
-        feedback.className = 'lab-feedback ok';
-        feedback.textContent = faultExplanation[faultId];
-        setTimeout(() => ui.finish(ePointsOf(mistakes, 80)), 900);
-      } else {
-        mistakes++;
-        b.classList.add('picked');
-        setTimeout(() => b.classList.remove('picked'), 400);
-        feedback.className = 'lab-feedback bad';
-        feedback.textContent = 'Нет: ' + c.name.replace('Неисправно: ', '') + ' работает нормально. Сверьте показания прибора.';
-      }
-    };
-    decide.appendChild(b);
-  });
-  rightCol.appendChild(decide);
-
-  const feedback = EKit.h('p', 'lab-feedback');
-  layout.append(leftCol, rightCol);
-  ui.body.append(layout, feedback);
-  return ui;
 }
 
 /* ---- Игра 4. Пуск электродвигателя ---- */
 function openEMotor(done, cancel){
-  const steps = [
-    { id: 'qf1',   name: 'Включить вводной автомат QF1',        note: 'питание щита' },
-    { id: 'ctrl',  name: 'Подать питание цепи управления',       note: '24 В на схему' },
-    { id: 'star',  name: 'Нажать «ПУСК» — включить «звезду»',    note: 'КМ1: пуск' },
-    { id: 'delta', name: 'Переключить «звезда → треугольник»',   note: 'КМ2: разгон' },
-    { id: 'run',   name: 'Ввести двигатель в рабочий режим',     note: 'КМ3: работа' }
-  ];
-  let progress = 0, mistakes = 0;
-
-  const ui = EKit.create({
+  return window.openTaskGame({
     theme: 'e',
-    tag: 'Электропривод · пуск',
-    title: 'Прямой пуск электродвигателя «звезда-треугольник»',
-    objective: 'Включите двигатель в правильной последовательности. Ошибка в порядке = короткое замыкание, пуск придётся начать заново.',
-    howto: [
-      'Нажимайте кнопки в правильном порядке пуска двигателя.',
-      'Сначала питание: вводной автомат, затем цепь управления.',
-      'Затем пуск на «звезде», переключение на «треугольник» и рабочий режим.',
-      'Ошибка в порядке = короткое замыкание: прогресс сбрасывается, начинайте заново.'
+    icon: '⚙️',
+    title: 'Пуск электродвигателя',
+    intro: 'Расставьте шаги пуска прямо на схеме — не спалите двигатель!',
+    memo: [
+      ['Пуск «звездой»', 'Обмотки звездой: пусковой ток меньше в ~1,7 раза. Разгон мягкий.'],
+      ['Переход в «треугольник»', 'После разгона — полная мощность.'],
+      ['Цепь управления', 'Кнопки и катушки питаются отдельно, обычно 24 В — это безопасность.']
     ],
-    hint: 'Мощный двигатель нельзя включать сразу «треугольником»: сначала пусковой режим «звезда», затем разгон и переключение на «треугольник».',
-    steps: steps.length,
+    steps: [
+      {
+        title: 'Этап 1 · Последовательность пуска',
+        task: 'Нажмите «ШАГ 1» на схеме, затем фишку. Заполните все четыре шага.',
+        art: eSvgMotorChain(),
+        hotspots: [
+          { x: 11.8, y: 37 }, { x: 34.7, y: 37 }, { x: 57.6, y: 37 }, { x: 80.6, y: 37 }
+        ],
+        slots: [
+          { label: 'Шаг 1', answer: 'Вводной автомат QF1' },
+          { label: 'Шаг 2', answer: 'Питание цепи управления' },
+          { label: 'Шаг 3', answer: 'Пуск «звездой»' },
+          { label: 'Шаг 4', answer: 'Переход в «треугольник»' }
+        ],
+        chips: [
+          { label: 'Вводной автомат QF1' },
+          { label: 'Питание цепи управления' },
+          { label: 'Пуск «звездой»' },
+          { label: 'Переход в «треугольник»' },
+          { label: 'Сразу «треугольник»', sub: 'лишний' }
+        ],
+        chipsLabel: 'Шаги',
+        hint: 'Сначала питание, потом управление, звезда — и лишь затем треугольник.',
+        success: 'Двигатель запущен по инструкции!'
+      },
+      {
+        title: 'Этап 2 · Зачем «звезда»?',
+        task: 'Почему двигатель сначала пускают «звездой»?',
+        art: eSvgMotorChain(),
+        slots: [{ label: 'Причина пуска звездой', answer: 'Меньше пусковой ток' }],
+        chips: [ { label: 'Меньше пусковой ток' }, { label: 'Быстрее разгон' }, { label: 'Громче работает' } ],
+        chipsLabel: 'Варианты',
+        hint: 'Большой пусковой ток греет провода и просаживает сеть. Звезда его снижает.',
+        success: 'Верно: звезда бережёт сеть и двигатель.'
+      }
+    ],
     onDone: done, onCancel: cancel
   });
-
-  const feedback = EKit.h('p', 'lab-feedback');
-  const seq = EKit.h('div', 'lab-seq');
-  const btns = new Map();
-  EKit.shuffle(steps).forEach((st) => {
-    const b = EKit.h('button', 'lab-btn');
-    b.type = 'button';
-    b.appendChild(EKit.h('strong', null, st.name));
-    b.appendChild(EKit.h('div', null, st.note));
-    b.onclick = () => press(st);
-    btns.set(st.id, b);
-    seq.appendChild(b);
-  });
-
-  const motor = EKit.h('div', 'lab-motor');
-  const rotor = EKit.h('div', 'rotor');
-  const motorLabel = EKit.h('div', null, 'Двигатель: остановлен');
-  motor.append(rotor, motorLabel);
-
-  ui.body.append(seq, motor, feedback);
-
-  function press(st){
-    if (ui.isClosed()) return;
-    const expected = steps[progress];
-    const b = btns.get(st.id);
-    if (st.id === expected.id){
-      b.classList.add('done');
-      b.disabled = true;
-      progress++;
-      ui.setProgress(progress, steps.length);
-      feedback.className = 'lab-feedback ok';
-      feedback.textContent = 'Шаг ' + progress + ': ' + st.name + '.';
-      motorLabel.textContent = progress >= 3 ? 'Двигатель: разгон / вращение' : 'Двигатель: подготовка';
-      if (progress >= 3) rotor.classList.add('spin');
-      if (progress === steps.length){
-        feedback.textContent = 'Пуск завершён! Двигатель вышел на рабочий режим.';
-        setTimeout(() => ui.finish(ePointsOf(mistakes, 70)), 700);
-      }
-    } else {
-      mistakes++;
-      b.classList.add('wrong');
-      setTimeout(() => b.classList.remove('wrong'), 450);
-      progress = 0;
-      rotor.classList.remove('spin');
-      motorLabel.textContent = 'Двигатель: остановлен';
-      btns.forEach((n) => { n.classList.remove('done'); n.disabled = false; });
-      ui.setProgress(0, steps.length);
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Короткое замыкание! Порядок пуска нарушен. Начните заново с вводного автомата.';
-    }
-  }
-  return ui;
 }
 
-/* ---- Игра 5. 3D-сборка электрошкафа ---- */
+/* ---- Игра 5. Сборка электрошкафа ---- */
 function openE3D(done, cancel){
-  const parts = [
-    { id: 'qs',  name: 'Вводной рубильник QS', note: 'главный выключатель' },
-    { id: 'rcd', name: 'УЗО 30 мА',            note: 'защита от утечки' },
-    { id: 'kwh', name: 'Счётчик кВт·ч',        note: 'учёт электроэнергии' },
-    { id: 'c16', name: 'Автомат C16',          note: 'линия 16 А' }
-  ];
-  const sectors = [
-    { id: 'qs',  title: 'ВВОД ПИТАНИЯ', task: 'Сюда приходит кабель 380 В от подстанции' },
-    { id: 'rcd', title: 'ЗАЩИТА',       task: 'Спасает человека от тока утечки на землю' },
-    { id: 'kwh', title: 'УЧЁТ',         task: 'Считает израсходованные киловатт-часы' },
-    { id: 'c16', title: 'ЛИНИЯ 16 А',   task: 'Питает группу розеток' }
-  ];
-  let selected = null, solved = 0, mistakes = 0, angle = 0;
-
-  const ui = EKit.create({
+  return window.openTaskGame({
     theme: 'e',
-    tag: '3D-стенд · монтаж шкафа',
-    title: '3D-сборка электрошкафа',
-    objective: 'Подберите каждому отсеку шкафа подходящий аппарат. Выберите аппарат, вращайте 3D-шкаф стрелками и нажмите на нужную грань.',
-    howto: [
-      'Выберите аппарат в списке снизу — плитка подсветится.',
-      'Кнопками ◀ ▶ вращайте 3D-шкаф, чтобы увидеть все четыре грани-отсека.',
-      'Прочитайте, какую задачу решает отсек, и нажмите на грань, если туда ставится выбранный аппарат.',
-      'Соберите все 4 отсека — шкаф готов к подаче напряжения.'
+    icon: '🗄️',
+    title: 'Сборка электрошкафа',
+    intro: 'Нажмите отсек на шкафу и поставьте туда аппарат, который решает его задачу.',
+    memo: [
+      ['Автомат QF', 'Защита от перегрузки и короткого замыкания.'],
+      ['УЗО', 'Защита человека: отключает при утечке 30 мА.'],
+      ['Счётчик', 'Учитывает электроэнергию, кВт·ч.'],
+      ['Шина PE', 'Собирает все провода заземления в одну точку.']
     ],
-    hint: 'Разложите по порядку «от ввода к нагрузке»: ввод питания → защита от утечки → учёт энергии → отходящая линия.',
-    steps: 4,
+    steps: [
+      {
+        title: 'Этап · Функции аппаратов',
+        task: 'Четыре отсека шкафа подписаны задачами. Поставьте в каждый нужный аппарат.',
+        art: eSvgCabinet(),
+        hotspots: [
+          { x: 31.3, y: 30 }, { x: 68.7, y: 30 }, { x: 31.3, y: 69 }, { x: 68.7, y: 69 }
+        ],
+        slots: [
+          { label: 'Отсек «Перегрузка и КЗ»', answer: 'Автомат QF' },
+          { label: 'Отсек «Утечка тока»', answer: 'УЗО' },
+          { label: 'Отсек «Учёт энергии»', answer: 'Счётчик' },
+          { label: 'Отсек «Земля»', answer: 'Шина PE' }
+        ],
+        chips: [
+          { label: 'Автомат QF' }, { label: 'УЗО' }, { label: 'Счётчик' }, { label: 'Шина PE' },
+          { label: 'Розетка', sub: 'лишняя' }, { label: 'Лампа', sub: 'лишняя' }
+        ],
+        chipsLabel: 'Аппараты шкафа',
+        hint: 'КЗ и перегрузка — автомат. Утечка — УЗО. Учёт — счётчик. Земля — шина PE.',
+        success: 'Шкаф укомплектован — можно подавать напряжение!'
+      }
+    ],
     onDone: done, onCancel: cancel
   });
-
-  const shuffled = EKit.shuffle(sectors).map((s, i) => Object.assign({}, s, { rot: i * 90 }));
-  const feedback = EKit.h('p', 'lab-feedback');
-  const faces = [];
-
-  const scene = EKit.h('div', 'lab-scene3d');
-  const cube = EKit.h('div', 'lab-cube3d');
-  shuffled.forEach((sec) => {
-    const face = EKit.h('div', 'lab-face3d');
-    face.style.transform = 'rotateY(' + sec.rot + 'deg) translateZ(95px)';
-    const inner = EKit.h('div', 'lab-face-inner');
-    inner.appendChild(EKit.h('small', null, 'Отсек · поверните к себе'));
-    inner.appendChild(EKit.h('strong', null, sec.title));
-    inner.appendChild(EKit.h('div', 'lab-face-slot', sec.task));
-    face.appendChild(inner);
-    face.onclick = () => install(sec, inner);
-    cube.appendChild(face);
-    faces.push({ sec, inner, filled: false });
-  });
-  const capTop = EKit.h('div', 'lab-face3d');
-  capTop.style.transform = 'rotateX(90deg) translateZ(95px)';
-  capTop.appendChild(EKit.h('div', 'lab-face-inner lab-cap-inner', '⚡'));
-  const capBot = EKit.h('div', 'lab-face3d');
-  capBot.style.transform = 'rotateX(-90deg) translateZ(95px)';
-  capBot.appendChild(EKit.h('div', 'lab-face-inner lab-cap-inner', 'СОТА'));
-  cube.append(capTop, capBot);
-  scene.appendChild(cube);
-
-  function applyRot(){ cube.style.transform = 'rotateX(-14deg) rotateY(' + angle + 'deg)'; }
-  applyRot();
-
-  const controls = EKit.h('div', 'lab-scene-controls');
-  const left = EKit.h('button', 'lab-rotbtn', '◀');
-  left.type = 'button'; left.setAttribute('aria-label', 'Повернуть шкаф влево');
-  const right = EKit.h('button', 'lab-rotbtn', '▶');
-  right.type = 'button'; right.setAttribute('aria-label', 'Повернуть шкаф вправо');
-  left.onclick = () => { angle -= 90; applyRot(); };
-  right.onclick = () => { angle += 90; applyRot(); };
-  controls.append(left, right);
-
-  const caption = EKit.h('p', 'lab-scene-caption', 'Сейчас перед вами одна грань-отсек. Вращайте шкаф, чтобы найти нужную.');
-  const trayTitle = EKit.h('h3', 'lab-col-title', 'Аппараты для установки');
-  const tray = EKit.h('div', 'lab-tray');
-  EKit.shuffle(parts).forEach((p) => {
-    const t = EKit.h('button', 'lab-tile');
-    t.type = 'button'; t.dataset.id = p.id;
-    t.setAttribute('aria-pressed', 'false');
-    t.appendChild(EKit.h('strong', null, p.name));
-    t.appendChild(EKit.h('span', null, p.note));
-    t.onclick = () => {
-      if (t.disabled) return;
-      selected = p.id;
-      tray.querySelectorAll('.lab-tile').forEach((n) => n.setAttribute('aria-pressed', String(n.dataset.id === p.id)));
-      feedback.className = 'lab-feedback';
-      feedback.textContent = 'Выбрано: ' + p.name + '. Найдите подходящий отсек.';
-    };
-    tray.appendChild(t);
-  });
-
-  ui.body.append(scene, controls, caption, trayTitle, tray, feedback);
-
-  function install(sec, inner){
-    if (ui.isClosed()) return;
-    const st = faces.find((f) => f.sec === sec);
-    if (st.filled){
-      feedback.className = 'lab-feedback';
-      feedback.textContent = 'Этот отсек уже собран.';
-      return;
-    }
-    if (!selected){
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Сначала выберите аппарат в списке ниже.';
-      return;
-    }
-    const part = parts.find((p) => p.id === selected);
-    if (part.id === sec.id){
-      st.filled = true;
-      solved++;
-      inner.classList.add('filled', 'pop');
-      setTimeout(() => inner.classList.remove('pop'), 420);
-      inner.querySelector('.lab-face-slot').textContent = '✔ ' + part.name;
-      const tile = tray.querySelector('[data-id="' + part.id + '"]');
-      if (tile){ tile.disabled = true; tile.setAttribute('aria-pressed', 'false'); }
-      selected = null;
-      ui.setProgress(solved, 4);
-      feedback.className = 'lab-feedback ok';
-      feedback.textContent = 'Верно! ' + part.name + ' установлен в отсек «' + sec.title + '».';
-      if (solved === faces.length){
-        feedback.textContent += ' Шкаф собран — можно подавать напряжение!';
-        setTimeout(() => ui.finish(ePointsOf(mistakes, 90)), 800);
-      }
-    } else {
-      mistakes++;
-      inner.classList.add('miss');
-      setTimeout(() => inner.classList.remove('miss'), 440);
-      feedback.className = 'lab-feedback bad';
-      feedback.textContent = 'Не сюда: ' + part.name + ' не решает задачу «' + sec.task + '».';
-    }
-  }
-
-  return ui;
 }
 
 /* ---- Диспетчер станций Э ---- */

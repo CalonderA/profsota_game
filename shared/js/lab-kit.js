@@ -22,6 +22,61 @@
     return a;
   }
 
+  /* ---- Живые эффекты: звук, конфетти, похвала, тряска ----
+     Делают любую мини-игру на ките «ожившей» без правок самих игр. */
+  let audioCtx = null;
+  function tone(freq, t0, dur, type, vol){
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.05, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function sfx(kind){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const t = audioCtx.currentTime;
+      if (kind === 'click') tone(620, t, 0.06, 'square', 0.025);
+      else if (kind === 'good'){ tone(660, t, 0.1, 'sine', 0.05); tone(880, t + 0.08, 0.14, 'sine', 0.05); }
+      else if (kind === 'bad'){ tone(200, t, 0.16, 'sawtooth', 0.04); tone(150, t + 0.1, 0.18, 'sawtooth', 0.04); }
+      else if (kind === 'win'){
+        [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.09, 0.22, 'triangle', 0.06));
+      }
+    } catch(e){ /* звук — украшение, не обязанность */ }
+  }
+  const PRAISES = [
+    '🔥 Круто!', '⚡ Есть контакт!', '🔧 Как настоящий наладчик!',
+    '💡 Точно в цель!', '🎯 Метко!', '🛠️ Мастер!', '✨ Блестяще!', '🚀 Поехали!'
+  ];
+  function praise(card){
+    const p = h('div', 'lab-praise', PRAISES[Math.floor(Math.random() * PRAISES.length)]);
+    card.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
+  function confetti(root){
+    const box = h('div', 'lab-confetti');
+    const colors = ['#5eead4', '#a78bfa', '#f59e0b', '#4fd69f', '#f472b6', '#60a5fa'];
+    for (let i = 0; i < 44; i++){
+      const bit = document.createElement('i');
+      bit.style.left = Math.random() * 100 + '%';
+      bit.style.background = colors[i % colors.length];
+      bit.style.animationDelay = (Math.random() * 0.35) + 's';
+      bit.style.animationDuration = (1 + Math.random() * 0.8) + 's';
+      bit.style.transform = 'rotate(' + Math.random() * 360 + 'deg)';
+      box.appendChild(bit);
+    }
+    root.appendChild(box);
+    setTimeout(() => box.remove(), 2200);
+  }
+  function shake(card){
+    card.classList.remove('shake');
+    void card.offsetWidth; // перезапуск анимации
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 420);
+  }
+
   /**
    * Создаёт оверлей мини-игры.
    * @param {Object} opts
@@ -80,11 +135,12 @@
     }
     let hintEl = null;
     if (opts.hint){
-      const hintBtn = h('button', 'lab-hint-btn', '❔ Подсказка');
+      const hintBtn = h('button', 'lab-hint-btn', '✔ Скрыть подсказку');
       hintBtn.type = 'button';
-      hintBtn.setAttribute('aria-expanded', 'false');
+      hintBtn.setAttribute('aria-expanded', 'true');
       hintEl = h('p', 'lab-hint');
-      hintEl.hidden = true;
+      // Подсказка сразу открыта: абитуриент понимает задание с первого взгляда.
+      hintEl.hidden = false;
       hintEl.textContent = opts.hint;
       hintBtn.onclick = () => {
         const willOpen = hintEl.hidden;
@@ -94,6 +150,29 @@
       };
       body.append(hintBtn, hintEl);
     }
+
+    // ---- Живые эффекты поверх любой мини-игры на ките ----
+    root.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (b && !b.disabled && !b.classList.contains('lab-exit')) sfx('click');
+    }, true);
+    // Реакция на результат: похвала/тряска по классу блока обратной связи.
+    const fxObserver = new MutationObserver((muts) => {
+      for (const m of muts){
+        for (const n of m.addedNodes){
+          if (n.nodeType !== 1) continue;
+          const fb = n.classList && n.classList.contains('lab-feedback') ? n : null;
+          if (!fb) continue;
+          if (fb.classList.contains('ok')){ sfx('good'); praise(card); }
+          else if (fb.classList.contains('bad')){ sfx('bad'); shake(card); }
+        }
+        if (m.type === 'attributes' && m.target.classList && m.target.classList.contains('lab-feedback')){
+          if (m.target.classList.contains('ok')){ sfx('good'); praise(card); }
+          else if (m.target.classList.contains('bad')){ sfx('bad'); shake(card); }
+        }
+      }
+    });
+    fxObserver.observe(body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
     const api = {
       root, card, body,
@@ -109,9 +188,14 @@
       finish(points){
         if (state.closed || state.finished) return;
         state.finished = true; state.closed = true;
-        root.remove();
-        if (previousFocus && previousFocus.isConnected) previousFocus.focus();
-        opts.onDone && opts.onDone(points == null ? 100 : points);
+        sfx('win');
+        confetti(root);
+        const bonus = points == null ? 100 : points;
+        setTimeout(() => {
+          root.remove();
+          if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+          opts.onDone && opts.onDone(bonus);
+        }, 900);
       },
       close(){
         if (state.closed) return;
