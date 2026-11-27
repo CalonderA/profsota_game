@@ -6,7 +6,7 @@ const fs=require('node:fs');const path=require('node:path');const os=require('no
  const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));});
  async function run(expression){const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;}
  const click=selector=>run(`document.querySelector(${JSON.stringify(selector)}).click()`);
- const state=()=>run("JSON.parse(localStorage.getItem('sota_ksk_service_v1'))");
+ const state=()=>run("window.testServiceState()");
  const hint=()=>run("document.querySelector('.pc-tutorial').dataset.step");
  const out=path.join(os.tmpdir(),'sota-service-review');fs.mkdirSync(out,{recursive:true});
  async function shot(name){const r=await send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,name+'.png'),Buffer.from(r.data,'base64'));}
@@ -14,6 +14,7 @@ const fs=require('node:fs');const path=require('node:path');const os=require('no
  await send('Runtime.enable');await send('Page.enable');await size(1366,768);
  await send('Page.navigate',{url:'http://127.0.0.1:8787/specialties/ksk/index.html'});
  for(let n=0;n<60;n++){if(await run("typeof window.openKskService==='function'"))break;await new Promise(r=>setTimeout(r,100));}
+ await run("fetch('service.js').then(r=>r.text()).then(source=>(0,eval)(source.replace('let s=fresh();','let s=fresh();window.testServiceState=()=>s;')))");
  await run("localStorage.removeItem('sota_ksk_service_v1');window.openKskService(n=>window.serviceBonus=n,()=>window.serviceCancelled=true)");
  const dims=()=>run(`(()=>{const d=document.querySelector('.pc-service');return {w:d.clientWidth,sw:d.scrollWidth,h:d.clientHeight,sh:d.scrollHeight,children:[...d.querySelectorAll('.pc-layout,.pc-steps,.pc-diag,.pc-workbench,footer')].map(e=>({name:e.className||e.tagName,h:e.clientHeight,sh:e.scrollHeight,w:e.clientWidth,sw:e.scrollWidth})),buttons:[...d.querySelectorAll('button')].filter(e=>e.offsetWidth).map(e=>{let r=e.getBoundingClientRect();return {text:e.textContent.trim(),left:r.left,right:r.right,top:r.top,bottom:r.bottom}})}})()`);
  for(const [w,h] of [[1366,768],[1920,1080],[1024,768],[1280,720]]){await size(w,h);const v=await dims();assert.ok(v.sw<=v.w,`horizontal overflow at ${w}: ${JSON.stringify(v)}`);assert.ok(v.sh<=v.h,`vertical overflow at ${w}: ${JSON.stringify(v)}`);for(const child of v.children)assert.ok(child.sh<=child.h+1,`child overflow at ${w}: ${JSON.stringify(child)}`);await shot('desktop-'+w);console.log('Desktop fits',w,h);}

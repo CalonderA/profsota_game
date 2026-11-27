@@ -13,6 +13,8 @@ const server=http.createServer((req,res)=>{
   const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://127.0.0.1:${server.address().port}/specialties/ksk/index.html`);
   await page.evaluate(()=>{localStorage.removeItem('sota_ksk_service_v1');startGame();openQuestion(crystals.find(c=>c.stationType===3));});
+  await page.waitForFunction(()=>document.querySelector('.pc-case-photo')?.getAttribute('visibility')==='visible');
+  assert.equal(await page.locator('.pc-case-fallback').getAttribute('visibility'),'hidden');
   const check=async(label)=>{
    const v=await page.locator('.pc-service').evaluate(d=>{
     const fits=e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1};
@@ -21,11 +23,32 @@ const server=http.createServer((req,res)=>{
   };
   for(const [width,height] of [[1920,1080],[1366,768],[1280,720]]){await page.setViewportSize({width,height});await check('initial '+width);await page.screenshot({path:path.join(os.tmpdir(),`ksk-service-new-${width}.png`)});}
   await page.setViewportSize({width:1366,height:768});await page.locator('[data-act=diagnose]').click();await check('diagnosed');
-  await page.locator('[data-act=inspect]').click();await page.locator('[data-cause="1"]').click();await page.locator('[data-act=power]').click();await page.locator('[data-act=plug]').click();await page.locator('[data-tool=brush]').click();
+  await page.locator('[data-act=inspect]').click();
+  for(const [width,height] of [[1366,768],[1280,720]]){
+   await page.setViewportSize({width,height});await check('cause selection '+width);
+   assert.equal(await page.locator('.pc-tutorial').isVisible(),false);
+   assert(await page.locator('[data-cause="1"]').evaluate(e=>e.classList.contains('pc-guide-target')));
+   const space=await page.evaluate(()=>({causeBottom:document.querySelector('.causes').getBoundingClientRect().bottom,toolsTop:document.querySelector('footer').getBoundingClientRect().top}));
+   assert(space.causeBottom<=space.toolsTop,'cause choices must stay above tools at '+width+': '+JSON.stringify(space));
+  }
+  await page.setViewportSize({width:1366,height:768});
+  await page.locator('[data-cause="1"]').click();await page.locator('[data-act=power]').click();await page.locator('[data-act=plug]').click();await page.locator('[data-tool=brush]').click();
   const pt=await page.locator('.hardware').evaluate(svg=>{const p=svg.createSVGPoint();p.x=242;p.y=160;return {x:p.matrixTransform(svg.getScreenCTM()).x,y:p.matrixTransform(svg.getScreenCTM()).y};});
   await page.mouse.move(pt.x,pt.y);await page.mouse.down();for(let i=0;i<8;i++)await page.mouse.move(pt.x+(i%2?0:8),pt.y);await page.mouse.up();
-  assert(await page.evaluate(()=>JSON.parse(localStorage.getItem('sota_ksk_service_v1')).dust[0]<1));
-  await page.setViewportSize({width:390,height:844});assert(await page.locator('.pc-service').evaluate(d=>d.scrollWidth<=d.clientWidth+1));await page.screenshot({path:path.join(os.tmpdir(),'ksk-service-new-mobile.png')});
-  assert.deepEqual(errors,[]);console.log('PASS: workshop desktop layouts, diagnosis, power controls, native cleaning input and mobile width.');
+  assert(await page.evaluate(()=>Number(document.querySelector('[data-dust="0"]').getAttribute('opacity'))<1));
+  for(const width of [390,360]){
+   await page.setViewportSize({width,height:844});assert(await page.locator('.pc-service').evaluate(d=>d.scrollWidth<=d.clientWidth+1));
+   assert.equal(await page.locator('.pc-tutorial').isVisible(),false);
+   assert(await page.locator('.pc-guide-ring').isVisible());
+   assert(await page.locator('.pc-guide-arrow').isVisible());
+  }
+  await page.screenshot({path:path.join(os.tmpdir(),'ksk-service-new-mobile.png')});
+  // A failed image must leave a usable case behind the interactive components.
+  await page.route('**/service-art/case.png*',route=>route.abort());
+  await page.reload();
+  await page.evaluate(()=>{startGame();openQuestion(crystals.find(c=>c.stationType===3));});
+  await page.waitForFunction(()=>document.querySelector('.pc-case-fallback')?.getAttribute('visibility')==='visible');
+  assert.equal(await page.locator('.pc-case-photo').getAttribute('visibility'),'hidden');
+  assert.deepEqual(errors,[]);console.log('PASS: workshop desktop layouts, diagnosis, power controls, native cleaning input, mobile width and case image fallback.');
  }finally{if(browser)await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

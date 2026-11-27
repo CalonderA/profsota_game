@@ -1,7 +1,9 @@
 'use strict';
 window.openKskService=function(done,cancel){
- const key='sota_ksk_service_v1',fresh=()=>({diagnosed:false,inspect:false,cause:false,on:true,plug:true,dust:Array(60).fill(1),cable:true,screws:0,removed:false,cpu:1,base:1,paste:false,installed:false,verified:false});
- let s=fresh();try{const v=JSON.parse(localStorage.getItem(key));if(v?.dust?.length===60)s={...s,...v};}catch(e){}
+ // Discard saves made by older versions; each visit starts a fresh repair.
+ try{localStorage.removeItem('sota_ksk_service_v1');}catch(e){}
+ const fresh=()=>({diagnosed:false,inspect:false,cause:false,on:true,plug:true,dust:Array(60).fill(1),cable:true,screws:0,removed:false,cpu:1,base:1,paste:false,installed:false,verified:false});
+ let s=fresh();
  let tool='hand',held=false,last=null,closed=false,testing=false;
  const d=document.createElement('dialog');d.className='pc-service';d.setAttribute('aria-label','Ремонт и обслуживание ПК');
  const icon=id=>window.KskServiceArt.tool(id);
@@ -10,7 +12,9 @@ window.openKskService=function(done,cancel){
   <div class="pc-title"><h2>Сервисная мастерская</h2><p>Ремонт и обслуживание ПК</p></div>
   <button data-act="exit" class="pc-close ksk-minigame-exit" type="button" aria-label="&#1047;&#1072;&#1082;&#1088;&#1099;&#1090;&#1100; &#1084;&#1080;&#1085;&#1080;-&#1080;&#1075;&#1088;&#1091;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
  </header>
- <div class="pc-tutorial" role="status" aria-live="polite" aria-atomic="true"><strong class="pc-hint-title"></strong><p id="pc-instruction" class="pc-instruction"></p><button data-act="hint" aria-controls="pc-instruction" aria-expanded="false">Подсказка</button></div>
+ <div class="pc-tutorial" role="status" aria-live="polite" aria-atomic="true">
+  <strong class="pc-hint-title"></strong><p id="pc-instruction" class="pc-instruction"></p><button data-act="hint" aria-controls="pc-instruction" aria-expanded="false">Подсказка</button>
+ </div>
  <div class="pc-layout">
 
   <main class="pc-workbench"><div class="pc-scene">${window.KskServiceArt.scene()}<div class="pc-cursor"></div></div><div class="pc-switches"><div class="pc-power-summary"><span class="pc-power-caption"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10M6.3 5.7a9 9 0 1 0 11.4 0"/></svg><span>Состояние питания</span></span><span class="pc-power-state" role="status" aria-live="polite"></span></div><button data-act="inspect">Осмотреть ПК</button><button data-act="power"></button><button data-act="plug"></button><button data-act="hold" aria-pressed="false">Фиксатор вентилятора</button></div></main>
@@ -22,10 +26,13 @@ window.openKskService=function(done,cancel){
  <footer><nav class="pc-mobile-nav" aria-label="Навигация по мастерской"><button data-act="view-pc">Системный блок</button><button data-act="view-diagnostics">Диагностика</button></nav><div class="pc-tools">${Object.entries({hand:'Рука',driver:'Отвёртка',brush:'Кисть',air:'Сжатый воздух',cloth:'Салфетка',paste:'Термопаста'}).map(([id,n])=>`<button data-tool="${id}" aria-label="${n}" aria-pressed="${id==='hand'}">${icon(id)}<span>${n}</span></button>`).join('')}</div><div class="pc-feedback"><p role="status" class="pc-status"></p><button data-act="sound" class="pc-sound" aria-pressed="true" aria-label="Выключить звук">Звук: вкл.</button></div></footer>
  <dialog class="pc-exit-confirm" aria-labelledby="pc-exit-title" aria-describedby="pc-exit-description">
   <div class="qconfirm-box"><h3 class="qconfirm-title" id="pc-exit-title">Выйти из мини-игры?</h3>
-  <p class="qconfirm-text" id="pc-exit-description">Вы точно хотите выйти? Вы потеряете <b>15 света</b>. Прогресс ремонта сохранится.</p>
+  <p class="qconfirm-text" id="pc-exit-description">Вы точно хотите выйти? Вы потеряете <b>15 света</b>. Незавершённый ремонт придётся начать заново.</p>
   <div class="btnrow"><button type="button" class="btn ghost pc-exit-cancel" autofocus>Отмена</button><button type="button" class="btn danger pc-exit-accept">Выйти из мини-игры</button></div></div>
  </dialog>
 `;
+ const casePhoto=d.querySelector('.pc-case-photo'),caseFallback=d.querySelector('.pc-case-fallback');
+ casePhoto.addEventListener('load',()=>{casePhoto.setAttribute('visibility','visible');caseFallback.setAttribute('visibility','hidden');});
+ casePhoto.addEventListener('error',()=>{casePhoto.setAttribute('visibility','hidden');caseFallback.setAttribute('visibility','visible');});
  document.body.append(d);d.showModal();const q=v=>d.querySelector(v),clean=()=>s.dust.every(v=>v<=.01),positions=[[230,145],[352,145],[230,272],[352,272]];
  let soundEnabled=true,audioContext=null,lastSound=0;
  function playSound(kind='click'){
@@ -44,7 +51,7 @@ window.openKskService=function(done,cancel){
   }catch(e){/* Audio is optional; the station also works in silent browsers. */}
  }
  function msg(t,error=false){q('.pc-status').textContent=t;d.classList.toggle('pc-error',error);if(t)playSound(error?'error':'click');}
- // Instructions are derived from the repair state, including restored progress.
+ // Instructions are derived from the current repair state.
  // They never advance the repair or unlock an operation themselves.
  let tutorialId='',hintVisible=true,dustBuilt=false,dustNodes=[],previousDust=[];
  function tutorialStep(){
@@ -175,7 +182,6 @@ window.openKskService=function(done,cancel){
   d.querySelectorAll('[data-tool]').forEach(n=>{const selected=n.dataset.tool===tool;n.classList.toggle('selected',selected);n.setAttribute('aria-pressed',String(selected));});
   if(!dustBuilt){q('.dust').innerHTML=s.dust.map((v,i)=>{const [x,y]=dustPos(i);return `<g data-dust="${i}" opacity="${v}">${window.KskServiceArt.dust(i,x,y)}</g>`;}).join('');dustNodes=s.dust.map((_,i)=>q(`[data-dust="${i}"]`));dustBuilt=true;}
   s.dust.forEach((v,i)=>{if(previousDust[i]!==v)dustNodes[i].setAttribute('opacity',v);});previousDust=s.dust.slice();
-  try{localStorage.setItem(key,JSON.stringify(s));}catch(e){}
  }
  function dustPos(i){return i<30?[242+i%6*20,160+Math.floor(i/6)*22]:[120+(i-30)%10*47,320+Math.floor((i-30)/10)*36];}
  const exitConfirmation=q('.pc-exit-confirm');let confirmingExit=false;
@@ -183,7 +189,7 @@ window.openKskService=function(done,cancel){
  q('.pc-exit-cancel').onclick=dismissExit;
  q('.pc-exit-accept').onclick=()=>{dismissExit();close(false,true);};
  exitConfirmation.addEventListener('cancel',e=>{e.preventDefault();e.stopPropagation();dismissExit();});
- function close(ok,confirmed=false){if(closed)return;if(!ok&&!confirmed){if(!confirmingExit){confirmingExit=true;exitConfirmation.showModal();}return;}closed=true;if(audioContext)audioContext.close().catch(()=>{});d.close();d.remove();if(ok){try{localStorage.removeItem(key);}catch(e){}done(600);}else cancel();}
+ function close(ok,confirmed=false){if(closed)return;if(!ok&&!confirmed){if(!confirmingExit){confirmingExit=true;exitConfirmation.showModal();}return;}closed=true;if(audioContext)audioContext.close().catch(()=>{});d.close();d.remove();if(ok)done(600);else cancel();}
  d.addEventListener('cancel',e=>{e.preventDefault();close(false);});
  d.onclick=e=>{let t=e.target.closest('[data-tool]');if(t){playSound('tool');tool=t.dataset.tool;q('.pc-cursor').innerHTML=icon(tool);render();return;}t=e.target.closest('[data-cause]');if(t){if(s.diagnosed&&s.inspect&&t.dataset.cause==='1'){s.cause=true;msg('Причина установлена.');render();}else msg(s.inspect?'Показатели не подтверждают эту причину.':'Сначала осмотрите системный блок.',true);return;}const a=e.target.closest('[data-act]')?.dataset.act;if(a==='exit')return close(false);const mobileViews={'view-pc':'.pc-workbench','view-diagnostics':'.pc-diag'};if(mobileViews[a]){q(mobileViews[a]).scrollIntoView({behavior:'smooth',block:'start'});return;}if(a==='sound'){soundEnabled=!soundEnabled;q('[data-act=sound]').textContent=soundEnabled?'Звук: вкл.':'Звук: выкл.';q('[data-act=sound]').setAttribute('aria-pressed',String(soundEnabled));q('[data-act=sound]').setAttribute('aria-label',soundEnabled?'Выключить звук':'Включить звук');return;}if(a==='hint'){updateTutorial(true);return;}if(testing)return;if(a==='inspect'){s.inspect=true;msg('Радиатор забит пылью. Термоинтерфейс требует замены.');}if(a==='hold'){held=!held;q('[data-act=hold]').setAttribute('aria-pressed',held);}if(a==='power'){if(s.on){if(!s.cause)return msg('Сначала установите причину неисправности.',true);s.on=false;}else{if(!s.plug||s.removed||!s.cable||s.screws||s.cause&&!s.installed)return msg('Проверьте питание, крепления и подключение кулера.',true);s.on=true;}}if(a==='plug'){if(s.on)return msg('Сначала выключите ПК.',true);s.plug=!s.plug;}if(a==='diagnose'){if(!s.on||!s.plug)return msg('Для диагностики включите ПК.',true);if(!s.installed){s.diagnosed=true;msg('CPU 95 °C · GPU 54 °C. Нагрузка 100%, 60 виртуальных секунд.');}else if(clean()&&s.cable&&s.paste&&s.cpu<=.01&&s.base<=.01){testing=true;const start=performance.now();const tick=now=>{if(closed)return;const v=Math.min(1,(now-start)/3000);q('.pc-thermal-track i').style.width=(95-43*v)+'%';q('.temperature').innerHTML=Math.round(95-43*v)+' <span>°C</span>';if(v<1)requestAnimationFrame(tick);else{testing=false;s.verified=true;q('.result').innerHTML='<h3>Компьютер успешно обслужен!</h3><p>Нагрузка до и после: 100%, 60 виртуальных секунд</p><p>CPU: 95 → 52 °C<br>GPU: 54 → 54 °C</p>';msg('Система стабильна. Проверка пройдена.');render();}};requestAnimationFrame(tick);}}if(a==='finish'&&s.verified)return close(true);render();};
  const svg=q('.hardware');function point(e){let p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}

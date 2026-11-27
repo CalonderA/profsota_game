@@ -1,6 +1,9 @@
 'use strict';
 // Workshop-specific case artwork. SVG overlays retain their interactive coordinates.
 window.KskServiceArt = (() => {
+ // Resolve artwork beside this script, including when the page uses a legacy URL.
+ const scriptUrl=document.currentScript?.src;
+ const caseUrl=scriptUrl?new URL('service-art/case.png?v=20261127',scriptUrl).href:'service-art/case.png?v=20261127';
  const many=(n,fn)=>Array.from({length:n},(_,i)=>fn(i)).join('');
  const bolt=(x,y,r=3)=>`<g transform="translate(${x} ${y})"><circle r="${r}" fill="#182029" stroke="#76828c" stroke-width=".7"/><path d="M-${r/2} 0h${r}" stroke="#a6b4be" stroke-width=".8"/></g>`;
  function fan(x,y,r,frame=true){return `<g transform="translate(${x} ${y})">${frame?`<path d="M-${r+7} -${r+7}h${r*2+14}v${r*2+14}h-${r*2+14}Z" fill="url(#pc-frame)" stroke="#4a535e"/><path d="M-${r+5} -${r+5}l${r*2+10} ${r*2+10}m0 -${r*2+10}l-${r*2+10} ${r*2+10}" stroke="#151c25" stroke-width="6"/>`:''}<circle r="${r}" fill="#060a10" stroke="#53606d" stroke-width="2"/><circle r="${r-2}" fill="none" stroke="#253746" stroke-width="2"/><g class="rotor">${many(9,i=>`<path transform="rotate(${i*40})" d="M-4 -7C-${r*.85} -${r*.25} -${r*.9} -${r*.8} -${r*.35} -${r*.93}Q${r*.22} -${r*.99} 8 -9L0 0Z" fill="url(#pc-blade)" stroke="#73808c" stroke-opacity=".35" stroke-width=".6"/>`)}</g><circle r="${r*.24}" fill="url(#pc-cap)" stroke="#566572" stroke-width=".8"/><circle r="${r*.17}" fill="#1a232d"/><path d="M-4 1l4-5 4 5-4 3Z" fill="#95a4b1"/>${frame?[-1,1].map(a=>[-1,1].map(b=>bolt(a*(r+3),b*(r+3),1.6)).join('')).join(''):''}</g>`;}
@@ -15,7 +18,20 @@ window.KskServiceArt = (() => {
  <pattern id="pc-grain" width="8" height="5" patternUnits="userSpaceOnUse"><path d="M0 .5h6M3 3h5" stroke="#c5d5de" stroke-opacity=".07" stroke-width=".4"/></pattern>
  <filter id="pc-shadow" x="-30%" y="-30%" width="170%" height="180%"><feDropShadow dx="3" dy="7" stdDeviation="5" flood-color="#000" flood-opacity=".65"/></filter>
  </defs>
- <image class="pc-case-photo" href="service-art/case.png" x="10" y="0" width="600" height="600" preserveAspectRatio="xMidYMid meet"/>
+ <g class="pc-case-fallback" aria-hidden="true">
+ <rect x="22" y="8" width="570" height="574" rx="12" fill="url(#pc-frame)" stroke="#87939f" stroke-width="5"/>
+ <rect x="42" y="30" width="530" height="510" rx="5" fill="#111923" stroke="#526170" stroke-width="3"/>
+ <rect x="153" y="65" width="350" height="370" rx="4" fill="#202d38" stroke="#647681"/>
+ ${many(14,i=>`<path d="M${175+i*22} 420v-${30+i%4*16}l12-12v-65" fill="none" stroke="#637880" stroke-opacity=".35"/>`)}
+ ${fan(99,174,39)}
+ ${many(4,i=>`<rect x="${414+i*17}" y="100" width="11" height="192" rx="2" fill="#0b111b" stroke="#687787"/><path d="M${418+i*17} 110v170" stroke="#977bbb"/>`)}
+ ${many(3,i=>`<rect x="170" y="${329+i*33}" width="215" height="12" rx="2" fill="#0b111b" stroke="#687787"/>`)}
+ <rect x="48" y="454" width="518" height="79" rx="4" fill="url(#pc-brushed)" stroke="#73828e"/>
+ <rect x="65" y="468" width="177" height="48" fill="url(#pc-perf)"/>
+ <path d="M50 553h514M538 54v380" stroke="#8997a5" stroke-width="3"/>
+ ${[[35,22],[579,22],[35,567],[579,567]].map(([x,y])=>bolt(x,y,5)).join('')}
+ </g>
+ <image class="pc-case-photo" href="${caseUrl}" visibility="hidden" x="10" y="0" width="600" height="600" preserveAspectRatio="xMidYMid meet"/>
  <path d="M238 153h104v107H238Z" fill="#0c151c" stroke="#889189" stroke-width="2"/><path d="M246 160h89v92h-89Z" fill="#677786" stroke="#c5cbd1"/>
 
  <path d="M252 168h78v80h-78Z" fill="url(#pc-brushed)" stroke="#ced4d5"/>

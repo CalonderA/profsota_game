@@ -148,6 +148,16 @@ window.openKskNetwork = function(done, cancel) {
       ?startPort?'Порт уже выбран → нажми на выделенный второй конец кабеля.':'① СНАЧАЛА нажми порт с цифрой 1 → ② ЗАТЕМ нажми порт с цифрой 2.'
       :won?'Задание выполнено.':status.invalid.length?'× Нажми выделенный порт, чтобы снять ошибочный кабель.':status.ok?'Последнее действие: нажми подсвеченную кнопку внизу.':'СНАЧАЛА выбери подсвеченную карточку внизу → ЗАТЕМ нажми подсвеченный «+» на карте.';
     if(legend.textContent!==legendText)legend.textContent=legendText;
+    let progress=q('.nw-progress');
+    if(!progress){
+      progress=document.createElement('div');progress.className='nw-progress';
+      progress.setAttribute('role','progressbar');progress.setAttribute('aria-label','Выполнение задания');
+      progress.setAttribute('aria-valuemin','0');progress.setAttribute('aria-valuemax','12');
+      progress.innerHTML='<span></span>';q('.nw-hint').append(progress);
+    }
+    const completed=won?12:step-1;
+    progress.setAttribute('aria-valuenow',String(completed));
+    progress.firstElementChild.style.width=(completed/12*100)+'%';
     dialog.dataset.guideState=connecting?'connect':status.invalid.length?'error':'place';
   }
   function render() {

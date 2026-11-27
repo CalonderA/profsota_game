@@ -20,6 +20,7 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.locator('.nw-brand svg').count(),1);
     const hint=()=>page.locator('.nw-hint').textContent();
     assert.match(await hint(),/Шаг 1 из 12.*Маршрутизатор/s);
+    assert.equal(await page.locator('.nw-progress').getAttribute('aria-valuenow'),'0');
     assert.equal(await page.locator('[data-tool="router"].nw-guide-target').count(),1);
     assert.equal(await page.locator('[data-slot="hub1"].nw-guide-target').count(),1);
     await page.locator('.nw-check').click();
@@ -41,6 +42,7 @@ const server=http.createServer((req,res)=>{
     assert.equal(await page.locator('[data-device="router"]').count(),1);
     await tool('switch').click();await slot('hub1').click();
     assert.match(await hint(),/Шаг 4 из 12.*Интернет.*WAN/s);
+    assert.equal(await page.locator('.nw-progress').getAttribute('aria-valuenow'),'3');
     assert.equal(await page.locator('[data-port^="switch:"]').count(),8);
     assert.equal(await page.locator('.nw-link').count(),0,'Placement does not create cables');
     const port=id=>page.locator(`[data-port="${id}"]`);
@@ -109,6 +111,7 @@ const server=http.createServer((req,res)=>{
     await page.screenshot({path:path.join(os.tmpdir(),'ksk-network-desktop.png'),fullPage:true});
     await page.locator('.nw-check').click();assert.match(await page.locator('.nw-status').textContent(),/Сеть успешно/);
     assert.match(await hint(),/Готово!/);
+    assert.equal(await page.locator('.nw-progress').getAttribute('aria-valuenow'),'12');
     assert.equal(await page.locator('.nw-room-online').count(),4);
     assert.equal(await page.locator('.nw-check').textContent(),'Выйти в лабораторию');
     await page.locator('.nw-check').click();

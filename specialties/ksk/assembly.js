@@ -23,12 +23,6 @@ window.openKskAssembly = function(done, cancel){
    hint:'Видеокарта обрабатывает графику. Её ряд контактов вставляется в длинный горизонтальный «Слот PCIe ×16» внизу платы.'
   }
  };
- const tasks = [
-  {part:'cpu', text:'Вставь процессор.', guide:'Перетащи его в квадратную металлическую рамку вверху платы. Это гнездо подписано «Сокет CPU».'},
-  {part:'ram', text:'Установи оперативную память.', guide:'Перетащи планку в длинный вертикальный разъём справа от процессора. Ищи надпись «Слот DIMM».'},
-  {part:'ssd', text:'Установи накопитель SSD M.2.', guide:'Перетащи его в короткий горизонтальный разъём под процессором. Он подписан «Разъём M.2».'},
-  {part:'gpu', text:'Вставь видеокарту.', guide:'Перетащи её в длинный горизонтальный разъём ниже накопителя. Он подписан «Слот PCIe ×16».'}
- ];
  const dialog = document.createElement('dialog');
  dialog.className = 'ksk-assembly';
  dialog.setAttribute('aria-labelledby', 'assembly-title');
@@ -57,15 +51,13 @@ window.openKskAssembly = function(done, cancel){
  const dismiss = dialog.querySelector('.assembly-dismiss');
  const cards = [...dialog.querySelectorAll('[data-part]')];
  const slots = [...dialog.querySelectorAll('[data-slot]')];
+ const partMistakes = new Map();
  let installed = 0, mistakes = 0, dragged = null, keyboardPart = null, closed = false;
 
  function updateTask(){
-  const task = tasks[installed];
-  taskLabel.textContent = task
-   ? 'Задание ' + (installed + 1) + ' из ' + tasks.length + '. ' + task.text
-   : 'Все задания выполнены.';
-  taskGuide.textContent = task?.guide ?? '';
-  taskGuide.hidden = !task;
+  taskLabel.textContent = installed === cards.length ? 'Все детали установлены.' : 'Собери ПК: устанавливай детали в любом порядке.';
+  taskGuide.textContent = 'Перетащи деталь в разъём или выбери деталь и нажми на разъём.';
+  taskGuide.hidden = installed === cards.length;
  }
  function clearHint(){
   dialog.classList.remove('assembly-show-hint');
@@ -80,7 +72,7 @@ window.openKskAssembly = function(done, cancel){
  function dismissHint(){
   clearHint();
   status.textContent = '';
-  cards.find(card=>card.dataset.part===tasks[installed].part)?.focus({preventScroll:true});
+  cards.find(card=>!card.disabled)?.focus({preventScroll:true});
  }
  dismiss.onclick = dismissHint;
 
@@ -88,15 +80,13 @@ window.openKskAssembly = function(done, cancel){
   if(!slot || card.disabled || slot.disabled || closed)return;
   const part = parts[card.dataset.part];
   clearHint();
-  if(card.dataset.part !== tasks[installed].part){
-   showHint('Выбрана деталь «' + part.name + '». Сейчас нужна деталь «' + parts[tasks[installed].part].name + '».');
-   return;
-  }
   if(card.dataset.part !== slot.dataset.slot){
    mistakes++;
-   showHint(parts[slot.dataset.slot].socketHelp + ' ' + part.hint);
+   const attempts = (partMistakes.get(card.dataset.part) || 0) + 1;
+   partMistakes.set(card.dataset.part, attempts);
+   showHint(attempts >= 2 ? part.hint : 'Деталь «' + part.name + '» не подходит к этому разъёму. Попробуй другой.');
    slot.classList.add('incorrect');
-   slots.find(item=>item.dataset.slot===card.dataset.part).classList.add('assembly-hinted');
+   if(attempts >= 2)slots.find(item=>item.dataset.slot===card.dataset.part).classList.add('assembly-hinted');
    return;
   }
   card.disabled = slot.disabled = true;
@@ -108,7 +98,7 @@ window.openKskAssembly = function(done, cancel){
   updateTask();
   status.textContent = installed === 4 ? 'ПК собран! Все четыре детали на своих местах.' : 'Верно! ' + name + ' — ' + connector + '.';
   if(installed === 4){finish.hidden = false; finish.focus();}
-  else if(keyboardPart)cards.find(card=>card.dataset.part===tasks[installed].part)?.focus({preventScroll:true});
+  else if(keyboardPart)cards.find(card=>!card.disabled)?.focus({preventScroll:true});
  }
  function target(x,y){
   const slot = document.elementFromPoint(x,y)?.closest('[data-slot]');
@@ -170,8 +160,11 @@ window.openKskAssembly = function(done, cancel){
    cards.forEach(item=>item.setAttribute('aria-pressed',String(item===card)));
    keyboardPart = card;
    status.textContent = 'Выбрано: '+parts[card.dataset.part].name+'. Нажми на подходящий разъём в корпусе.';
-   const expected=slots.find(slot=>slot.dataset.slot===card.dataset.part);
-   if(event.detail===0)expected?.focus();
+   if((partMistakes.get(card.dataset.part) || 0) >= 2){
+    showHint(parts[card.dataset.part].hint);
+    slots.find(slot=>slot.dataset.slot===card.dataset.part).classList.add('assembly-hinted');
+   }
+   if(event.detail===0)slots.find(slot=>!slot.disabled)?.focus();
    else if(window.matchMedia('(max-width:760px)').matches)qCaseScroll();
   };
  });
@@ -179,17 +172,19 @@ window.openKskAssembly = function(done, cancel){
  slots.forEach(slot=>slot.onclick=event=>{
   if(keyboardPart){place(keyboardPart,slot); keyboardPart=null;cards.forEach(card=>card.setAttribute('aria-pressed','false'));}
  });
- function leave(confirmed=false){
+ function leave(success=false,confirmed=false){
   if(closed)return;
   endDrag();
-  if(installed !== 4 && confirmed!==true){window.confirmKskMinigameExit(dialog,()=>leave(true));return;}
+  if(success && installed !== 4)return;
+  if(!success && confirmed!==true){window.confirmKskMinigameExit(dialog,()=>leave(false,true));return;}
   closed = true;
   dialog.close();
   dialog.remove();
-  if(installed === 4)done(Math.max(50,200-mistakes*25));
+  if(success)done(Math.max(50,200-mistakes*25));
   else cancel();
  }
- dialog.querySelector('.assembly-exit').onclick = finish.onclick = leave;
+ dialog.querySelector('.assembly-exit').onclick = ()=>leave();
+ finish.onclick = ()=>leave(true);
  dialog.oncancel = event=>{
   event.preventDefault();
   if(!dismiss.hidden)dismissHint();
