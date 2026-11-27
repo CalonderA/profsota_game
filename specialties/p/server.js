@@ -2,32 +2,17 @@
 
 // Все скрипты выполняются только в учебной симуляции.
 const P_SERVER_STEPS = [
- {title:'Подготовка резервной копии',goal:'Создайте папку backups, скопируйте в неё server.conf и перейдите в эту папку.',file:'backup.sh',lines:[['comment','# Подготовка резервной копии'],['slot','mkdir backups'],['code','cp server.conf backups/'],['slot','cd backups'],['code','pwd']],words:['mkdir backups','cd backups','mv server.conf backups/','rm -r backups'],hint:'mkdir создаёт папку, cp копирует файл, cd меняет папку.',output:'/home/admin/backups\nРезервная копия server.conf сохранена.'},
- {title:'Проверка журналов',goal:'Перейдите в /var/log/nginx и найдите строки с текстом error в файле error.log.',file:'logs.sh',lines:[['comment','# Диагностика веб-сервера'],['slot','cd /var/log/nginx'],['code','ls'],['slot','grep error error.log']],words:['cd /var/log/nginx','grep error error.log','mkdir error.log','mv error.log access.log'],hint:'cd меняет папку. grep ищет строки с заданным текстом в файле.',output:'error: permission denied\nПричина найдена: у файла сайта неверные права доступа.'},
- {title:'Восстановление доступа',goal:'Перейдите в /var/www/sota и установите права 644 для index.html: владелец читает и пишет, остальные только читают.',file:'permissions.sh',lines:[['comment','# Восстановление доступа к странице'],['slot','cd /var/www/sota'],['code','ls -l index.html'],['slot','chmod 644 index.html']],words:['cd /var/www/sota','chmod 644 index.html','rm index.html','chmod 000 index.html'],hint:'chmod меняет права. 644 даёт владельцу чтение и запись, остальным — чтение.',output:'-rw-r--r-- index.html\nПрава исправлены. Сервер может прочитать страницу.'},
- {title:'Применение настроек',goal:'Проверьте конфигурацию Nginx, затем перечитайте настройки службы и проверьте HTTP-ответ сайта.',file:'deploy.sh',lines:[['comment','# Проверка и применение конфигурации'],['slot','sudo nginx -t'],['slot','sudo systemctl reload nginx'],['code','curl -I http://localhost']],words:['sudo nginx -t','sudo systemctl reload nginx','sudo systemctl stop nginx','sudo nginx -v'],hint:'nginx -t проверяет настройки, systemctl reload перечитывает их без полной остановки.',output:'nginx: configuration test is successful\nHTTP/1.1 200 OK\nСайт восстановлен. Инцидент закрыт!'}
+ {title:'Перейти в папку',goal:'Вы находитесь в /home/admin. Перейдите в папку languages — в ней лежат языковые файлы.',file:'languages.sh',lines:[['comment','# Откройте папку с языками'],['slot','cd languages'],['code','ls']],words:['cd languages','cd ..','ls'],hint:'Команда cd languages открывает папку languages.',output:'/home/admin/languages\nru.lang — русский\nen.lang — английский\nfr.lang — французский'},
+ {title:'Удалить французский язык',goal:'Удалите только файл fr.lang — это французский язык. Русский ru.lang и английский en.lang нужно оставить.',file:'languages.sh',lines:[['comment','# Удалите файл французского языка'],['slot','rm fr.lang'],['code','ls']],words:['rm fr.lang','rm ru.lang','rm en.lang'],hint:'rm удаляет указанный файл. Французский язык находится в fr.lang.',output:'ru.lang — русский\nen.lang — английский\nФайл fr.lang удалён. Остальные языки сохранены.'},
+ {title:'Вернуться обратно',goal:'Вернитесь из languages в родительскую папку /home/admin.',file:'languages.sh',lines:[['comment','# Вернитесь на одну папку выше'],['slot','cd ..'],['code','pwd']],words:['cd ..','cd languages','ls'],hint:'Команда cd .. возвращает на одну папку выше.',output:'/home/admin\nГотово! Французский язык удалён, вы вернулись обратно.'}
 ];
 const P_LINUX_MEMO = [
- ['cd', 'Перейти в другую папку.', 'cd /tmp'],
- ['ls', 'Показать содержимое папки. Флаг -l показывает подробности, в том числе права.', 'ls -l'],
+ ['cd', 'Перейти в папку. Две точки означают возврат в родительскую папку.', 'cd languages\ncd ..'],
+ ['ls', 'Показать файлы и папки в текущей папке.', 'ls'],
  ['pwd', 'Показать путь к текущей папке.', 'pwd'],
- ['mkdir', 'Создать новую папку.', 'mkdir reports'],
- ['cp', 'Скопировать файл. Сначала укажите исходный файл, затем место для копии.', 'cp notes.txt reports/'],
- ['mv', 'Переместить или переименовать файл.', 'mv old.txt new.txt'],
- ['rm', 'Удалить файл. Флаг -r удаляет папку вместе с содержимым.', 'rm draft.txt'],
- ['cat', 'Показать содержимое текстового файла.', 'cat notes.txt'],
- ['grep', 'Показать строки, содержащие заданный текст. Сначала укажите текст, затем файл.', 'grep warning access.log'],
- ['chmod', 'Изменить права доступа. 644 даёт владельцу чтение и запись, остальным только чтение.', 'chmod 644 notes.txt'],
- ['nginx -t', 'Проверить, правильно ли написаны настройки Nginx.', 'sudo nginx -t'],
- ['systemctl reload', 'Попросить службу перечитать настройки без полной остановки.', 'sudo systemctl reload nginx'],
- ['curl -I', 'Показать заголовки HTTP-ответа, в том числе код состояния.', 'curl -I http://localhost']
+ ['rm', 'Удалить указанный файл. В этом задании французский язык хранится в fr.lang.', 'rm fr.lang']
 ];
-const P_LINUX_MEMO_BY_STEP = [
- ['mkdir', 'cp', 'cd', 'pwd'],
- ['cd', 'ls', 'grep'],
- ['cd', 'ls', 'chmod'],
- ['nginx -t', 'systemctl reload', 'curl -I']
-];
+const P_LINUX_MEMO_BY_STEP = [['cd','ls'],['rm','ls'],['cd','pwd']];
 
 window.openPServerGame = function(done,cancel){
  let stage=0,mistakes=0,solved=false,closed=false,drag=null,activeSlot=0,slots=[],values=[];
@@ -183,7 +168,7 @@ window.openPServerGame = function(done,cancel){
   clearDrag();solved=false;slots=[];values=[];activeSlot=0;const step=P_SERVER_STEPS[stage];
   q('.p-progress').textContent='Этап '+(stage+1)+' / '+P_SERVER_STEPS.length;q('.p-stage-title').textContent=step.title;
   q('.p-task').replaceChildren();
-  ('Дополните скрипт: '+step.goal).split(/(backups|server\.conf|error\.log|index\.html|\/var\/log\/nginx|\/var\/www\/sota)/g).forEach((part,i)=>{
+  ('Дополните скрипт: '+step.goal).split(/(\/home\/admin|languages|fr\.lang|ru\.lang|en\.lang)/g).forEach((part,i)=>{
    if(i%2){const badge=document.createElement('code');badge.className='p-linux-inline-code';badge.textContent=part;q('.p-task').appendChild(badge);}
    else q('.p-task').appendChild(document.createTextNode(part));
   });

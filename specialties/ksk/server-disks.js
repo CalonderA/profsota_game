@@ -22,7 +22,7 @@ window.openKskDisks=function(done,cancel){
  q('.sd-hint').setAttribute('aria-live','polite');
  q('.sd-hint').setAttribute('aria-atomic','true');
  q('.sd-viewport').insertAdjacentHTML('beforeend','<div class="sd-next-action" aria-hidden="true"></div>');
- q('.sd-hint h3').insertAdjacentHTML('afterend','<strong class="sd-action-title"></strong>');
+ q('.sd-hint h3').insertAdjacentHTML('afterend',`<div class="sd-action-card">${img('spare')}<strong class="sd-action-title"></strong></div>`);
  function renderGuide(){
   dialog.querySelectorAll('[data-guide-label]').forEach(node=>node.removeAttribute('data-guide-label'));
   dialog.querySelectorAll('[data-guide]').forEach(node=>node.removeAttribute('data-guide'));
