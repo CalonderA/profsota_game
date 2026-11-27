@@ -467,351 +467,560 @@ window.STATION_RENDERERS = window.STATION_RENDERERS || {};
 window.STATION_RENDERERS.reu = drawReuStation;
 
 /* ------------------------------------------------------------------
-   МИНИ-ИГРЫ РЭУ — красивые задания-карточки с интерактивными схемами
-   (движок task-game.js: точки-пропуски прямо на картинке)
+   МИНИ-ИГРЫ РЭУ — играбельные симуляторы (openPlayGame):
+   монтаж платы с подачей питания, омметр-верстак, осциллограф
+   с живой развёрткой и зондами, чтение сигнала, 3D-модуль.
    ------------------------------------------------------------------ */
+const rPts = (mistakes) => Math.max(50, 200 - mistakes * 25);
 
-/* SVG-волна: период занимает ровно freqCells клеточек, в кадре 2 периода */
-function rWaveSvg(type, freqCells, ampCells, color){
-  const ch = 18, cv = 11;
-  const periods = 2, waveW = periods * freqCells * ch;
-  const W = waveW + 2 * ch, H = 100, mid = 50;
-  const pts = [];
-  const N = 240;
-  for (let i = 0; i <= N; i++){
-    const t = i / N;
-    let v;
-    if (type === 'square') v = Math.sin(t * periods * Math.PI * 2) >= 0 ? 1 : -1;
-    else if (type === 'saw'){ const fr = (t * periods) % 1; v = 2 * fr - 1; }
-    else v = Math.sin(t * periods * Math.PI * 2);
-    const x = ch + t * waveW;
-    const y = mid - v * ampCells * cv;
-    pts.push((i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1));
-  }
-  let grid = '';
-  for (let i = 0; i <= waveW / ch; i++) grid += '<line x1="' + (ch + i * ch) + '" y1="4" x2="' + (ch + i * ch) + '" y2="' + (H - 4) + '" stroke="#1b3b34"/>';
-  for (let j = -4; j <= 4; j++){
-    const gy = mid + j * cv;
-    if (gy < 4 || gy > H - 4) continue;
-    grid += '<line x1="' + ch + '" y1="' + gy + '" x2="' + (W - ch) + '" y2="' + gy + '" stroke="' + (j === 0 ? '#2a5f52' : '#1b3b34') + '"/>';
-  }
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + Math.min(W * 2.2, 340) + '" height="' + Math.round(Math.min(W * 2.2, 340) * H / W) + '">' +
-    '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#04120f"/>' + grid +
-    '<path d="' + pts.join(' ') + '" fill="none" stroke="' + (color || '#f5b95a') + '" stroke-width="2.5"/>' +
-  '</svg>';
-}
-function rWaveChip(type, freqCells, ampCells){
-  const ch = 9, cv = 5;
-  const periods = 2, waveW = periods * freqCells * ch;
-  const W = waveW + 2 * ch, H = 26, mid = 13;
-  const pts = [];
-  const N = 120;
-  for (let i = 0; i <= N; i++){
-    const t = i / N;
-    let v;
-    if (type === 'square') v = Math.sin(t * periods * Math.PI * 2) >= 0 ? 1 : -1;
-    else if (type === 'saw'){ const fr = (t * periods) % 1; v = 2 * fr - 1; }
-    else v = Math.sin(t * periods * Math.PI * 2);
-    const x = ch + t * waveW;
-    const y = mid - v * ampCells * cv;
-    pts.push((i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1));
-  }
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '"><rect width="' + W + '" height="' + H + '" rx="4" fill="#04120f"/><line x1="0" y1="' + mid + '" x2="' + W + '" y2="' + mid + '" stroke="#1c5c4c"/><path d="' + pts.join(' ') + '" fill="none" stroke="#f5b95a" stroke-width="2"/></svg>';
-}
-
-/* Осциллограмма с выносками измерений: амплитуда ? и период ? */
-function rWaveMeasured(freqCells, ampCells){
-  const base = rWaveSvg('sine', freqCells, ampCells);
-  // выноски поверх: скобка амплитуды слева и скобка периода сверху
-  const ampH = ampCells * 11;
-  const perW = freqCells * 18;
-  return base.replace('<path',
-    '<path d="M10 ' + (50 - ampH) + ' h-6 M10 50 h-10 M10 ' + (50 + ampH) + ' h-6 M6 ' + (50 - ampH) + ' v' + (ampH * 2) + '" stroke="#8ea3b8" stroke-width="1.5" fill="none"/>' +
-    '<text x="2" y="49" fill="#cfe0f2" font-size="9" font-family="monospace">A?</text>' +
-    '<path d="M' + (18 + perW) + ' 6 v-5 M18 6 v-5 M18 3 h' + perW + '" stroke="#8ea3b8" stroke-width="1.5" fill="none"/>' +
-    '<text x="' + (18 + perW / 2 - 8) + '" y="10" fill="#cfe0f2" font-size="9" font-family="monospace">T?</text><path');
-}
-
-/* Резистор с полосами: собранные полосы закрашиваются вживую */
-function rResistorLive(bands){
-  const colorHex = { '0': '#1c1c1c', '1': '#6b4423', '2': '#c0392b', '3': '#e67e22', '4': '#f1c40f', '5': '#27ae60', '6': '#2b7fc4', '7': '#8e44ad', x100: '#c0392b', x1000: '#e67e22', x10: '#6b4423' };
-  const bandX = [148, 170, 192];
-  const bandRects = bandX.map((x, i) => {
-    const b = bands[i];
-    return '<rect x="' + x + '" y="32" width="11" height="46" rx="2" fill="' + (b ? (colorHex[b] || '#3a3a3a') : '#3a3a3a') + '"' + (b ? '' : ' stroke="#7d92ae" stroke-dasharray="4 3"') + '/>';
-  }).join('');
-  return '<svg viewBox="0 0 340 110" width="340">' +
-    '<line x1="16" y1="55" x2="86" y2="55" stroke="#c9ced8" stroke-width="5"/>' +
-    '<line x1="254" y1="55" x2="324" y2="55" stroke="#c9ced8" stroke-width="5"/>' +
-    '<rect x="86" y="32" width="168" height="46" rx="21" fill="#e8d6a8" stroke="#b39c60" stroke-width="2"/>' +
-    bandRects +
-    '<text x="170" y="100" fill="#7f93ad" font-size="10" text-anchor="middle" font-family="monospace">1-я · 2-я · МНОЖИТЕЛЬ</text>' +
-  '</svg>';
-}
-function rBandChipSvg(hex){
-  return '<svg viewBox="0 0 52 24" width="44" height="20"><rect x="0" y="2" width="52" height="20" rx="4" fill="' + hex + '"/></svg>';
-}
-
-/* Печатная плата с 4 посадочными местами */
-function rSvgBoard(){
-  return '<svg viewBox="0 0 340 170" width="340">' +
-    '<rect x="14" y="14" width="312" height="142" rx="10" fill="#0d3a22" stroke="#1c8a67" stroke-width="2"/>' +
-    // дорожки
-    '<path d="M30 30 H140 M30 45 H200 M310 30 H240 M310 140 H120 M40 140 H90" stroke="#2f8a5b" stroke-width="2" fill="none"/>' +
-    '<circle cx="30" cy="30" r="3" fill="#f5b95a"/><circle cx="310" cy="140" r="3" fill="#f5b95a"/>' +
-    // посадочные места
-    [64, 138, 212, 286].map((px, i) =>
-      '<rect x="' + (px - 28) + '" y="58" width="56" height="52" rx="6" fill="#0a2b18" stroke="#48b98c" stroke-dasharray="5 3"/>' +
-      '<text x="' + px + '" y="80" fill="#8fd8b8" font-size="13" text-anchor="middle" font-family="monospace">' + ['R1', 'C1', 'D1', 'U1'][i] + '</text>' +
-      '<text x="' + px + '" y="97" fill="#5f9f7f" font-size="8" text-anchor="middle" font-family="monospace">' + ['ток', 'пульсации', 'обратный ток', 'программа'][i] + '</text>'
-    ).join('') +
-    '<text x="170" y="150" fill="#7fbf9a" font-size="10" text-anchor="middle" font-family="monospace">ПЕЧАТНАЯ ПЛАТА · ПОСАДОЧНЫЕ МЕСТА</text>' +
-  '</svg>';
-}
-
-/* Модуль: 4 отсека-функции на корпусе */
-function rSvgModule(){
-  return '<svg viewBox="0 0 300 190" width="300">' +
-    '<rect x="30" y="12" width="240" height="166" rx="10" fill="#182234" stroke="#3c4c6c" stroke-width="2"/>' +
-    '<rect x="30" y="12" width="240" height="166" rx="10" fill="none" stroke="#f5b95a33"/>' +
-    [ ['ОГРАНИЧЕНИЕ ТОКА', 42, 24], ['ПИТАНИЕ', 154, 24], ['ЗАЩИТА', 42, 98], ['УПРАВЛЕНИЕ', 154, 98] ].map((c, i) =>
-      '<rect x="' + c[1] + '" y="' + c[2] + '" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
-      '<text x="' + (c[1] + 52) + '" y="' + (c[2] + 32) + '" fill="#c9b88a" font-size="9" text-anchor="middle" font-family="monospace">' + c[0] + '</text>' +
-      '<text x="' + (c[1] + 52) + '" y="' + (c[2] + 48) + '" fill="#5f7f9a" font-size="8" text-anchor="middle" font-family="monospace">ОТСЕК ' + (i + 1) + '</text>'
-    ).join('') +
-    '<circle cx="150" cy="90" r="10" fill="#0d1420" stroke="#f5b95a"/>' +
-  '</svg>';
-}
-
-/* ---- Игра 1. Сборка печатного модуля ---- */
+/* ---- Игра 1. Монтаж печатной платы: поставь компоненты и включи ---- */
 function openReuBoard(done, cancel){
-  return window.openTaskGame({
+  const comps = [
+    { id: 'R1', name: 'Резистор', cls: 'mini-res', slot: 0, hint: 'ограничивает ток' },
+    { id: 'C1', name: 'Конденсатор', cls: 'mini-cap', slot: 1, hint: 'сглаживает пульсации' },
+    { id: 'D1', name: 'Диод', cls: 'mini-diod', slot: 2, hint: 'ток в одну сторону' },
+    { id: 'U1', name: 'Микросхема', cls: 'mini-u', slot: 3, hint: 'программа устройства' }
+  ];
+  let mistakes = 0, placed = 0, sel = null;
+
+  return window.openPlayGame({
     theme: 'reu',
     icon: '🧩',
-    title: 'Сборка печатного модуля',
-    intro: 'Нажмите посадочное место на плате и поставьте туда компонент.',
+    title: 'Монтаж печатной платы',
+    intro: 'Поставь компоненты на посадочные места платы (R — резистор, C — конденсатор…) и подай питание!',
     memo: [
-      ['R — резистор', 'Ограничивает ток. На плате R1, R2…'],
-      ['C — конденсатор', 'Сглаживает пульсации питания. C1, C2…'],
-      ['D — диод', 'Ток только в одну сторону — защита. D1…'],
-      ['U — микросхема', '«Мозг» устройства. U1…']
+      ['R', 'Резистор — ограничивает ток.'],
+      ['C', 'Конденсатор — сглаживает пульсации питания.'],
+      ['D', 'Диод — пропускает ток только в одну сторону.'],
+      ['U', 'Микросхема — «мозг», исполняет программу.']
     ],
-    steps: [
-      {
-        title: 'Этап · Смонтируйте всю плату',
-        task: 'Нажмите площадку на плате, затем фишку компонента. Первая буква обозначения — тип детали.',
-        art: rSvgBoard(),
-        hotspots: [ { x: 18.8, y: 49 }, { x: 40.6, y: 49 }, { x: 62.4, y: 49 }, { x: 84.1, y: 49 } ],
-        slots: [
-          { label: 'R1 · ограничивает ток', answer: 'Резистор' },
-          { label: 'C1 · сглаживает пульсации', answer: 'Конденсатор' },
-          { label: 'D1 · защита от обратного тока', answer: 'Диод' },
-          { label: 'U1 · управляющая программа', answer: 'Микросхема' }
-        ],
-        chips: [ { label: 'Резистор' }, { label: 'Конденсатор' }, { label: 'Диод' }, { label: 'Микросхема' } ],
-        chipsLabel: 'Компоненты',
-        hint: 'R = резистор, C = конденсатор, D = диод, U = микросхема.',
-        success: 'Плата собрана!'
-      }
-    ],
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-pcb-scene">' +
+          '<div class="tg-pcb" id="pbBoard">' +
+            '<div class="padslot">' +
+              comps.map((c) => '<button type="button" class="tg-padslot" data-pad="' + c.id + '"><b>' + c.id + '</b><small>' + c.hint + '</small></button>').join('') +
+            '</div>' +
+            '<button type="button" class="tg-btn-big tg-btn-start power-sw" id="pbPower" hidden>⚡ ПОДАТЬ ПИТАНИЕ</button>' +
+          '</div>' +
+          '<div class="tg-e-tray" style="flex-direction:column">' +
+            comps.map((c) => '<button type="button" class="tg-comp ' + c.cls + '" data-comp="' + c.id + '"><span class="mini"></span>' + c.id + ' · ' + c.name + '</button>').join('') +
+          '</div>' +
+        '</div>';
+      const board = area.querySelector('#pbBoard');
+      comps.forEach((c) => {
+        const btn = area.querySelector('[data-comp="' + c.id + '"]');
+        btn.onclick = () => {
+          if (sel) area.querySelector('[data-comp="' + sel.id + '"]').classList.remove('sel');
+          sel = c;
+          btn.classList.add('sel');
+          api.feedback('Взято: ' + c.id + ' · ' + c.name + '. Нажми площадку ' + c.id + ' на плате.');
+        };
+      });
+      area.querySelectorAll('.tg-padslot').forEach((pad) => {
+        pad.onclick = () => {
+          const id = pad.dataset.pad;
+          if (!sel){ api.feedback('Сначала возьми компонент справа.', 'bad'); return; }
+          if (sel.id !== id){
+            mistakes++;
+            api.bad('Не та площадка: буква обозначения — тип детали. «' + id + '» — это ' + ({ R: 'резистор', C: 'конденсатор', D: 'диод', U: 'микросхема' })[id[0]] + '.');
+            return;
+          }
+          pad.innerHTML = '<span class="comp-placed"><span class="mini ' + sel.cls + '"></span>✔ ' + sel.id + '</span>';
+          pad.disabled = true;
+          area.querySelector('[data-comp="' + sel.id + '"]').disabled = true;
+          sel = null;
+          placed++;
+          api.setProgress(placed, 4);
+          api.sfx('place');
+          api.feedback('Припаяно ' + placed + ' из 4.');
+          if (placed === 4){
+            area.querySelector('#pbPower').hidden = false;
+            api.feedback('Плата собрана! Подавай питание.');
+          }
+        };
+      });
+      area.querySelector('#pbPower').onclick = () => {
+        board.classList.add('lit');
+        api.sfx('power');
+        api.ok('Плата под напряжением — устройство работает!');
+        setTimeout(() => api.finish(rPts(mistakes)), 1100);
+      };
+    },
     onDone: done, onCancel: cancel
   });
 }
 
-/* ---- Игра 2. Маркировка резистора ---- */
+/* ---- Игра 2. Омметр-верстак: собери резистор и измерь ---- */
 function openReuResistor(done, cancel){
-  const colorHex = { '0': '#1c1c1c', '1': '#6b4423', '2': '#c0392b', '3': '#e67e22', '4': '#f1c40f', '5': '#27ae60', '6': '#2b7fc4', '7': '#8e44ad' };
-  const colorName = { '0': 'чёрный', '1': 'коричневый', '2': 'красный', '3': 'оранжевый', '4': 'жёлтый', '5': 'зелёный', '6': 'синий', '7': 'фиолетовый' };
+  const colorHex = { '0': '#1c1c1c', '1': '#6b4423', '2': '#c0392b', '3': '#e67e22', '4': '#f1c40f', '5': '#27ae60', '6': '#2b7fc4', '7': '#8e44ad', '8': '#95a5a6', '9': '#ecf0f1' };
+  const colorName = { '0': 'чёрный', '1': 'коричневый', '2': 'красный', '3': 'оранжевый', '4': 'жёлтый', '5': 'зелёный', '6': 'синий', '7': 'фиолетовый', '8': 'серый', '9': 'белый' };
   const targets = [
-    { label: '2,2 кОм', digits: ['2', '2'], mult: '×100' },
-    { label: '1 кОм',   digits: ['1', '0'], mult: '×100' },
-    { label: '4,7 кОм', digits: ['4', '7'], mult: '×100' },
-    { label: '10 кОм',  digits: ['1', '0'], mult: '×1000' }
+    { om: 470, label: '470 Ом' }, { om: 1000, label: '1 кОм' }, { om: 2200, label: '2,2 кОм' },
+    { om: 4700, label: '4,7 кОм' }, { om: 10000, label: '10 кОм' }, { om: 22000, label: '22 кОм' }
   ];
   const target = targets[Math.floor(Math.random() * targets.length)];
-  const digitOf = (label) => label ? label[0] : null;
-  const digitChips = ['0', '1', '2', '4', '7'].map((d) => ({
-    label: d + ' — ' + colorName[d], svg: rBandChipSvg(colorHex[d])
-  }));
-  const multChips = [
-    { label: '×10', sub: 'один ноль', svg: rBandChipSvg('#6b4423') },
-    { label: '×100', sub: 'два нуля', svg: rBandChipSvg('#c0392b') },
-    { label: '×1000', sub: 'три нуля', svg: rBandChipSvg('#e67e22') }
-  ];
-  const hsX = [43.5, 50, 56.5];
-  return window.openTaskGame({
+  const bands = [null, null, null];
+  const bandPct = [43.5, 50, 56.5];
+
+  function fmt(om){
+    if (om >= 1000){
+      const k = om / 1000;
+      return (k % 1 ? k.toFixed(1).replace('.', ',') : String(k)) + ' кОм';
+    }
+    return om + ' Ом';
+  }
+  function value(){
+    if (bands[0] == null || bands[1] == null || bands[2] == null) return null;
+    return (Number(bands[0]) * 10 + Number(bands[1])) * Math.pow(10, Number(bands[2]));
+  }
+  // Подсказка-шпаргалка: какие три цвета нажать, чтобы получить цель.
+  const hint = (() => {
+    let d = target.om, m = 0;
+    while (d > 99){ d /= 10; m++; }
+    d = Math.round(d);
+    return { tens: String(Math.floor(d / 10)), ones: String(d % 10), mult: String(m) };
+  })();
+
+  return window.openPlayGame({
     theme: 'reu',
     icon: '🌈',
-    title: 'Маркировка резистора',
-    intro: 'Соберите резистор ' + target.label + ' — прямо на его теле: две цифры и множитель.',
+    title: 'Резисторный верстак с омметром',
+    intro: 'Собери резистор ' + target.label + ': нажми три цвета из подсказки — омметр сразу подтвердит.',
     memo: [
-      ['Правило чтения', 'Номинал = цифра · цифра · множитель. 2, 2, ×100 = 2200 Ом = 2,2 кОм.'],
-      ['Множитель', 'Третья полоса — сколько нулей дописать: ×100 — два нуля, ×1000 — три нуля.'],
-      ['Ом → кОм', '1000 Ом = 1 кОм. 2200 Ом = 2,2 кОм.']
+      ['Полосы', '1-я и 2-я — цифры числа, 3-я — сколько нулей дописать (множитель ×10ⁿ).'],
+      ['Пример', 'красный-красный-красный: 2, 2, ×100 → 2200 Ом = 2,2 кОм.'],
+      ['Омметр', 'Живой: меняешь полосу — значение пересчитывается. Собери ровно ' + target.label + '.']
     ],
-    steps: [
-      {
-        title: 'Этап 1 · Первая цифра (' + target.digits[0] + ')',
-        task: 'Номинал ' + target.label + ' начинается с цифры ' + target.digits[0] + '. Нажмите 1-ю полосу на резисторе.',
-        art: (vals) => rResistorLive([digitOf(vals[0]), null, null]),
-        hotspots: [ { x: hsX[0], y: 52 } ],
-        slots: [{ label: '1-я полоса — цифра ' + target.digits[0], answer: target.digits[0] + ' — ' + colorName[target.digits[0]] }],
-        chips: digitChips,
-        chipsLabel: 'Цвета полос (цифра подписана)',
-        hint: 'Первая цифра ' + target.label + ' — это ' + target.digits[0] + '.',
-        success: 'Первая полоса стоит на месте!'
-      },
-      {
-        title: 'Этап 2 · Вторая цифра (' + target.digits[1] + ')',
-        task: 'Вторая цифра номинала — ' + target.digits[1] + '. Нажмите 2-ю полосу.',
-        art: (vals) => rResistorLive([target.digits[0], digitOf(vals[0]), null]),
-        hotspots: [ { x: hsX[1], y: 52 } ],
-        slots: [{ label: '2-я полоса — цифра ' + target.digits[1], answer: target.digits[1] + ' — ' + colorName[target.digits[1]] }],
-        chips: digitChips,
-        chipsLabel: 'Цвета полос (цифра подписана)',
-        hint: 'Число на табло: ' + target.digits[0] + target.digits[1] + '. Вторая цифра — ' + target.digits[1] + '.',
-        success: 'Обе цифры на месте!'
-      },
-      {
-        title: 'Этап 3 · Множитель',
-        task: 'Допишите нули: ' + target.digits[0] + ' · ' + target.digits[1] + ' · ? = ' + target.label + '. Нажмите 3-ю полосу.',
-        art: (vals) => rResistorLive([target.digits[0], target.digits[1], vals[0]]),
-        hotspots: [ { x: hsX[2], y: 52 } ],
-        slots: [{ label: '3-я полоса — множитель', answer: target.mult }],
-        chips: multChips,
-        chipsLabel: 'Множители',
-        hint: target.digits[0] + ' · ' + target.digits[1] + ' = ' + Number(target.digits[0] + target.digits[1]) + '. Добавьте нулей до ' + target.label.replace(' кОм', '000 Ом') + '.',
-        success: 'Готово: резистор ' + target.label + ' собран!'
+    build(area, api){
+      const bandBtns = bandPct.map((x, i) =>
+        '<button type="button" class="tg-band" data-band="' + i + '" style="left:' + x + '%;top:52%" title="Полоса ' + (i + 1) + ' — нажми, чтобы снять"></button>'
+      ).join('');
+      const chip = (digit, extra) =>
+        '<span><span class="sw" style="background:' + colorHex[digit] + '"></span>' + digit + ' · ' + colorName[digit] + (extra || '') + '</span>';
+      area.innerHTML =
+        '<div class="tg-bench">' +
+          '<div class="tg-ohm-scr">' +
+            '<div class="tg-ohm-val" id="ohVal">— · — · —</div>' +
+            '<div class="tg-ohm-target">ЦЕЛЬ: ' + target.label + '</div>' +
+          '</div>' +
+          '<div class="tg-ohm-hint">Нажми по порядку: ' +
+            chip(hint.tens) + ' <b>→</b> ' + chip(hint.ones) + ' <b>→</b> ' + chip(hint.mult, ' (множитель ×10' + '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(hint.mult)] + ')') +
+          '</div>' +
+          '<div class="tg-res-wrap"><span class="pic">' +
+            '<svg viewBox="0 0 340 110" width="340">' +
+              '<line x1="16" y1="55" x2="86" y2="55" stroke="#c9ced8" stroke-width="5"/>' +
+              '<line x1="254" y1="55" x2="324" y2="55" stroke="#c9ced8" stroke-width="5"/>' +
+              '<rect x="86" y="32" width="168" height="46" rx="21" fill="#e8d6a8" stroke="#b39c60" stroke-width="2"/>' +
+            '</svg>' + bandBtns +
+          '</span></div>' +
+          '<div class="tg-rack">' +
+            Object.keys(colorHex).map((d) =>
+              '<button type="button" class="tg-colorbtn" data-digit="' + d + '"><span class="sw" style="background:' + colorHex[d] + '"></span><small>' + d + ' · ' + colorName[d] + '</small></button>'
+            ).join('') +
+          '</div>' +
+        '</div>';
+      const val = area.querySelector('#ohVal');
+
+      function render(){
+        bandBtns;
+        area.querySelectorAll('.tg-band').forEach((b, i) => {
+          b.style.background = bands[i] != null ? colorHex[bands[i]] : '#2a2f38';
+          b.style.borderStyle = bands[i] != null ? 'solid' : 'dashed';
+        });
+        const v = value();
+        if (v == null){
+          val.textContent = '— · — · —';
+          val.classList.remove('ok');
+        } else {
+          val.textContent = fmt(v);
+          const match = v === target.om;
+          val.classList.toggle('ok', match);
+          if (match){
+            api.ok('Точно! Омметр показывает ' + fmt(v) + ' — это ' + target.label + '.');
+            setTimeout(() => api.finish(160), 1000);
+          }
+        }
       }
-    ],
+      area.querySelectorAll('.tg-colorbtn').forEach((btn) => {
+        btn.onclick = () => {
+          const idx = bands.findIndex((b) => b == null);
+          if (idx === -1){ api.feedback('Все три полосы заняты — сними одну нажатием.', 'bad'); return; }
+          bands[idx] = btn.dataset.digit;
+          api.sfx('place');
+          render();
+        };
+      });
+      area.querySelectorAll('.tg-band').forEach((b, i) => {
+        b.onclick = () => {
+          if (bands[i] == null) return;
+          bands[i] = null;
+          api.sfx('click');
+          render();
+        };
+      });
+      render();
+    },
     onDone: done, onCancel: cancel
   });
 }
 
-/* ---- Игра 3. Осциллограф: форма сигнала ---- */
+/* ---- Игра 3. Осциллограф с зондами: живая развёртка ---- */
 function openReuScope(done, cancel){
-  const shapes = [
-    { type: 'sine', label: 'Синусоида', title: 'Этап 1 · Плавные волны', hint: 'Круглые плавные горбы — синусоида.' },
-    { type: 'square', label: 'Меандр', title: 'Этап 2 · Ступеньки', hint: 'Резкие прямоугольные ступеньки — меандр.' },
-    { type: 'saw', label: 'Пила', title: 'Этап 3 · Зубья', hint: 'Медленный подъём и резкий спад — пила.' }
+  const points = [
+    { id: 'gen', name: 'Генератор', shape: 'sin', hint: 'плавные волны' },
+    { id: 'pwm', name: 'ШИМ-выход', shape: 'square', hint: 'ступеньки' },
+    { id: 'sawp', name: 'Развёртка', shape: 'saw', hint: 'зубья пилы' },
+    { id: 'vcc', name: 'Питание', shape: 'dc', hint: 'ровная линия' }
   ];
-  return window.openTaskGame({
+  const shapes = [
+    { id: 'sin', label: 'Синусоида' }, { id: 'square', label: 'Меандр' },
+    { id: 'saw', label: 'Пила' }, { id: 'dc', label: 'Постоянное' }
+  ];
+  let mistakes = 0, active = 0, phase = 0, raf = 0, solvedN = 0;
+  const labeled = {};
+
+  return window.openPlayGame({
     theme: 'reu',
     icon: '📈',
-    title: 'Определение формы сигнала',
-    intro: 'Нажмите на подпись под экраном и выберите название формы.',
+    title: 'Осциллограф: щупы и формы сигналов',
+    intro: 'Тыкай щупом в точки схемы — экран покажет живой сигнал. Определи форму каждой точки.',
     memo: [
-      ['Синусоида', 'Плавные волны, как на море. Генератор и усилитель.'],
-      ['Меандр', 'Резкие ступеньки вверх-вниз. Цифровой сигнал и ШИМ.'],
-      ['Пила', 'Зубья: подъём и резкий спад. Развёртка.']
+      ['Синусоида', 'Плавные волны.'],
+      ['Меандр', 'Резкие ступеньки вверх-вниз.'],
+      ['Пила', 'Подъём и резкий спад.'],
+      ['Постоянное', 'Ровная линия — питание.']
     ],
-    steps: shapes.map((s) => ({
-      title: s.title,
-      task: 'Как называется сигнал на экране? Нажмите точку под экраном и выберите фишку.',
-      art: rWaveSvg(s.type, 2, 2.6),
-      hotspots: [ { x: 50, y: 90 } ],
-      slots: [{ label: 'Форма сигнала', answer: s.label }],
-      chips: [
-        { label: 'Синусоида', svg: rWaveChip('sine', 2, 3) },
-        { label: 'Меандр', svg: rWaveChip('square', 2, 3) },
-        { label: 'Пила', svg: rWaveChip('saw', 2, 3) }
-      ],
-      chipsLabel: 'Формы сигналов',
-      hint: s.hint,
-      success: 'Верно, это ' + s.label.toLowerCase() + '!'
-    })),
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-scope-scene">' +
+          '<div class="tg-scope-frame"><canvas id="scCv" width="460" height="240"></canvas></div>' +
+          '<div class="tg-probe-pads">' +
+            points.map((p) => '<button type="button" class="tg-probe" data-point="' + p.id + '"><span class="led"></span>' + p.name + '</button>').join('') +
+          '</div>' +
+        '</div>' +
+        '<div class="tg-shapes">' +
+          shapes.map((s) => '<button type="button" class="tg-shapebtn" data-shape="' + s.id + '">' + s.label + '</button>').join('') +
+        '</div>';
+      const cv = area.querySelector('#scCv');
+      const pads = area.querySelectorAll('.tg-probe');
+      const SH = shapes.find((s) => s.id === 'sin'); void SH;
+
+      function setActive(i){
+        active = i;
+        pads.forEach((b, j) => b.classList.toggle('probed', j === i));
+        const p = points[i];
+        api.feedback(labeled[p.id] ? '«' + p.name + '» уже определена.' : 'Щуп на «' + p.name + '». Какая это форма?');
+      }
+      pads.forEach((b, j) => { b.onclick = () => setActive(j); });
+      setActive(0);
+
+      function draw(){
+        const g = cv.getContext('2d');
+        const W = cv.width, H = cv.height, pad = 14;
+        g.fillStyle = '#04120f';
+        g.fillRect(0, 0, W, H);
+        g.strokeStyle = '#123f36';
+        for (let i = 1; i < 10; i++){
+          const x = pad + ((W - 2 * pad) / 10) * i;
+          g.beginPath(); g.moveTo(x, pad); g.lineTo(x, H - pad); g.stroke();
+        }
+        for (let j = 1; j < 5; j++){
+          const y = pad + ((H - 2 * pad) / 5) * j;
+          g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke();
+        }
+        const mid = H / 2;
+        g.strokeStyle = '#2a5f52';
+        g.beginPath(); g.moveTo(pad, mid); g.lineTo(W - pad, mid); g.stroke();
+        const p = points[active];
+        const col = labeled[p.id] ? '#4fd69f' : '#f5b95a';
+        g.strokeStyle = col;
+        g.lineWidth = 2.5;
+        g.shadowColor = col;
+        g.shadowBlur = 10;
+        g.beginPath();
+        const N = 160, amp = (H - 2 * pad) * 0.32;
+        for (let i = 0; i <= N; i++){
+          const t = i / N;
+          let v;
+          const ph = t * 3 + phase;
+          if (p.shape === 'square') v = Math.sin(ph * Math.PI * 2) >= 0 ? 1 : -1;
+          else if (p.shape === 'saw'){ const fr = ph % 1; v = 2 * fr - 1; }
+          else if (p.shape === 'dc') v = 0.42;
+          else v = Math.sin(ph * Math.PI * 2);
+          const x = pad + t * (W - 2 * pad);
+          const y = mid - v * amp;
+          if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+        }
+        g.stroke();
+        g.shadowBlur = 0;
+        g.fillStyle = '#7fbf9a';
+        g.font = 'bold 12px monospace';
+        g.fillText('ЩУП: ' + p.name.toUpperCase(), pad + 6, pad + 14);
+      }
+      function loop(){
+        if (api.isClosed()) return;
+        phase = (phase + 0.012) % 1;
+        draw();
+        raf = requestAnimationFrame(loop);
+      }
+      loop();
+      api.onClose(() => { if (raf) cancelAnimationFrame(raf); });
+
+      area.querySelectorAll('.tg-shapebtn').forEach((btn) => {
+        btn.onclick = () => {
+          const p = points[active];
+          if (labeled[p.id]){ api.feedback('Эта точка уже определена. Выбери другую.'); return; }
+          if (btn.dataset.shape === p.shape){
+            labeled[p.id] = true;
+            solvedN++;
+            pads[active].classList.add('done');
+            pads[active].querySelector('.led');
+            api.setProgress(solvedN, points.length);
+            api.ok('Верно: «' + p.name + '» — ' + btn.textContent + '!');
+            if (solvedN === points.length){
+              setTimeout(() => api.finish(rPts(mistakes)), 1000);
+            } else {
+              const next = points.findIndex((x) => !labeled[x.id]);
+              setTimeout(() => setActive(next), 700);
+            }
+          } else {
+            mistakes++;
+            btn.classList.add('wrong');
+            setTimeout(() => btn.classList.remove('wrong'), 450);
+            api.bad('Неверно: «' + p.name + '» — не ' + btn.textContent.toLowerCase() + '. Посмотри на экран: ' + p.hint + '.');
+          }
+        };
+      });
+    },
     onDone: done, onCancel: cancel
   });
 }
 
-/* ---- Игра 4. Осциллограф: чтение сигнала ---- */
+/* ---- Игра 4. Чтение осциллограммы: живой сигнал ---- */
 function openReuGenerator(done, cancel){
   const rnd = (n) => 1 + Math.floor(Math.random() * n);
-  const amp1 = rnd(4), f1 = rnd(4);
-  let amp2 = rnd(4), f2 = rnd(4);
-  if (amp2 === amp1 && f2 === f1) f2 = (f2 % 4) + 1;
-  const ampChips = [1, 2, 3, 4].map((n) => ({ label: n + ' В' }));
-  const freqChips = [1, 2, 3, 4].map((n) => ({ label: n + ' кГц' }));
-  return window.openTaskGame({
+  const rounds = [];
+  for (let i = 0; i < 3; i++){
+    let amp = rnd(4), freq = rnd(4);
+    if (i === 1 && amp === rounds[0].amp && freq === rounds[0].freq) freq = (freq % 4) + 1;
+    rounds.push({ amp, freq });
+  }
+  const amps = [1, 2, 3, 4], freqs = [1, 2, 3, 4];
+  let round = 0, mistakes = 0, phase = 0, raf = 0;
+  let guess = { amp: null, freq: null };
+
+  return window.openPlayGame({
     theme: 'reu',
     icon: '🖥️',
     title: 'Чтение осциллограммы',
-    intro: 'На экране скобки-выноски: A? — амплитуда (клетки вверх), T? — период (клетки ширины).',
+    intro: 'Сигнал бежит по экрану. Считай клеточки: вверх — амплитуда (В), один период — частота (кГц).',
     memo: [
-      ['Амплитуда A?', 'Сколько клеточек от средней линии вверх до вершины — столько вольт.'],
-      ['Период T?', 'Сколько клеточек занимает один полный период волны — столько килогерц.'],
-      ['Пример', 'Вершина на 2 клетки, период 3 клетки → 2 В, 3 кГц.']
+      ['Амплитуда', 'Клеточки от средней линии вверх до вершины — вольты.'],
+      ['Частота', 'Клеточки одного периода (от горба до горба) — килогерцы.'],
+      ['Пример', 'Вершина 2 клетки, период 3 клетки → 2 В, 3 кГц.']
     ],
-    steps: [
-      {
-        title: 'Этап 1 · Считаем клеточки',
-        task: 'Нажмите выноску A? и введите амплитуду, затем T? и период.',
-        art: rWaveMeasured(f1, amp1),
-        hotspots: [ { x: 7, y: 42, hold: 'A?' }, { x: 46, y: 8, hold: 'T?' } ],
-        slots: [
-          { label: 'Амплитуда (клетки вверх = вольты)', answer: amp1 + ' В' },
-          { label: 'Частота (клетки периода = кГц)', answer: f1 + ' кГц' }
-        ],
-        chips: ampChips.concat(freqChips),
-        chipsLabel: 'Ответы',
-        hint: 'Вершина выше средней линии на ' + amp1 + ' клет' + (amp1 === 1 ? 'ку' : 'ки') + ', период — ' + f1 + ' клет' + (f1 === 1 ? 'ка' : (f1 < 5 ? 'ки' : 'ок')) + '.',
-        success: 'Верно: ' + amp1 + ' В и ' + f1 + ' кГц!'
-      },
-      {
-        title: 'Этап 2 · Ещё сигнал',
-        task: 'Новый сигнал на экране. Считайте клеточки по выноскам!',
-        art: rWaveMeasured(f2, amp2),
-        hotspots: [ { x: 7, y: 42, hold: 'A?' }, { x: 46, y: 8, hold: 'T?' } ],
-        slots: [
-          { label: 'Амплитуда', answer: amp2 + ' В' },
-          { label: 'Частота', answer: f2 + ' кГц' }
-        ],
-        chips: ampChips.concat(freqChips),
-        chipsLabel: 'Ответы',
-        hint: 'Высота вершины — ' + amp2 + ' клет' + (amp2 === 1 ? 'ка' : (amp2 < 5 ? 'ки' : 'ок')) + ', период — ' + f2 + ' клет' + (f2 === 1 ? 'ка' : (f2 < 5 ? 'ки' : 'ок')) + '.',
-        success: 'Всё верно — осциллограф освоен!'
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-scope-scene">' +
+          '<div class="tg-scope-frame"><canvas id="gnCv" width="500" height="260"></canvas></div>' +
+          '<div>' +
+            '<p class="tg-progress" style="position:static" id="gnTask"></p>' +
+            '<div class="tg-shapes">' +
+              amps.map((a) => '<button type="button" class="tg-shapebtn" data-amp="' + a + '">' + a + ' В</button>').join('') +
+            '</div>' +
+            '<div class="tg-shapes" style="margin-top:9px">' +
+              freqs.map((f) => '<button type="button" class="tg-shapebtn" data-freq="' + f + '">' + f + ' кГц</button>').join('') +
+            '</div>' +
+            '<button type="button" class="tg-btn-big tg-btn-start" id="gnCheck" style="width:100%;margin-top:10px">✓ ПРОВЕРИТЬ</button>' +
+          '</div>' +
+        '</div>';
+      const cv = area.querySelector('#gnCv');
+      const task = area.querySelector('#gnTask');
+
+      function pickRound(){
+        guess = { amp: null, freq: null };
+        api.setProgress(round, rounds.length);
+        task.textContent = 'Сигнал ' + (round + 1) + ' из ' + rounds.length + ' — сколько клеток в высоту и в ширину?';
+        api.feedback('Считай клетки на живом сигнале и жми кнопки.');
       }
-    ],
+      pickRound();
+
+      function draw(){
+        const r = rounds[round];
+        if (!r) return; // игра завершена — рисовать нечего
+        const g = cv.getContext('2d');
+        const W = cv.width, H = cv.height, pad = 20;
+        const DIV_X = 12, DIV_Y = 8;
+        g.fillStyle = '#04120f';
+        g.fillRect(0, 0, W, H);
+        g.strokeStyle = '#123f36';
+        for (let i = 0; i <= DIV_X; i++){
+          const x = pad + ((W - 2 * pad) / DIV_X) * i;
+          g.beginPath(); g.moveTo(x, pad); g.lineTo(x, H - pad); g.stroke();
+        }
+        for (let j = 0; j <= DIV_Y; j++){
+          const y = pad + ((H - 2 * pad) / DIV_Y) * j;
+          g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke();
+        }
+        const mid = H / 2, cellY = (H - 2 * pad) / DIV_Y, cellX = (W - 2 * pad) / DIV_X;
+        g.strokeStyle = '#2a5f52';
+        g.beginPath(); g.moveTo(pad, mid); g.lineTo(W - pad, mid); g.stroke();
+        const cycles = DIV_X / r.freq;
+        const col = '#f5b95a';
+        g.strokeStyle = col; g.lineWidth = 2.5; g.shadowColor = col; g.shadowBlur = 10;
+        g.beginPath();
+        const N = 200;
+        for (let i = 0; i <= N; i++){
+          const t = i / N;
+          const v = Math.sin((t * cycles + phase) * Math.PI * 2);
+          const x = pad + t * (W - 2 * pad);
+          const y = mid - v * r.amp * cellY;
+          if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+        }
+        g.stroke();
+        g.shadowBlur = 0;
+        g.fillStyle = '#c9b88a';
+        g.font = 'bold 12px monospace';
+        g.fillText('1 клетка = 1 В · 1 клетка = 1 кГц', pad + 6, pad + 16);
+      }
+      function loop(){
+        if (api.isClosed()) return;
+        phase = (phase + 0.01) % 1;
+        draw();
+        raf = requestAnimationFrame(loop);
+      }
+      loop();
+      api.onClose(() => { if (raf) cancelAnimationFrame(raf); });
+
+      function syncBtns(){
+        area.querySelectorAll('[data-amp]').forEach((b) => {
+          b.style.borderColor = guess.amp === Number(b.dataset.amp) ? 'var(--tg-accent)' : '';
+          b.style.background = guess.amp === Number(b.dataset.amp) ? 'color-mix(in srgb, var(--tg-accent) 18%, #10151e)' : '';
+        });
+        area.querySelectorAll('[data-freq]').forEach((b) => {
+          b.style.borderColor = guess.freq === Number(b.dataset.freq) ? 'var(--tg-accent)' : '';
+          b.style.background = guess.freq === Number(b.dataset.freq) ? 'color-mix(in srgb, var(--tg-accent) 18%, #10151e)' : '';
+        });
+      }
+      area.querySelectorAll('[data-amp]').forEach((b) => {
+        b.onclick = () => { guess.amp = Number(b.dataset.amp); syncBtns(); api.feedback('Амплитуда: ' + b.dataset.amp + ' В. Теперь частота.'); };
+      });
+      area.querySelectorAll('[data-freq]').forEach((b) => {
+        b.onclick = () => { guess.freq = Number(b.dataset.freq); syncBtns(); api.feedback('Частота: ' + b.dataset.freq + ' кГц. Жми «Проверить».'); };
+      });
+      area.querySelector('#gnCheck').onclick = () => {
+        const r = rounds[round];
+        if (guess.amp == null || guess.freq == null){
+          api.bad('Выбери и амплитуду, и частоту.');
+          return;
+        }
+        if (guess.amp === r.amp && guess.freq === r.freq){
+          round++;
+          api.ok('Верно: ' + r.amp + ' В и ' + r.freq + ' кГц!');
+          if (round >= rounds.length){
+            setTimeout(() => api.finish(rPts(mistakes)), 1000);
+          } else {
+            setTimeout(() => { syncBtns(); pickRound(); }, 700);
+          }
+        } else {
+          mistakes++;
+          api.bad('Не сходится. Считай только клетки: вверх от средней линии — амплитуда, от горба до горба — период.');
+        }
+      };
+    },
     onDone: done, onCancel: cancel
   });
 }
 
 /* ---- Игра 5. 3D-сборка электронного модуля ---- */
 function openReu3D(done, cancel){
-  return window.openTaskGame({
+  const parts = [
+    { id: 'R1', name: 'Резистор', face: 0 },
+    { id: 'C1', name: 'Конденсатор', face: 1 },
+    { id: 'D1', name: 'Диод', face: 2 },
+    { id: 'U1', name: 'Микроконтроллер', face: 3 }
+  ];
+  const faces = [
+    { title: 'ОГРАНИЧЕНИЕ ТОКА', task: 'Не даёт току превысить безопасный уровень' },
+    { title: 'ПИТАНИЕ', task: 'Сглаживает пульсации напряжения' },
+    { title: 'ЗАЩИТА', task: 'Не пускает ток в обратном направлении' },
+    { title: 'УПРАВЛЕНИЕ', task: 'Исполняет программу устройства' }
+  ];
+  let mistakes = 0, placed = 0, sel = null, angle = 0;
+
+  return window.openPlayGame({
     theme: 'reu',
     icon: '🛰️',
     title: '3D-сборка электронного модуля',
-    intro: 'Нажмите отсек на корпусе модуля и поставьте компонент, который выполняет его функцию.',
+    intro: 'Вращай модуль кнопками ◀ ▶, читай функции на гранях и ставь компоненты в отсеки.',
     memo: [
       ['Резистор', 'Ограничивает ток.'],
       ['Конденсатор', 'Сглаживает пульсации питания.'],
-      ['Диод', 'Ток только в одну сторону — защита.'],
-      ['Микроконтроллер', 'Исполняет программу — «мозг» модуля.']
+      ['Диод', 'Защита от обратного тока.'],
+      ['Микроконтроллер', 'Исполняет программу — «мозг».']
     ],
-    steps: [
-      {
-        title: 'Этап · Функции отсеков',
-        task: 'Четыре отсека подписаны задачами. Поставьте в каждый нужный компонент.',
-        art: rSvgModule(),
-        hotspots: [
-          { x: 31.3, y: 30 }, { x: 68.7, y: 30 }, { x: 31.3, y: 69 }, { x: 68.7, y: 69 }
-        ],
-        slots: [
-          { label: 'Отсек «Ограничение тока»', answer: 'Резистор' },
-          { label: 'Отсек «Питание»', answer: 'Конденсатор' },
-          { label: 'Отсек «Защита»', answer: 'Диод' },
-          { label: 'Отсек «Управление»', answer: 'Микроконтроллер' }
-        ],
-        chips: [
-          { label: 'Резистор' }, { label: 'Конденсатор' }, { label: 'Диод' }, { label: 'Микроконтроллер' },
-          { label: 'Транзистор', sub: 'лишний' }, { label: 'Катушка', sub: 'лишняя' }
-        ],
-        chipsLabel: 'Компоненты',
-        hint: 'Ток — резистор, пульсации — конденсатор, обратный ток — диод, программа — микроконтроллер.',
-        success: 'Модуль собран — можно подавать питание!'
-      }
-    ],
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-cube-wrap">' +
+          '<div class="tg-cube-persp"><div class="tg-cube" id="cbCube">' +
+            faces.map((f, i) =>
+              '<button type="button" class="face" data-face="' + i + '" style="transform:rotateY(' + (i * 90) + 'deg) translateZ(110px)">' +
+                '<small>ОТСЕК ' + (i + 1) + '</small><b>' + f.title + '</b><span class="slot">' + f.task + '</span>' +
+              '</button>'
+            ).join('') +
+            '<div class="face cap" style="transform:rotateX(90deg) translateZ(110px)">🔌</div>' +
+            '<div class="face cap" style="transform:rotateX(-90deg) translateZ(110px)">СОТА</div>' +
+          '</div></div>' +
+          '<div class="tg-cube-controls">' +
+            '<button type="button" class="tg-rotbtn" id="cbL">◀</button>' +
+            '<button type="button" class="tg-rotbtn" id="cbR">▶</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tg-e-tray">' +
+          parts.map((p) => '<button type="button" class="tg-comp" data-part="' + p.id + '"><span class="mini" style="background:#c9b88a"></span>' + p.id + ' · ' + p.name + '</button>').join('') +
+        '</div>';
+      const cube = area.querySelector('#cbCube');
+      function apply(){ cube.style.transform = 'rotateX(-14deg) rotateY(' + angle + 'deg)'; }
+      apply();
+      area.querySelector('#cbL').onclick = () => { angle -= 90; apply(); };
+      area.querySelector('#cbR').onclick = () => { angle += 90; apply(); };
+
+      parts.forEach((p) => {
+        area.querySelector('[data-part="' + p.id + '"]').onclick = (e) => {
+          if (sel) area.querySelector('[data-part="' + sel.id + '"]').classList.remove('sel');
+          sel = p;
+          e.currentTarget.classList.add('sel');
+          api.feedback('Взято: ' + p.name + '. Найди его отсек — вращай модуль.');
+        };
+      });
+      area.querySelectorAll('.face[data-face]').forEach((face) => {
+        face.onclick = () => {
+          const idx = Number(face.dataset.face);
+          if (!sel){ api.feedback('Сначала возьми компонент снизу.', 'bad'); return; }
+          if (sel.face !== idx){
+            mistakes++;
+            face.classList.add('miss');
+            setTimeout(() => face.classList.remove('miss'), 450);
+            api.bad('Не сюда: ' + sel.name + ' не делает «' + faces[idx].title.toLowerCase() + '». Функция отсека подсказывает ответ.');
+            return;
+          }
+          face.classList.add('filled');
+          face.querySelector('.slot').textContent = '✔ ' + sel.id + ' · ' + sel.name;
+          face.disabled = true;
+          area.querySelector('[data-part="' + sel.id + '"]').disabled = true;
+          sel = null;
+          placed++;
+          api.setProgress(placed, 4);
+          api.sfx('place');
+          api.feedback('Установлено ' + placed + ' из 4.');
+          if (placed === 4){
+            api.ok('Модуль собран — можно подавать питание!');
+            setTimeout(() => api.finish(rPts(mistakes)), 1000);
+          }
+        };
+      });
+    },
     onDone: done, onCancel: cancel
   });
 }

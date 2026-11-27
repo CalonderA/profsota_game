@@ -489,377 +489,486 @@ window.STATION_RENDERERS = window.STATION_RENDERERS || {};
 window.STATION_RENDERERS.e = drawEStation;
 
 /* ------------------------------------------------------------------
-   МИНИ-ИГРЫ Э — красивые задания-карточки с интерактивными схемами
-   (движок task-game.js: точки-пропуски прямо на картинке)
+   МИНИ-ИГРЫ Э — играбельные симуляторы (openPlayGame):
+   щит собирается руками и включается, провода тянутся к розетке,
+   мультиметр с щупами, панель пуска двигателя с ротором, шкаф.
    ------------------------------------------------------------------ */
+const ePts = (mistakes) => Math.max(50, 200 - mistakes * 25);
 
-/* ---------- SVG-иллюстрации ---------- */
-
-/* Щит с DIN-рейкой: 4 посадочных места под автоматы */
-function eSvgPanel(){
-  return '<svg viewBox="0 0 340 150" width="340">' +
-    '<rect x="20" y="14" width="300" height="122" rx="10" fill="#182234" stroke="#3c4c6c" stroke-width="2"/>' +
-    '<rect x="34" y="28" width="272" height="26" fill="#0d1420" stroke="#2c3850"/>' +
-    '<text x="170" y="45" fill="#8ea3b8" font-size="11" text-anchor="middle" font-family="monospace">ВВОД 380 В</text>' +
-    '<rect x="34" y="64" width="272" height="46" rx="4" fill="#0a0f1a" stroke="#2c3850"/>' +
-    '<rect x="34" y="106" width="272" height="5" fill="#3c4c6c"/>' +
-    [62, 124, 186, 248].map((mx, i) =>
-      '<rect x="' + (mx - 26) + '" y="70" width="52" height="34" rx="4" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
-      '<rect x="' + (mx - 12) + '" y="76" width="24" height="9" rx="2" fill="#0d1522"/>' +
-      '<text x="' + mx + '" y="102" fill="#5f7f9a" font-size="10" text-anchor="middle" font-family="monospace">№' + (i + 1) + '</text>'
-    ).join('') +
-    '<text x="170" y="130" fill="#7f93ad" font-size="10" text-anchor="middle" font-family="monospace">ДИН-РЕЙКА · СТАВЬ ПО ПОРЯДКУ</text>' +
-  '</svg>';
-}
-
-/* Розетка: клеммы PE / L / N + живой провод выбранного цвета */
-function eSvgSocketLive(wireColor, connectedPos, highlight){
-  // connectedPos: 'L' | 'N' | 'PE' | null — рисует провод, когда фишка поставлена
-  const term = { L: [96, 108], N: [244, 108], PE: [170, 52] };
-  let wire = '';
-  if (connectedPos && term[connectedPos]){
-    const [tx, ty] = term[connectedPos];
-    wire = '<path d="M18 ' + ty + ' C 50 ' + ty + ', 60 ' + ty + ', ' + (tx - 14) + ' ' + ty + '" fill="none" stroke="' + wireColor + '" stroke-width="9" stroke-linecap="round"/>' +
-      '<circle cx="' + (tx - 14) + '" cy="' + ty + '" r="6" fill="' + wireColor + '"/>';
-  }
-  const hl = highlight && term[highlight]
-    ? '<circle cx="' + term[highlight][0] + '" cy="' + term[highlight][1] + '" r="20" fill="none" stroke="#f5a623" stroke-dasharray="5 4" stroke-width="2"/>'
-    : '';
-  return '<svg viewBox="0 0 340 170" width="340">' +
-    '<rect x="60" y="16" width="220" height="140" rx="22" fill="#e9edf2" stroke="#c3cad4" stroke-width="2"/>' +
-    '<rect x="72" y="28" width="196" height="116" rx="16" fill="#f7fafd"/>' +
-    // клеммы-гнёзда
-    '<rect x="140" y="36" width="60" height="26" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
-    '<text x="170" y="53" fill="#8b94a1" font-size="10" text-anchor="middle" font-family="monospace">PE</text>' +
-    '<rect x="76" y="92" width="46" height="30" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
-    '<text x="99" y="111" fill="#8b94a1" font-size="10" text-anchor="middle" font-family="monospace">L</text>' +
-    '<rect x="218" y="92" width="46" height="30" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
-    '<text x="241" y="111" fill="#8b94a1" font-size="10" text-anchor="middle" font-family="monospace">N</text>' +
-    hl + wire +
-    '<text x="18" y="' + (connectedPos ? term[connectedPos][1] - 12 : 90) + '" fill="#8ea3b8" font-size="10" font-family="monospace">провод →</text>' +
-  '</svg>';
-}
-
-/* Мультиметр: поворотный диск режимов */
-function eSvgDial(active){
-  // активная позиция подсвечивается жёлтым
-  const modes = [
-    { id: 'V', x: 96, y: 96, label: 'V~' },
-    { id: 'R', x: 170, y: 76, label: 'Ω' },
-    { id: 'B', x: 244, y: 96, label: '♪' }
-  ];
-  const m = modes.find((x) => x.id === active);
-  return '<svg viewBox="0 0 340 150" width="340">' +
-    '<rect x="60" y="12" width="220" height="126" rx="12" fill="#1d2430" stroke="#3c4a5e" stroke-width="2"/>' +
-    '<rect x="78" y="22" width="184" height="34" rx="6" fill="#071510"/>' +
-    '<text x="286" y="44" fill="#6ef0b6" font-size="13" text-anchor="end" font-family="monospace">- - -</text>' +
-    '<circle cx="170" cy="96" r="34" fill="#10151e" stroke="#46536a" stroke-width="3"/>' +
-    '<circle cx="170" cy="96" r="5" fill="#c7ccd6"/>' +
-    modes.map((p) =>
-      '<circle cx="' + p.x + '" cy="' + p.y + '" r="15" fill="' + (m && m.id === p.id ? '#3a2f10' : '#0d1420') + '" stroke="' + (m && m.id === p.id ? '#f5a623' : '#46536a') + '" stroke-width="2"/>' +
-      '<text x="' + p.x + '" y="' + (p.y + 5) + '" fill="' + (m && m.id === p.id ? '#ffd166' : '#8ea3b8') + '" font-size="13" text-anchor="middle" font-family="monospace">' + p.label + '</text>'
-    ).join('') +
-    (m ? '<line x1="170" y1="96" x2="' + m.x + '" y2="' + m.y + '" stroke="#f5a623" stroke-width="3"/>' : '<line x1="170" y1="96" x2="170" y2="62" stroke="#8ea3b8" stroke-width="3"/>') +
-    '<text x="170" y="140" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">РЕЖИМ · ПОВЕРНИ ДИСК</text>' +
-  '</svg>';
-}
-
-/* Цепь: автомат → розетки → свет (для поиска обрыва) */
-function eSvgChainActive(){
-  return '<svg viewBox="0 0 340 130" width="340">' +
-    '<rect x="24" y="36" width="86" height="44" rx="8" fill="#182234" stroke="#f5a623" stroke-width="2"/>' +
-    '<text x="67" y="54" fill="#e6eef8" font-size="13" text-anchor="middle" font-family="monospace">QF1</text>' +
-    '<text x="67" y="70" fill="#9fb0c6" font-size="9" text-anchor="middle" font-family="monospace">ввод</text>' +
-    '<line x1="110" y1="58" x2="146" y2="58" stroke="#4b5b7a" stroke-width="2"/>' +
-    '<rect x="146" y="36" width="90" height="44" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
-    '<text x="191" y="54" fill="#9fb0c6" font-size="11" text-anchor="middle" font-family="monospace">Розетки</text>' +
-    '<text x="191" y="70" fill="#5f7f9a" font-size="9" text-anchor="middle" font-family="monospace">0 В · 0 В</text>' +
-    '<line x1="236" y1="58" x2="272" y2="58" stroke="#4b5b7a" stroke-width="2"/>' +
-    '<rect x="272" y="36" width="54" height="44" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
-    '<text x="299" y="54" fill="#9fb0c6" font-size="11" text-anchor="middle" font-family="monospace">Свет</text>' +
-    '<text x="299" y="70" fill="#5f7f9a" font-size="9" text-anchor="middle" font-family="monospace">0 В</text>' +
-    '<text x="170" y="108" fill="#e0483a" font-size="11" text-anchor="middle" font-family="monospace">ВЕЗДЕ 0 В — ОБРЫВ В НАЧАЛЕ ЦЕПИ?</text>' +
-  '</svg>';
-}
-
-/* Двигатель + цепочка шагов пуска */
-function eSvgMotorChain(){
-  return '<svg viewBox="0 0 340 140" width="340">' +
-    [40, 118, 196, 274].map((bx, i) =>
-      '<rect x="' + (bx - 34) + '" y="30" width="76" height="44" rx="8" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
-      '<text x="' + bx + '" y="56" fill="#5f7f9a" font-size="11" text-anchor="middle" font-family="monospace">ШАГ ' + (i + 1) + '</text>'
-    ).join('') +
-    '<circle cx="170" cy="106" r="24" fill="#182234" stroke="#3c4c6c" stroke-width="3"/>' +
-    '<circle cx="170" cy="106" r="6" fill="#0d1420" stroke="#5fd0e0"/>' +
-    '<path d="M170 82 v8 M170 122 v8 M146 106 h8 M186 106 h8" stroke="#4b5b7a" stroke-width="3"/>' +
-    '<text x="212" y="110" fill="#f5a623" font-size="11" font-family="monospace">M 3~ 380 В</text>' +
-  '</svg>';
-}
-
-/* Шкаф с 4 отсеками-функциями */
-function eSvgCabinet(){
-  return '<svg viewBox="0 0 300 190" width="300">' +
-    '<rect x="30" y="12" width="240" height="166" rx="10" fill="#182234" stroke="#3c4c6c" stroke-width="2"/>' +
-    '<rect x="42" y="24" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
-    '<text x="94" y="52" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ПЕРЕГРУЗКА</text>' +
-    '<text x="94" y="64" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">И КЗ</text>' +
-    '<rect x="154" y="24" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
-    '<text x="206" y="52" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">УТЕЧКА</text>' +
-    '<text x="206" y="64" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ТОКА</text>' +
-    '<rect x="42" y="98" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
-    '<text x="94" y="126" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">УЧЁТ</text>' +
-    '<text x="94" y="138" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ЭНЕРГИИ</text>' +
-    '<rect x="154" y="98" width="104" height="66" rx="7" fill="#1b2a3c" stroke="#48587a" stroke-dasharray="4 3"/>' +
-    '<text x="206" y="126" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">ЗЕМЛЯ</text>' +
-    '<text x="206" y="138" fill="#7f93ad" font-size="9" text-anchor="middle" font-family="monospace">В ОДНУ ТОЧКУ</text>' +
-    '<rect x="30" y="182" width="240" height="4" fill="#3c4c6c"/>' +
-  '</svg>';
-}
-
-/* Фишка-цвет провода */
-function eWireChipSvg(color){
-  return '<svg viewBox="0 0 60 24" width="52" height="21"><path d="M4 12 C 18 2, 42 22, 56 12" fill="none" stroke="' + color + '" stroke-width="8" stroke-linecap="round"/></svg>';
-}
-
-/* ---- Игра 1. Сборка распределительного щита ---- */
+/* ---- Игра 1. Сборка распределительного щита: поставь и включи ---- */
 function openEPanel(done, cancel){
-  return window.openTaskGame({
+  const parts = [
+    { id: 'c40', name: 'Вводной автомат C40', slot: 0 },
+    { id: 'uzo', name: 'УЗО 30 мА', slot: 1 },
+    { id: 'c16', name: 'Автомат C16', slot: 2 },
+    { id: 'c10', name: 'Автомат C10', slot: 3 },
+    { id: 'km',  name: 'Контактор КМ', slot: -1 },
+    { id: 'hl',  name: 'Лампа HL', slot: -1 }
+  ];
+  const slotNames = ['№1 · ввод', '№2 · защита людей', '№3 · розетки', '№4 · свет'];
+  let mistakes = 0, placed = 0, sel = null;
+
+  return window.openPlayGame({
     theme: 'e',
     icon: '⚡',
     title: 'Сборка распределительного щита',
-    intro: 'Расставьте аппараты защиты прямо на ДИН-рейке щита.',
+    intro: 'Поставь автоматы на ДИН-рейку, затем включи щит — загорится свет!',
     memo: [
-      ['QF — автомат', 'Отключает линию при перегрузке и коротком замыкании. Число — ток в амперах: C40 на вводе, C16 розетки, C10 свет.'],
-      ['УЗО', 'Защита человека: отключает при утечке 30 мА.'],
-      ['PE', 'Жёлто-зелёный проводник заземления — соединяет корпуса с землёй.'],
-      ['Порядок', 'Ввод → УЗО → розетки → свет. Контактор и лампа в квартирном щите не нужны.']
+      ['Порядок', '№1 вводной автомат → №2 УЗО (защита людей) → №3 розетки C16 → №4 свет C10.'],
+      ['УЗО', 'Отключает при утечке 30 мА — защищает человека.'],
+      ['Контактор и лампа', 'В квартирном щите не нужны — это лишние детали.']
     ],
-    steps: [
-      {
-        title: 'Этап 1 · Порядок аппаратов',
-        task: 'Нажмите место №1 на рейке, затем фишку аппарата. Соберите весь щит по порядку.',
-        art: eSvgPanel(),
-        hotspots: [
-          { x: 18.2, y: 52 }, { x: 36.5, y: 52 }, { x: 54.7, y: 52 }, { x: 72.9, y: 52 }
-        ],
-        slots: [
-          { label: '№1 · сразу после ввода', answer: 'Вводной автомат C40' },
-          { label: '№2 · защита людей', answer: 'УЗО 30 мА' },
-          { label: '№3 · линия розеток', answer: 'Автомат C16' },
-          { label: '№4 · линия освещения', answer: 'Автомат C10' }
-        ],
-        chips: [
-          { label: 'Вводной автомат C40', sub: 'общее отключение' },
-          { label: 'УЗО 30 мА', sub: 'от утечки тока' },
-          { label: 'Автомат C16', sub: 'розетки' },
-          { label: 'Автомат C10', sub: 'свет' },
-          { label: 'Контактор КМ', sub: 'лишний' },
-          { label: 'Лампа HL', sub: 'лишняя' }
-        ],
-        chipsLabel: 'Аппараты щита',
-        hint: 'Ввод — УЗО — розетки — свет.',
-        success: 'Щит собран правильно!'
-      },
-      {
-        title: 'Этап 2 · Ток групповой линии',
-        task: 'Стиральная машина и компьютер в комнате. Какой автомат поставить на линию розеток?',
-        art: eSvgDial(null),
-        slots: [{ label: 'Автомат линии розеток', answer: 'C16 (16 А)' }],
-        chips: [ { label: 'C16 (16 А)' }, { label: 'C10 (10 А)' }, { label: 'C40 (40 А)' } ],
-        chipsLabel: 'Номиналы автоматов',
-        hint: 'Розеточная группа — 16 А. C10 — для света, а C40 — это ввод всего щита.',
-        success: 'Верно: 16 А для розеток.'
-      },
-      {
-        title: 'Этап 3 · Заземление',
-        task: 'Каким проводником соединяют корпуса приборов с землёй?',
-        slots: [{ label: 'Проводник заземления', answer: 'PE (жёлто-зелёный)' }],
-        chips: [
-          { label: 'PE (жёлто-зелёный)', svg: eWireChipSvg('#7ba33a') },
-          { label: 'N (голубой)', svg: eWireChipSvg('#2b6fa8') },
-          { label: 'L (коричневый)', svg: eWireChipSvg('#8a5a2b') }
-        ],
-        chipsLabel: 'Провода',
-        hint: 'PE — жёлто-зелёный, N — голубой, L — коричневый. Земля — это всегда PE.',
-        success: 'Отлично, корпуса заземлены!'
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-e-panel" id="epPanel">' +
+          '<div class="tg-e-panel-top">' +
+            '<span class="tg-lamp" id="epLamp"></span><b>СЕТЬ</b>' +
+            '<button type="button" class="tg-e-main" id="epMain" disabled>ВКЛЮЧИТЬ ЩИТ</button>' +
+          '</div>' +
+          '<div class="tg-e-rail">' +
+            slotNames.map((n, i) => '<button type="button" class="tg-mount" data-slot="' + i + '"><b>' + (i + 1) + '</b><small>' + n + '</small></button>').join('') +
+          '</div>' +
+          '<div class="tg-e-lamps">' +
+            '<label><span class="tg-e-bulb" style="font-size:24px" id="epSock">🔌</span>розетки</label>' +
+            '<label><span class="tg-e-bulb" style="font-size:24px" id="epLight">💡</span>свет</label>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tg-e-tray">' +
+          parts.map((p) => '<button type="button" class="tg-brk" data-part="' + p.id + '"><span class="mini"></span>' + p.name + '</button>').join('') +
+        '</div>';
+      const panel = area.querySelector('#epPanel');
+      const main = area.querySelector('#epMain');
+      const lamp = area.querySelector('#epLamp');
+
+      function pickPart(btn, part){
+        if (sel) area.querySelector('[data-part="' + sel.id + '"]').classList.remove('sel');
+        sel = part; btn.classList.add('sel');
+        api.feedback('Взято: ' + part.name + '. Теперь нажми место №' + (part.slot + 1) + ' на рейке.');
       }
-    ],
+      function mountClick(mount, idx){
+        if (!sel){ api.feedback('Сначала возьми автомат снизу.', 'bad'); return; }
+        if (sel.slot !== idx){
+          mistakes++;
+          api.bad('Не сюда: ' + sel.name + ' не подходит на «' + slotNames[idx] + '». Порядок: ввод → УЗО → розетки → свет.');
+          mount.classList.add('sel');
+          setTimeout(() => mount.classList.remove('sel'), 400);
+          return;
+        }
+        mount.classList.remove('sel');
+        mount.innerHTML = '<span class="tg-brk-mod"><span>' + sel.name.split(' ')[0] + '</span></span>';
+        mount.disabled = true;
+        area.querySelector('[data-part="' + sel.id + '"]').disabled = true;
+        sel = null;
+        placed++;
+        api.setProgress(placed, 4);
+        api.sfx('place');
+        api.feedback('Установлено ' + placed + ' из 4.');
+        if (placed === 4){
+          main.disabled = false;
+          main.focus({ preventScroll: true });
+          api.feedback('Щит собран! Жми «ВКЛЮЧИТЬ ЩИТ».');
+        }
+      }
+      main.onclick = () => {
+        lamp.classList.add('lit');
+        main.classList.add('on');
+        main.textContent = 'ЩИТ ПОД НАПРЯЖЕНИЕМ';
+        area.querySelector('#epSock').textContent = '✅';
+        const b = area.querySelector('#epLight');
+        b.textContent = '💡';
+        b.style.filter = 'drop-shadow(0 0 14px #f5a623)';
+        api.sfx('power');
+        api.ok('Щит под напряжением — розетки и свет работают!');
+        setTimeout(() => api.finish(ePts(mistakes)), 1100);
+      };
+      parts.forEach((p) => {
+        const btn = area.querySelector('[data-part="' + p.id + '"]');
+        btn.onclick = () => pickPart(btn, p);
+      });
+      area.querySelectorAll('.tg-mount').forEach((m) => {
+        m.onclick = () => mountClick(m, Number(m.dataset.slot));
+      });
+    },
     onDone: done, onCancel: cancel
   });
 }
 
-/* ---- Игра 2. Электромонтаж розетки ---- */
+/* ---- Игра 2. Электромонтаж розетки: подключи провода ---- */
 function openESocket(done, cancel){
-  const stages = [
-    { pos: 'L', wire: '#8a5a2b', name: 'Коричневый', answer: 'L — фаза', hs: { x: 28, y: 63 }, title: 'Этап 1 · Фаза' },
-    { pos: 'N', wire: '#2b6fa8', name: 'Голубой', answer: 'N — ноль', hs: { x: 72, y: 63 }, title: 'Этап 2 · Ноль' },
-    { pos: 'PE', wire: '#7ba33a', name: 'Жёлто-зелёный', answer: 'PE — земля', hs: { x: 50, y: 29 }, title: 'Этап 3 · Земля' }
+  const wires = [
+    { id: 'L', name: 'Коричневый · фаза', color: '#8a5a2b', path: 'M40 286 C 150 286, 250 250, 341 168' },
+    { id: 'N', name: 'Голубой · ноль', color: '#2b6fa8', path: 'M40 286 C 170 300, 320 260, 421 168' },
+    { id: 'PE', name: 'Жёлто-зелёный · земля', color: '#7ba33a', path: 'M40 286 C 120 200, 240 120, 380 112' }
   ];
-  return window.openTaskGame({
+  const termPos = { L: [341, 168], N: [421, 168], PE: [380, 112] };
+  const termPct = { L: [71, 56], N: [87.7, 56], PE: [79.2, 37.3] };
+  let mistakes = 0, connected = 0, sel = null;
+
+  return window.openPlayGame({
     theme: 'e',
     icon: '🔌',
     title: 'Электромонтаж розетки',
-    intro: 'Подключите провода прямо на клеммах розетки. Перепутаете — будет авария!',
+    intro: 'Тянем провода к клеммам: возьми провод снизу и нажми клемму на розетке. Потом воткни вилку!',
     memo: [
-      ['L — фаза', 'Коричневый провод. «Рабочий» провод под напряжением.'],
-      ['N — ноль', 'Голубой провод. Обратный провод цепи.'],
-      ['PE — земля', 'Жёлто-зелёный провод. Защита: соединяет корпуса с землёй.']
+      ['L — фаза', 'Коричневый провод — «рабочий», под напряжением.'],
+      ['N — ноль', 'Голубой — обратный провод цепи.'],
+      ['PE — земля', 'Жёлто-зелёный — защита, соединяет корпуса с землёй.']
     ],
-    steps: stages.map((s, i) => ({
-      title: s.title,
-      task: 'Куда подключается ' + s.name.toLowerCase() + ' провод? Нажмите на клемму на розетке.',
-      art: (vals) => eSvgSocketLive(s.wire, vals[0] === s.answer ? s.pos : null, s.pos),
-      hotspots: [s.hs],
-      slots: [{ label: 'Клемма ' + s.name.toLowerCase() + ' провода', answer: s.answer }],
-      chips: [ { label: 'L — фаза' }, { label: 'N — ноль' }, { label: 'PE — земля' } ],
-      chipsLabel: 'Клеммы',
-      hint: i === 0 ? 'Коричневый — всегда фаза L.' : i === 1 ? 'Голубой — ноль N (Neutral).' : 'Жёлто-зелёный — защитная земля PE.',
-      success: 'Провод подключён верно!'
-    })),
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-socket-scene" id="skScene">' +
+          '<svg viewBox="0 0 480 300" preserveAspectRatio="none">' +
+            '<rect x="300" y="70" width="160" height="180" rx="18" fill="#e9edf2" stroke="#c3cad4" stroke-width="3"/>' +
+            '<rect x="72" y="82" width="196" height="116" rx="0" fill="none"/>' +
+            '<rect x="350" y="95" width="60" height="26" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
+            '<rect x="318" y="150" width="46" height="30" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
+            '<rect x="398" y="150" width="46" height="30" rx="6" fill="#dfe5ec" stroke="#b9c2cf"/>' +
+            '<text x="380" y="113" fill="#8b94a1" font-size="11" text-anchor="middle" font-family="monospace">PE</text>' +
+            '<text x="341" y="169" fill="#8b94a1" font-size="11" text-anchor="middle" font-family="monospace">L</text>' +
+            '<text x="421" y="169" fill="#8b94a1" font-size="11" text-anchor="middle" font-family="monospace">N</text>' +
+            '<g id="skWires"></g>' +
+            '<circle id="skPlugLamp" cx="40" cy="286" r="0" fill="none"/>' +
+          '</svg>' +
+          wires.map((w) => '<button type="button" class="tg-term" data-term="' + w.id + '" style="left:' + termPct[w.id][0] + '%;top:' + termPct[w.id][1] + '%">' + w.id + '</button>').join('') +
+        '</div>' +
+        '<div class="tg-plugs">' +
+          wires.map((w) => '<button type="button" class="tg-plug" data-wire="' + w.id + '"><span class="pl" style="background:' + w.color + '"></span>' + w.name + '</button>').join('') +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:16px;justify-content:center">' +
+          '<div class="tg-e-bulb"><span class="b" id="skBulb">🕯️</span>лампа нагрузки</div>' +
+          '<button type="button" class="tg-btn-big tg-btn-start" id="skPlugBtn" disabled>ВСТАВИТЬ ВИЛКУ</button>' +
+        '</div>';
+      const scene = area.querySelector('#skScene');
+      const wiresG = area.querySelector('#skWires');
+
+      area.querySelectorAll('.tg-plug').forEach((btn) => {
+        btn.onclick = () => {
+          if (sel) area.querySelector('[data-wire="' + sel + '"]').classList.remove('sel');
+          sel = wires.find((w) => w.id === btn.dataset.wire);
+          btn.classList.add('sel');
+          api.feedback('Взято: ' + sel.name + '. Нажми клемму ' + sel.id + ' на розетке.');
+        };
+      });
+      area.querySelectorAll('.tg-term').forEach((btn) => {
+        btn.onclick = () => {
+          if (!sel){ api.feedback('Сначала возьми провод снизу.', 'bad'); return; }
+          if (sel.id !== btn.dataset.term){
+            mistakes++;
+            api.sfx('spark');
+            scene.classList.add('spark');
+            setTimeout(() => scene.classList.remove('spark'), 450);
+            api.bad('Искра! ' + sel.name + ' не в клемму ' + btn.dataset.term + '. Цвет провода подсказывает клемму.');
+            return;
+          }
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', sel.path);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', sel.color);
+          path.setAttribute('stroke-width', '9');
+          path.setAttribute('stroke-linecap', 'round');
+          wiresG.appendChild(path);
+          btn.classList.add('filled');
+          btn.disabled = true;
+          area.querySelector('[data-wire="' + sel.id + '"]').disabled = true;
+          sel = null;
+          connected++;
+          api.sfx('place');
+          api.setProgress(connected, 3);
+          api.feedback('Подключено ' + connected + ' из 3.');
+          if (connected === 3){
+            const pb = area.querySelector('#skPlugBtn');
+            pb.disabled = false;
+            pb.focus({ preventScroll: true });
+            api.feedback('Все провода на месте! Втыкай вилку.');
+          }
+        };
+      });
+      area.querySelector('#skPlugBtn').onclick = () => {
+        const bulb = area.querySelector('#skBulb');
+        bulb.textContent = '💡';
+        bulb.classList.add('lit');
+        api.sfx('power');
+        api.ok('Лампа горит — розетка работает на 230 В!');
+        setTimeout(() => api.finish(ePts(mistakes)), 1100);
+      };
+    },
     onDone: done, onCancel: cancel
   });
 }
 
-/* ---- Игра 3. Поиск неисправности мультиметром ---- */
+/* ---- Игра 3. Поиск неисправности мультиметром: щупы и показания ---- */
 function openEMeter(done, cancel){
-  return window.openTaskGame({
+  const points = [
+    { id: 'av', name: 'Автомат QF1', kind: 'feeder' },
+    { id: 'r1', name: 'Розетка №1', kind: 'branch' },
+    { id: 'r2', name: 'Розетка №2', kind: 'branch' },
+    { id: 'lamp', name: 'Светильник', kind: 'load' }
+  ];
+  const padPct = { av: [15.6, 44], r1: [42.7, 44], r2: [70, 44], lamp: [89.6, 44] };
+  const faultId = points[Math.floor(Math.random() * points.length)].id;
+  const readings = {
+    v: {}, r: {}, b: {}
+  };
+  points.forEach((p) => {
+    const broken = p.id === faultId;
+    const downstream = points.find((x) => x.id === faultId).kind === 'feeder';
+    const dead = broken || (downstream && p.kind !== 'feeder');
+    readings.v[p.id] = dead ? '0 В' : '230 В';
+    readings.r[p.id] = dead ? 'обрыв ∞' : (p.kind === 'load' ? '18 Ом' : '0,2 Ом');
+    readings.b[p.id] = dead ? 'нет сигнала' : 'есть сигнал';
+  });
+  const modes = [
+    { id: 'v', label: 'V~' },
+    { id: 'r', label: 'Ω' },
+    { id: 'b', label: '♪' }
+  ];
+  let mistakes = 0, mode = 'v';
+
+  return window.openPlayGame({
     theme: 'e',
     icon: '🔍',
     title: 'Поиск неисправности мультиметром',
-    intro: 'Розетки не работают. Пройдите диагностику: поверните диск прибора и найдите обрыв.',
+    intro: 'Розетки не работают. Поверни диск, тыкай щупами в точки схемы и найди сломанный элемент.',
     memo: [
-      ['V~ — напряжение', 'Режим измерения переменного напряжения. В розетке должно быть ~230 В.'],
-      ['Ω — сопротивление', 'Обрыв цепи — «∞», бесконечность.'],
-      ['Прозвонка ♪', 'Пищит, если цепь целая. Удобно искать обрыв при снятом питании.'],
-      ['Правило обрыва', '0 В сразу везде = обрыв в самом начале цепи.']
+      ['V~', 'Напряжение: в исправной точке 230 В.'],
+      ['Ω', 'Сопротивление: у обрыва «∞».'],
+      ['Прозвонка ♪', 'Пищит на целой цепи.'],
+      ['Подсказка', '0 В сразу везде — сломан вводной автомат QF1.']
     ],
-    steps: [
-      {
-        title: 'Этап 1 · Режим прибора',
-        task: 'Проверяем: есть ли в розетках напряжение. Нажмите нужный режим на диске.',
-        art: eSvgDial(null),
-        hotspots: [ { x: 28, y: 64 } ],
-        slots: [{ label: 'Режим мультиметра', answer: 'V~ (напряжение)' }],
-        chips: [ { label: 'V~ (напряжение)' }, { label: 'Ω (сопротивление)' }, { label: 'Прозвонка' } ],
-        chipsLabel: 'Режимы',
-        hint: 'Живую розетку проверяют напряжением — V~.',
-        success: 'Диск на V~. Прибор готов.'
-      },
-      {
-        title: 'Этап 2 · Где обрыв',
-        task: 'Мультиметр показывает 0 В во всех точках. Нажмите на схеме элемент, который сломан.',
-        art: eSvgChainActive(),
-        hotspots: [ { x: 19.7, y: 44 } ],
-        slots: [{ label: 'Неисправный элемент', answer: 'Вводной автомат QF1' }],
-        chips: [ { label: 'Вводной автомат QF1' }, { label: 'Вторая розетка' }, { label: 'Светильник' } ],
-        chipsLabel: 'Элементы цепи',
-        hint: '0 В сразу везде = питание пропало в самом начале цепи.',
-        success: 'Точно! Обрыв на вводе — поэтому гаснет всё.'
-      },
-      {
-        title: 'Этап 3 · Проверка без питания',
-        task: 'Питание сняли. Каким режимом быстрее всего найти обрыв провода? Нажмите на диске.',
-        art: eSvgDial(null),
-        hotspots: [ { x: 71.8, y: 64 } ],
-        slots: [{ label: 'Режим поиска обрыва', answer: 'Прозвонка' }],
-        chips: [ { label: 'Прозвонка' }, { label: 'V~ (напряжение)' }, { label: 'A (ток)' } ],
-        chipsLabel: 'Режимы',
-        hint: 'Прозвонка пищит на целой цепи. Молчит — значит обрыв.',
-        success: 'Диагностика завершена — неисправность найдена!'
-      }
-    ],
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-meter-wrap">' +
+          '<div class="tg-meter-box">' +
+            '<div class="tg-meter-scr dead" id="mmScr">- - -</div>' +
+            '<div class="tg-meter-modes">' +
+              modes.map((m) => '<button type="button" class="tg-modebtn" data-mode="' + m.id + '" aria-pressed="false">' + m.label + '</button>').join('') +
+            '</div>' +
+            '<small style="color:#8fa2ba">Выбери режим, затем точку на схеме.</small>' +
+          '</div>' +
+          '<div class="tg-scheme" id="mmScheme">' +
+            '<svg viewBox="0 0 480 240" preserveAspectRatio="none">' +
+              '<line x1="75" y1="105" x2="205" y2="105" stroke="#4b5b7a" stroke-width="3"/>' +
+              '<line x1="205" y1="105" x2="336" y2="105" stroke="#4b5b7a" stroke-width="3"/>' +
+              '<line x1="336" y1="105" x2="432" y2="105" stroke="#4b5b7a" stroke-width="3"/>' +
+              '<line x1="75" y1="130" x2="75" y2="200" stroke="#4b5b7a" stroke-width="3"/>' +
+              '<line x1="432" y1="130" x2="432" y2="200" stroke="#4b5b7a" stroke-width="3"/>' +
+              '<rect x="30" y="80" width="90" height="50" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
+              '<rect x="160" y="80" width="90" height="50" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
+              '<rect x="290" y="80" width="90" height="50" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
+              '<rect x="392" y="80" width="80" height="50" rx="8" fill="#182234" stroke="#3c4c6c"/>' +
+            '</svg>' +
+            points.map((p) => '<button type="button" class="tg-pad" data-pad="' + p.id + '" style="left:' + padPct[p.id][0] + '%;top:' + padPct[p.id][1] + '%">' + p.name + '</button>').join('') +
+          '</div>' +
+        '</div>' +
+        '<div class="tg-replace">' +
+          points.map((p) => '<button type="button" class="tg-scene-btn" data-rep="' + p.id + '">🔧 Заменить: ' + p.name + '</button>').join('') +
+        '</div>';
+      const scr = area.querySelector('#mmScr');
+      area.querySelectorAll('.tg-modebtn').forEach((btn) => {
+        btn.onclick = () => {
+          mode = btn.dataset.mode;
+          area.querySelectorAll('.tg-modebtn').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+          scr.classList.add('dead');
+          scr.textContent = '- - -';
+          api.feedback('Режим ' + (modes.find((m) => m.id === mode).label) + '. Теперь нажми точку на схеме.');
+        };
+      });
+      area.querySelectorAll('.tg-pad').forEach((btn) => {
+        btn.onclick = () => {
+          const id = btn.dataset.pad;
+          scr.classList.remove('dead');
+          scr.textContent = readings[mode][id];
+          area.querySelectorAll('.tg-pad').forEach((b) => b.classList.toggle('probed', b === btn));
+          const p = points.find((x) => x.id === id);
+          api.feedback(p.name + ' · ' + (modes.find((m) => m.id === mode).label) + ': ' + readings[mode][id] + '. Сравни с другими точками.');
+        };
+      });
+      area.querySelectorAll('[data-rep]').forEach((btn) => {
+        btn.onclick = () => {
+          if (btn.dataset.rep === faultId){
+            api.sfx('power');
+            api.ok('Верно! Неисправность была в «' + points.find((p) => p.id === faultId).name + '» — заменили, всё заработало!');
+            setTimeout(() => api.finish(ePts(mistakes)), 1100);
+          } else {
+            mistakes++;
+            btn.classList.add('wrong');
+            setTimeout(() => btn.classList.remove('wrong'), 500);
+            api.bad('«' + points.find((p) => p.id === btn.dataset.rep).name + '» исправен. Сверь показания: у неисправной точки 0 В, «обрыв ∞» и нет сигнала.');
+          }
+        };
+      });
+    },
     onDone: done, onCancel: cancel
   });
 }
 
-/* ---- Игра 4. Пуск электродвигателя ---- */
+/* ---- Игра 4. Пуск электродвигателя: панель с ротором ---- */
 function openEMotor(done, cancel){
-  return window.openTaskGame({
+  let mistakes = 0, qf = false, running = false;
+
+  return window.openPlayGame({
     theme: 'e',
     icon: '⚙️',
     title: 'Пуск электродвигателя',
-    intro: 'Расставьте шаги пуска прямо на схеме — не спалите двигатель!',
+    intro: 'Настоящая панель: автомат → ПУСК (звезда) → переключить на треугольник. Ошибёшься — сработает защита!',
     memo: [
-      ['Пуск «звездой»', 'Обмотки звездой: пусковой ток меньше в ~1,7 раза. Разгон мягкий.'],
-      ['Переход в «треугольник»', 'После разгона — полная мощность.'],
-      ['Цепь управления', 'Кнопки и катушки питаются отдельно, обычно 24 В — это безопасность.']
+      ['Порядок', '1) Вводной автомат QF1. 2) Кнопка ПУСК — разгон «звездой». 3) Переключить «звезда → треугольник» — полная мощность.'],
+      ['Защита', 'ПУСК без автомата или треугольник без разгона — срабатывает защита, всё отключается.'],
+      ['Звезда', 'Пусковой ток меньше — двигатель разгоняется мягко.']
     ],
-    steps: [
-      {
-        title: 'Этап 1 · Последовательность пуска',
-        task: 'Нажмите «ШАГ 1» на схеме, затем фишку. Заполните все четыре шага.',
-        art: eSvgMotorChain(),
-        hotspots: [
-          { x: 11.8, y: 37 }, { x: 34.7, y: 37 }, { x: 57.6, y: 37 }, { x: 80.6, y: 37 }
-        ],
-        slots: [
-          { label: 'Шаг 1', answer: 'Вводной автомат QF1' },
-          { label: 'Шаг 2', answer: 'Питание цепи управления' },
-          { label: 'Шаг 3', answer: 'Пуск «звездой»' },
-          { label: 'Шаг 4', answer: 'Переход в «треугольник»' }
-        ],
-        chips: [
-          { label: 'Вводной автомат QF1' },
-          { label: 'Питание цепи управления' },
-          { label: 'Пуск «звездой»' },
-          { label: 'Переход в «треугольник»' },
-          { label: 'Сразу «треугольник»', sub: 'лишний' }
-        ],
-        chipsLabel: 'Шаги',
-        hint: 'Сначала питание, потом управление, звезда — и лишь затем треугольник.',
-        success: 'Двигатель запущен по инструкции!'
-      },
-      {
-        title: 'Этап 2 · Зачем «звезда»?',
-        task: 'Почему двигатель сначала пускают «звездой»?',
-        art: eSvgMotorChain(),
-        slots: [{ label: 'Причина пуска звездой', answer: 'Меньше пусковой ток' }],
-        chips: [ { label: 'Меньше пусковой ток' }, { label: 'Быстрее разгон' }, { label: 'Громче работает' } ],
-        chipsLabel: 'Варианты',
-        hint: 'Большой пусковой ток греет провода и просаживает сеть. Звезда его снижает.',
-        success: 'Верно: звезда бережёт сеть и двигатель.'
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-motor-panel" id="moPanel">' +
+          '<div class="tg-motor-row">' +
+            '<label class="lbl"><span class="tg-lamp" id="moNet"></span>СЕТЬ</label>' +
+            '<button type="button" class="tg-e-main" id="moQf">QF1 · ВВОД</button>' +
+            '<button type="button" class="tg-btn-big tg-btn-start" id="moStart">ПУСК ▶</button>' +
+            '<button type="button" class="tg-btn-big tg-btn-stop" id="moStop">■ СТОП</button>' +
+          '</div>' +
+          '<div class="tg-motor-row">' +
+            '<label class="lbl"><span class="tg-lamp" id="moPusk"></span>ПУСК</label>' +
+            '<label class="lbl"><span class="tg-lamp" id="moRun"></span>РАБОТА</label>' +
+            '<button type="button" class="tg-e-main" id="moDelta">ЗВЕЗДА → ТРЕУГОЛЬНИК</button>' +
+            '<div class="tg-motor-display" id="moDisp">РЕЖИМ: ОЖИДАНИЕ</div>' +
+          '</div>' +
+          '<div class="tg-motor-row">' +
+            '<div class="tg-rotor" id="moRotor"><i></i><i></i><i></i><i></i></div>' +
+            '<small style="color:#8fa2ba">ротор двигателя M3~</small>' +
+          '</div>' +
+        '</div>';
+      const rotor = area.querySelector('#moRotor'), disp = area.querySelector('#moDisp'), panel = area.querySelector('#moPanel');
+      function trip(msg){
+        mistakes++;
+        running = false;
+        qf = false;
+        panel.classList.add('tg-panel-trip');
+        setTimeout(() => panel.classList.remove('tg-panel-trip'), 550);
+        rotor.classList.remove('spin-slow', 'spin-fast');
+        ['moNet', 'moPusk', 'moRun'].forEach((id) => area.querySelector('#' + id).classList.remove('lit'));
+        area.querySelector('#moQf').textContent = 'QF1 · ВВОД';
+        area.querySelector('#moDelta').textContent = 'ЗВЕЗДА → ТРЕУГОЛЬНИК';
+        disp.textContent = 'РЕЖИМ: ЗАЩИТА СРАБОТАЛА';
+        api.bad(msg + ' Всё отключено — начни заново: сначала QF1.');
       }
-    ],
+      area.querySelector('#moQf').onclick = () => {
+        qf = !qf;
+        area.querySelector('#moNet').classList.toggle('lit', qf);
+        area.querySelector('#moQf').textContent = qf ? 'QF1 · ВКЛЮЧЕН' : 'QF1 · ВВОД';
+        api.feedback(qf ? 'Питание подано. Жми ПУСК.' : 'Автомат выключен.');
+      };
+      area.querySelector('#moStart').onclick = () => {
+        if (running) return;
+        if (!qf){ trip('ПУСК без питания!'); return; }
+        running = true;
+        rotor.classList.add('spin-slow');
+        area.querySelector('#moPusk').classList.add('lit');
+        disp.textContent = 'РЕЖИМ: ЗВЕЗДА · РАЗГОН';
+        api.ok('Двигатель разгоняется «звездой» — пусковой ток маленький. Переключай на треугольник!');
+      };
+      area.querySelector('#moDelta').onclick = () => {
+        if (!qf){ trip('Переключение без питания!'); return; }
+        if (!running){ trip('Треугольник сразу после включения — большой пусковой ток!'); return; }
+        rotor.classList.remove('spin-slow');
+        rotor.classList.add('spin-fast');
+        area.querySelector('#moPusk').classList.remove('lit');
+        area.querySelector('#moRun').classList.add('lit');
+        area.querySelector('#moDelta').textContent = 'ТРЕУГОЛЬНИК · РАБОТА';
+        disp.textContent = 'РЕЖИМ: ТРЕУГОЛЬНИК · РАБОТА';
+        api.ok('Двигатель на полной мощности — пуск выполнен!');
+        setTimeout(() => api.finish(ePts(mistakes)), 1200);
+      };
+      area.querySelector('#moStop').onclick = () => {
+        running = false;
+        rotor.classList.remove('spin-slow', 'spin-fast');
+        area.querySelector('#moPusk').classList.remove('lit');
+        area.querySelector('#moRun').classList.remove('lit');
+        disp.textContent = 'РЕЖИМ: ОЖИДАНИЕ';
+        api.feedback('Двигатель остановлен.');
+      };
+    },
     onDone: done, onCancel: cancel
   });
 }
 
-/* ---- Игра 5. Сборка электрошкафа ---- */
+/* ---- Игра 5. Сборка электрошкафа: отсеки и аппараты ---- */
 function openE3D(done, cancel){
-  return window.openTaskGame({
+  const devices = [
+    { id: 'qf', name: 'Автомат QF', slot: 0 },
+    { id: 'uzo', name: 'УЗО', slot: 1 },
+    { id: 'meter', name: 'Счётчик', slot: 2 },
+    { id: 'pe', name: 'Шина PE', slot: 3 },
+    { id: 'sock', name: 'Розетка', slot: -1 },
+    { id: 'lamp', name: 'Лампа', slot: -1 }
+  ];
+  const slots = ['ПЕРЕГРУЗКА И КЗ', 'УТЕЧКА ТОКА', 'УЧЁТ ЭНЕРГИИ', 'ЗЕМЛЯ В ОДНУ ТОЧКУ'];
+  let mistakes = 0, placed = 0, sel = null;
+
+  return window.openPlayGame({
     theme: 'e',
     icon: '🗄️',
     title: 'Сборка электрошкафа',
-    intro: 'Нажмите отсек на шкафу и поставьте туда аппарат, который решает его задачу.',
+    intro: 'Открой отсек шкафа и поставь аппарат, который решает его задачу. Потом включи рубильник!',
     memo: [
-      ['Автомат QF', 'Защита от перегрузки и короткого замыкания.'],
-      ['УЗО', 'Защита человека: отключает при утечке 30 мА.'],
-      ['Счётчик', 'Учитывает электроэнергию, кВт·ч.'],
-      ['Шина PE', 'Собирает все провода заземления в одну точку.']
+      ['Автомат QF', 'Перегрузка и короткое замыкание.'],
+      ['УЗО', 'Утечка тока — защита человека.'],
+      ['Счётчик', 'Учёт электроэнергии, кВт·ч.'],
+      ['Шина PE', 'Собирает все провода заземления.']
     ],
-    steps: [
-      {
-        title: 'Этап · Функции аппаратов',
-        task: 'Четыре отсека шкафа подписаны задачами. Поставьте в каждый нужный аппарат.',
-        art: eSvgCabinet(),
-        hotspots: [
-          { x: 31.3, y: 30 }, { x: 68.7, y: 30 }, { x: 31.3, y: 69 }, { x: 68.7, y: 69 }
-        ],
-        slots: [
-          { label: 'Отсек «Перегрузка и КЗ»', answer: 'Автомат QF' },
-          { label: 'Отсек «Утечка тока»', answer: 'УЗО' },
-          { label: 'Отсек «Учёт энергии»', answer: 'Счётчик' },
-          { label: 'Отсек «Земля»', answer: 'Шина PE' }
-        ],
-        chips: [
-          { label: 'Автомат QF' }, { label: 'УЗО' }, { label: 'Счётчик' }, { label: 'Шина PE' },
-          { label: 'Розетка', sub: 'лишняя' }, { label: 'Лампа', sub: 'лишняя' }
-        ],
-        chipsLabel: 'Аппараты шкафа',
-        hint: 'КЗ и перегрузка — автомат. Утечка — УЗО. Учёт — счётчик. Земля — шина PE.',
-        success: 'Шкаф укомплектован — можно подавать напряжение!'
+    build(area, api){
+      area.innerHTML =
+        '<div class="tg-e-panel">' +
+          '<div class="tg-e-panel-top">' +
+            '<span class="tg-lamp" id="cabLamp"></span><b>ГОТОВ К ПУСКУ</b>' +
+            '<button type="button" class="tg-e-main" id="cabMain" disabled>ПОДАТЬ НАПРЯЖЕНИЕ</button>' +
+          '</div>' +
+          '<div class="tg-e-rail">' +
+            slots.map((s, i) => '<button type="button" class="tg-mount" data-slot="' + i + '"><b>ОТСЕК ' + (i + 1) + '</b><small>' + s + '</small></button>').join('') +
+          '</div>' +
+        '</div>' +
+        '<div class="tg-e-tray">' +
+          devices.map((d) => '<button type="button" class="tg-brk" data-part="' + d.id + '"><span class="mini"></span>' + d.name + '</button>').join('') +
+        '</div>';
+      function pickPart(btn, d){
+        if (sel) area.querySelector('[data-part="' + sel.id + '"]').classList.remove('sel');
+        sel = d; btn.classList.add('sel');
+        api.feedback('Взято: ' + d.name + '. Нажми подходящий отсек.');
       }
-    ],
+      devices.forEach((d) => {
+        area.querySelector('[data-part="' + d.id + '"]').onclick = (e) => pickPart(e.currentTarget, d);
+      });
+      area.querySelectorAll('.tg-mount').forEach((m) => {
+        m.onclick = () => {
+          const idx = Number(m.dataset.slot);
+          if (!sel){ api.feedback('Сначала возьми аппарат снизу.', 'bad'); return; }
+          if (sel.slot !== idx){
+            mistakes++;
+            api.bad('Не сюда: «' + sel.name + '» не решает задачу «' + slots[idx] + '».');
+            return;
+          }
+          m.innerHTML = '<span class="tg-brk-mod"><span>' + sel.name.toUpperCase() + '</span></span>';
+          m.disabled = true;
+          area.querySelector('[data-part="' + sel.id + '"]').disabled = true;
+          sel = null;
+          placed++;
+          api.setProgress(placed, 4);
+          api.sfx('place');
+          api.feedback('Установлено ' + placed + ' из 4.');
+          if (placed === 4){
+            area.querySelector('#cabMain').disabled = false;
+            api.feedback('Шкаф укомплектован! Подавай напряжение.');
+          }
+        };
+      });
+      area.querySelector('#cabMain').onclick = () => {
+        area.querySelector('#cabLamp').classList.add('lit');
+        const b = area.querySelector('#cabMain');
+        b.classList.add('on');
+        b.textContent = 'ШКАФ ПОД НАПРЯЖЕНИЕМ';
+        api.sfx('power');
+        api.ok('Напряжение подано — шкаф в работе!');
+        setTimeout(() => api.finish(ePts(mistakes)), 1100);
+      };
+    },
     onDone: done, onCancel: cancel
   });
 }

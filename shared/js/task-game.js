@@ -333,4 +333,195 @@
       isClosed(){ return closed; }
     };
   };
+
+  /* ============================================================
+     ИГРАБЕЛЬНЫЕ МИНИ-ИГРЫ (симуляторы) — общий «кабинет» игры:
+     шапка, прогресс, памятка, выход-подтверждение, звуки, конфетти.
+     Сцена рисуется самой игрой в build(area, api).
+     ============================================================ */
+  let pgAudio = null;
+  function pgTone(freq, t0, dur, type, vol){
+    const o = pgAudio.createOscillator(), g = pgAudio.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.05, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(audioDestination());
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function audioDestination(){ return pgAudio.destination; }
+  function sfx(kind){
+    try{
+      pgAudio = pgAudio || new (window.AudioContext || window.webkitAudioContext)();
+      if (pgAudio.state === 'suspended') pgAudio.resume();
+      const t = pgAudio.currentTime;
+      if (kind === 'click') pgTone(620, t, 0.05, 'square', 0.02);
+      else if (kind === 'place'){ pgTone(520, t, 0.07, 'square', 0.03); pgTone(780, t + 0.05, 0.09, 'square', 0.03); }
+      else if (kind === 'good'){ pgTone(660, t, 0.1, 'sine', 0.05); pgTone(880, t + 0.08, 0.14, 'sine', 0.05); }
+      else if (kind === 'bad'){ pgTone(200, t, 0.16, 'sawtooth', 0.04); pgTone(150, t + 0.1, 0.18, 'sawtooth', 0.04); }
+      else if (kind === 'spark'){ pgTone(1400, t, 0.09, 'sawtooth', 0.05); pgTone(900, t + 0.05, 0.12, 'square', 0.04); }
+      else if (kind === 'power'){ pgTone(300, t, 0.3, 'sine', 0.05); pgTone(600, t + 0.15, 0.35, 'sine', 0.05); pgTone(1200, t + 0.3, 0.3, 'triangle', 0.04); }
+      else if (kind === 'win'){ [523, 659, 784, 1047].forEach((f, i) => pgTone(f, t + i * 0.09, 0.22, 'triangle', 0.06)); }
+    } catch(e){ /* звук — украшение */ }
+  }
+  const PRAISES2 = ['🔥 Круто!', '⚡ Есть контакт!', '🔧 Как настоящий наладчик!', '💡 Точно!', '🎯 Метко!', '🛠️ Мастер!', '✨ Блестяще!'];
+  function confettiBurst(root){
+    const box = document.createElement('div');
+    box.className = 'tg-confetti';
+    const colors = ['#5eead4', '#a78bfa', '#f5a623', '#4fd69f', '#f472b6', '#60a5fa'];
+    for (let i = 0; i < 46; i++){
+      const bit = document.createElement('i');
+      bit.style.left = Math.random() * 100 + '%';
+      bit.style.background = colors[i % colors.length];
+      bit.style.animationDelay = (Math.random() * 0.35) + 's';
+      bit.style.animationDuration = (1 + Math.random() * 0.8) + 's';
+      box.appendChild(bit);
+    }
+    root.appendChild(box);
+    setTimeout(() => box.remove(), 2200);
+  }
+  function praiseBadge(card){
+    const p = document.createElement('div');
+    p.className = 'tg-praise';
+    p.textContent = PRAISES2[Math.floor(Math.random() * PRAISES2.length)];
+    card.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
+  function shakeCard(card){
+    card.classList.remove('tg-shake');
+    void card.offsetWidth;
+    card.classList.add('tg-shake');
+    setTimeout(() => card.classList.remove('tg-shake'), 420);
+  }
+
+  window.openPlayGame = function(opts){
+    opts = opts || {};
+    let closed = false, finished = false;
+    const closeFns = [];
+    const previousFocus = document.activeElement;
+    const theme = opts.theme === 'reu' ? 'reu' : 'e';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'tg-overlay tg-' + theme;
+    overlay.innerHTML =
+      '<section class="tg-game tg-play" role="dialog" aria-modal="true" aria-labelledby="tgPlayTitle">' +
+        '<div class="tg-scroll">' +
+          '<button type="button" class="tg-exit" title="Выйти из мини-игры (−15 света)" aria-label="Выйти из мини-игры: минус 15 света">✕</button>' +
+          '<header class="tg-head">' +
+            '<span class="tg-icon" aria-hidden="true">' + (opts.icon || '🛠️') + '</span>' +
+            '<div class="tg-heading">' +
+              '<h2 id="tgPlayTitle">' + esc(opts.title || 'Мини-игра') + '</h2>' +
+              (opts.intro ? '<p class="tg-intro">' + esc(opts.intro) + '</p>' : '') +
+            '</div>' +
+            '<button type="button" class="tg-btn tg-ghost tg-memo-btn">📖 Памятка</button>' +
+            '<span class="tg-progress" hidden></span>' +
+          '</header>' +
+          '<div class="tg-area"></div>' +
+          '<p class="tg-feedback" role="status" aria-live="polite"></p>' +
+          '<div class="tg-exit-row"><small>Выход по крестику или Escape: −15 света. Практика начнётся заново.</small></div>' +
+        '</div>' +
+        '<dialog class="tg-memo" aria-labelledby="tgPlayMemoTitle">' +
+          '<header class="tg-memo-head"><h2 id="tgPlayMemoTitle">Памятка</h2>' +
+          '<button type="button" class="tg-btn tg-ghost tg-memo-back">К игре</button></header>' +
+          '<dl class="tg-memo-list" tabindex="0"></dl>' +
+        '</dialog>' +
+      '</section>';
+    document.body.appendChild(overlay);
+
+    const q = (s) => overlay.querySelector(s);
+    const card = q('.tg-game'), area = q('.tg-area'), feedback = q('.tg-feedback'),
+      progress = q('.tg-progress'), memo = q('.tg-memo'), memoList = q('.tg-memo-list');
+
+    (opts.memo || []).forEach((row) => {
+      const wrap = document.createElement('div');
+      const dt = document.createElement('dt'); dt.textContent = row[0];
+      const dd = document.createElement('dd'); dd.textContent = row[1];
+      wrap.append(dt, dd);
+      memoList.appendChild(wrap);
+    });
+    q('.tg-memo-btn').onclick = () => { memo.showModal(); q('.tg-memo-back').focus({ preventScroll: true }); };
+    q('.tg-memo-back').onclick = () => memo.close();
+    memo.addEventListener('keydown', (e) => e.stopPropagation());
+
+    // Щелчок по любой кнопке сцены — короткий тик.
+    overlay.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (b && !b.disabled && !b.classList.contains('tg-exit')) sfx('click');
+    }, true);
+
+    function closeRun(fireCancel){
+      closed = true;
+      closeFns.forEach((fn) => { try{ fn(); } catch(e){} });
+      overlay.remove();
+      if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+      if (fireCancel && opts.onCancel) opts.onCancel();
+    }
+    function leave(){
+      if (closed || finished) return;
+      overlay.classList.add('tg-confirm-open');
+      const box = document.createElement('div');
+      box.className = 'tg-confirm';
+      box.innerHTML =
+        '<div class="tg-confirm-box"><h3>Выйти из мини-игры?</h3>' +
+        '<p>Вы потеряете <b>15 света</b>. Незавершённое задание начнётся заново.</p>' +
+        '<div class="tg-confirm-actions">' +
+        '<button type="button" class="tg-btn tg-ghost tg-cancel">Отмена</button>' +
+        '<button type="button" class="tg-btn tg-danger tg-accept">Выйти</button>' +
+        '</div></div>';
+      overlay.appendChild(box);
+      const cancelBtn = box.querySelector('.tg-cancel'), acceptBtn = box.querySelector('.tg-accept');
+      const close = (accepted) => {
+        box.remove(); overlay.classList.remove('tg-confirm-open');
+        if (accepted) closeRun(true); else cancelBtn.focus();
+      };
+      cancelBtn.onclick = () => close(false);
+      acceptBtn.onclick = () => close(true);
+      cancelBtn.focus();
+    }
+    q('.tg-exit').onclick = leave;
+
+    const api = {
+      feedback(text, kind){
+        feedback.textContent = text;
+        feedback.className = 'tg-feedback' + (kind ? ' ' + kind : '');
+        if (kind === 'ok'){ sfx('good'); praiseBadge(card); }
+        if (kind === 'bad'){ sfx('bad'); shakeCard(card); }
+      },
+      setProgress(done, total){
+        progress.hidden = !total;
+        if (total) progress.textContent = 'Этап ' + Math.min(done + 1, total) + ' / ' + total;
+      },
+      ok(text){ api.feedback(text || 'Верно!', 'ok'); },
+      bad(text){ api.feedback(text || 'Ошибка!', 'bad'); },
+      sfx(kind){ sfx(kind); },
+      finish(points){
+        if (closed || finished) return;
+        finished = closed = true;
+        sfx('power');
+        sfx('win');
+        confettiBurst(overlay);
+        setTimeout(() => {
+          closeFns.forEach((fn) => { try{ fn(); } catch(e){} });
+          overlay.remove();
+          if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+          opts.onDone && opts.onDone(points == null ? 150 : points);
+        }, 1000);
+      },
+      onClose(fn){ if (fn) closeFns.push(fn); },
+      isClosed(){ return closed; }
+    };
+
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape'){ e.preventDefault(); leave(); return; }
+      if (e.key !== 'Tab') return;
+      const items = [...overlay.querySelectorAll('button:not(:disabled):not([hidden]), dl[tabindex]')]
+        .filter((n) => n.getClientRects().length);
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    });
+
+    if (opts.build) opts.build(area, api);
+    return { close(){ if (!closed) closeRun(false); }, isClosed(){ return closed; } };
+  };
 })();
